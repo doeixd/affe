@@ -1,5 +1,6 @@
-import { Effect, Option, Scope } from "effect";
-import { createDisposableEffect, onCleanup } from "./api.js";
+import { Effect, Exit, Option, Scope } from "effect";
+import { createDisposableEffect, createRoot, onCleanup } from "./api.js";
+import { getOwner, runWithOwner, type Owner } from "./owner.js";
 import { parseAttribute, serializeAttribute } from "./attributes.js";
 import * as MetadataToken from "./MetadataToken.js";
 
@@ -326,27 +327,65 @@ export function draggable(): Draggable {
 /** Create an in-memory collection handle for repeated slots. */
 export function collection<E extends Handle>(initial: ReadonlyArray<E> = []): Collection<E> {
   let current = initial;
-  const observers = new Set<{
-    run: (item: E, index: number) => Effect.Effect<Cleanup | void>;
-    cleanups: Set<Cleanup>;
-  }>();
+  interface Observer {
+    readonly run: (item: E, index: number) => Effect.Effect<Cleanup | void>;
+    readonly cleanups: Set<Cleanup>;
+    /** Reactive owner ambient when `observeEach` ran; item roots nest under it. */
+    readonly owner: Owner | null;
+  }
+  const observers = new Set<Observer>();
 
-  const runObserver = (observer: {
-    run: (item: E, index: number) => Effect.Effect<Cleanup | void>;
-    cleanups: Set<Cleanup>;
-  }): void => {
-    for (const cleanup of observer.cleanups) {
+  /**
+   * Run one per-item observer in its OWN child `Scope` and reactive root, so
+   * every resource the item acquires (`setAttr(fn)` reactions, `on(...)`
+   * listeners, nested finalizers) is released when that item's run is torn
+   * down — on re-run, on removal, and on the observer's own disposal. Without
+   * this, per-item work acquired inside `observeEach` had no Scope and piled
+   * up on every `set()`, still writing to items no longer in the collection.
+   */
+  const runItem = (observer: Observer, item: E, index: number): Cleanup => {
+    const itemScope = Effect.runSync(Scope.make());
+    let disposeRoot: () => void = () => {};
+    let out: Cleanup | void = undefined;
+    try {
+      out = runWithOwner(observer.owner, () =>
+        createRoot((dispose) => {
+          disposeRoot = dispose;
+          return Effect.runSync(observer.run(item, index).pipe(Scope.provide(itemScope)));
+        }),
+      );
+    } catch (error) {
+      Effect.runSync(Scope.close(itemScope, Exit.void));
+      disposeRoot();
+      throw error;
+    }
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      try {
+        if (typeof out === "function") out();
+      } finally {
+        Effect.runSync(Scope.close(itemScope, Exit.void));
+        disposeRoot();
+      }
+    };
+  };
+
+  const releaseAll = (observer: Observer): void => {
+    const pending = [...observer.cleanups];
+    observer.cleanups.clear();
+    for (const cleanup of pending) {
       cleanup();
     }
-    observer.cleanups.clear();
+  };
 
+  const runObserver = (observer: Observer): void => {
+    releaseAll(observer);
     for (let index = 0; index < current.length; index += 1) {
       const item = current[index];
       if (item === undefined) continue;
-      const out = Effect.runSync(observer.run(item, index));
-      if (typeof out === "function") {
-        observer.cleanups.add(out);
-      }
+      observer.cleanups.add(runItem(observer, item, index));
     }
   };
 
@@ -369,9 +408,10 @@ export function collection<E extends Handle>(initial: ReadonlyArray<E> = []): Co
       // scope close. The reactive owner is only the fallback for callers that
       // run without a Scope.
       return Effect.flatMap(Effect.serviceOption(Scope.Scope), (maybeScope) => {
-        const observer = {
+        const observer: Observer = {
           run: f,
           cleanups: new Set<Cleanup>(),
+          owner: getOwner(),
         };
         observers.add(observer);
         runObserver(observer);
@@ -385,11 +425,7 @@ export function collection<E extends Handle>(initial: ReadonlyArray<E> = []): Co
           if (disposed) return;
           disposed = true;
           observers.delete(observer);
-          const pending = [...observer.cleanups];
-          observer.cleanups.clear();
-          for (const cleanup of pending) {
-            cleanup();
-          }
+          releaseAll(observer);
         };
 
         if (Option.isSome(maybeScope)) {

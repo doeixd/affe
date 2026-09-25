@@ -1,5 +1,5 @@
 import { defaultThemeTokens, type SlotStyle, type ThemeTokenSchema } from "./style-types.js";
-import { lookupToken } from "./Theme.js";
+import { isStructuredTokenLeaf, lookupToken } from "./Theme.js";
 
 export function mergeStyle(a: SlotStyle, b: SlotStyle): SlotStyle {
   return { ...a, ...b };
@@ -62,8 +62,10 @@ export function tokenPathForProperty(
   property: string | undefined,
   value: string,
 ): string | undefined {
+  // Structured leaves (shadow objects) are single token VALUES, so
+  // `shadow: "md"` resolves to the whole `{ x, y, blur, color }` object.
   const isLeaf = (candidate: unknown): boolean =>
-    typeof candidate === "string" || typeof candidate === "number";
+    typeof candidate === "string" || typeof candidate === "number" || isStructuredTokenLeaf(candidate);
   if (value.includes(".")) {
     // A dotted path is an explicit token request: try it verbatim, then under
     // each category prefix (`"text.primary"` → `color.text.primary`).
@@ -101,12 +103,87 @@ export function resolveTokenValue(
     }
     return lookupToken(tokens, value);
   }
+  if (Array.isArray(value)) {
+    // Tuple shorthands (`padding: [8, "md"]`) resolve every entry under the
+    // SAME property, and stay arrays.
+    return value.map((entry) => resolveTokenValue(entry, tokens, property));
+  }
   if (typeof value === "object" && value !== null) {
+    // Structured values (`border: { width, color }`, `flex: { gap }`, a
+    // shadow's `color`) resolve each field under its OWN key when that key
+    // names a token category — the parent property (`border`, `flex`) has
+    // none, so recursing with it would leave `color: "border"` unresolved.
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = resolveTokenValue(v, tokens, property);
+      const nestedProperty = tokenCategoryOfProperty(k) !== undefined ? k : property;
+      out[k] = resolveTokenValue(v, tokens, nestedProperty);
     }
     return out;
   }
   return value;
+}
+
+/**
+ * CSS properties whose numeric values are unitless. Every other numeric
+ * value is a length and serializes with `px` in emitted CSS text.
+ */
+const unitlessCssProperties = new Set([
+  "animation-iteration-count",
+  "aspect-ratio",
+  "border-image-outset",
+  "border-image-slice",
+  "border-image-width",
+  "column-count",
+  "columns",
+  "fill-opacity",
+  "flex",
+  "flex-grow",
+  "flex-negative",
+  "flex-order",
+  "flex-positive",
+  "flex-shrink",
+  "flood-opacity",
+  "font-size-adjust",
+  "font-weight",
+  "grid-area",
+  "grid-column",
+  "grid-column-end",
+  "grid-column-start",
+  "grid-row",
+  "grid-row-end",
+  "grid-row-start",
+  "initial-letter",
+  "line-clamp",
+  "-webkit-line-clamp",
+  "line-height",
+  "opacity",
+  "order",
+  "orphans",
+  "scale",
+  "stop-opacity",
+  "stroke-miterlimit",
+  "stroke-opacity",
+  "tab-size",
+  "widows",
+  "z-index",
+  "zoom",
+]);
+
+/** True when `property` (camelCase or kebab-case) takes unitless numbers. */
+export function isUnitlessCssProperty(property: string): boolean {
+  if (property.startsWith("--")) return true;
+  const kebab = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  return unitlessCssProperties.has(kebab.startsWith("webkit-") ? `-${kebab}` : kebab);
+}
+
+/**
+ * Serialize a static value as CSS text for `property`: numbers become `px`
+ * lengths (`padding: 16` → `16px`) except on unitless properties and custom
+ * properties (whose type is unknown); `0` stays `0`.
+ */
+export function cssValueText(property: string, value: unknown): string {
+  if (typeof value === "number" && Number.isFinite(value) && value !== 0 && !isUnitlessCssProperty(property)) {
+    return `${value}px`;
+  }
+  return String(value);
 }

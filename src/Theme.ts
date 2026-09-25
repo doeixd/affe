@@ -153,7 +153,8 @@ export function layer<Tokens extends ThemeTokenSchema>(
  * complete Layer — never merge-aware `Layer.merge` semantics for the Theme
  * service, which would make one Context service behave against Effect's
  * grain. "Zinc color + compact spacing" is category composition: categories
- * merge by key, later definitions winning per token.
+ * merge by key (deeply, through nested token groups), later definitions
+ * winning per token.
  */
 export function compose<
   const Definitions extends readonly [
@@ -163,16 +164,51 @@ export function compose<
 >(
   ...definitions: Definitions
 ): ThemeDefinition<MergedTokensOf<Definitions>> {
-  const merged: Record<string, Record<string, unknown>> = {};
+  let merged: Record<string, unknown> = {};
   for (const definition of definitions) {
-    for (const [category, tokens] of Object.entries(definition.tokens)) {
-      merged[category] = {
-        ...(merged[category] ?? {}),
-        ...(tokens as Record<string, unknown>),
-      };
-    }
+    merged = mergeTokenSchemas(merged, definition.tokens as Record<string, unknown>);
   }
   return define(merged as MergedTokensOf<Definitions>);
+}
+
+/**
+ * A structured token leaf: an object-valued token that is ONE value, not a
+ * group of tokens — today the shadow shape (`{ x, y, blur, color }`). Shared
+ * by composition (a later shadow replaces, never field-merges) and by token
+ * resolution (`shadow: "md"` resolves to the whole object).
+ */
+export function isStructuredTokenLeaf(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.blur === "number"
+    || (typeof record.x === "number" && typeof record.y === "number");
+}
+
+function isPlainTokenGroup(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  if (isStructuredTokenLeaf(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
+ * Deep-merge token schemas: plain-object groups merge recursively, so a later
+ * schema overriding `color.text.primary` keeps the earlier
+ * `color.text.secondary`. Any non-group value (string, number, array) is a
+ * token leaf and the later schema wins. Neither input is mutated.
+ */
+export function mergeTokenSchemas<A extends Record<string, unknown>, B extends Record<string, unknown>>(
+  base: A,
+  override: B,
+): A & B {
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const previous = out[key];
+    out[key] = isPlainTokenGroup(previous) && isPlainTokenGroup(value)
+      ? mergeTokenSchemas(previous, value)
+      : value;
+  }
+  return out as A & B;
 }
 
 type UnionToIntersection<U> =
