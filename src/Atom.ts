@@ -910,6 +910,31 @@ export function optimistic<A, R>(
  *
  * On typed `Failure`, schedules refreshes according to the provided schedule.
  */
+/**
+ * Lifetime of a background policy (polling, stale refresh, retry): it runs
+ * while at least one reactive reader holds the atom, not per read. `hold()`
+ * registers the current reader (returning false for an untracked read, which
+ * starts nothing); when the last reader's owner is cleaned up, `onIdle` runs a
+ * microtask later, so a reader that merely re-runs keeps the policy alive
+ * instead of restarting it.
+ */
+function policyLifetime(onIdle: () => void): { readonly hold: () => boolean } {
+  let readers = 0;
+  return {
+    hold: () => {
+      if (getOwner() === null) return false;
+      readers += 1;
+      onCleanup(() => {
+        readers -= 1;
+        queueMicrotask(() => {
+          if (readers === 0) onIdle();
+        });
+      });
+      return true;
+    },
+  };
+}
+
 export function withRetry<A, E, R = never>(schedule: Schedule.Schedule<unknown, any, any>): (self: ResultAtom<A, E, R>) => ResultAtom<A, E, R>;
 export function withRetry<A, E, R = never>(self: ResultAtom<A, E, R>, schedule: Schedule.Schedule<unknown, any, any>): ResultAtom<A, E, R>;
 export function withRetry<A, E, R = never>(
@@ -934,8 +959,11 @@ export function withRetry<A, E, R = never>(
     }
   };
 
+  const lifetime = policyLifetime(stop);
+
   return readable((get) => {
     const result = get(self);
+    if (!lifetime.hold()) return result;
     if (result._tag === "Failure") {
       if (retryFiber === null || !Object.is(retryFailure, result.error)) {
         stop();
@@ -950,8 +978,6 @@ export function withRetry<A, E, R = never>(
     } else {
       stop();
     }
-
-    onCleanup(stop);
     return result;
   });
 }
@@ -993,9 +1019,10 @@ export function withPolling<A, E, R = never>(
     }
   };
 
+  const lifetime = policyLifetime(stop);
+
   return readable((get) => {
-    ensure();
-    onCleanup(stop);
+    if (lifetime.hold()) ensure();
     return get(self);
   });
 }
@@ -1020,28 +1047,43 @@ export function withStaleTime<A, E, R = never>(
   const duration = arg2;
   let staleFiber: Fiber.Fiber<unknown, never> | null = null;
 
+  // The settled result the running timer was scheduled for: a re-read of the
+  // same result keeps the timer; only a newly settled result restarts it.
+  let scheduledFor: unknown = undefined;
+
   const stop = (): void => {
     if (staleFiber !== null) {
       Effect.runFork(Fiber.interrupt(staleFiber));
       staleFiber = null;
     }
+    scheduledFor = undefined;
   };
+
+  const lifetime = policyLifetime(stop);
 
   return readable((get) => {
     const result = get(self);
-    stop();
+    if (!lifetime.hold()) return result;
     if (result._tag === "Success" || result._tag === "Failure" || result._tag === "Defect") {
-      const sleepFor = (typeof duration === "number"
-        ? `${duration} millis`
-        : duration) as any;
-      staleFiber = Effect.runFork(
-        Effect.sleep(sleepFor).pipe(
-          Effect.flatMap(() => Effect.sync(() => defaultContext.refresh(self))),
-          Effect.catchCause(() => Effect.void),
-        ),
-      );
+      if (staleFiber === null || !Object.is(scheduledFor, result)) {
+        stop();
+        scheduledFor = result;
+        const sleepFor = (typeof duration === "number"
+          ? `${duration} millis`
+          : duration) as any;
+        staleFiber = Effect.runFork(
+          Effect.sleep(sleepFor).pipe(
+            Effect.flatMap(() => Effect.sync(() => {
+              staleFiber = null;
+              defaultContext.refresh(self);
+            })),
+            Effect.catchCause(() => Effect.void),
+          ),
+        );
+      }
+    } else {
+      stop();
     }
-    onCleanup(stop);
     return result;
   });
 }
