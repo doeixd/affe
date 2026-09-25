@@ -1,5 +1,5 @@
 /**
- * testing.ts — First-class testing harness for effect-atom-jsx.
+ * testing.ts — First-class testing harness for Affe.
  *
  * Provides utilities to test reactive code that depends on Effect layers
  * and services, without requiring a DOM or jsdom environment.
@@ -10,7 +10,7 @@
  *   (always through the production root path; DOM-free)
  */
 
-import { Effect, Layer, ManagedRuntime, ServiceMap } from "effect";
+import { Effect, Layer, ManagedRuntime, Context } from "effect";
 import { createRoot, getOwner, runWithOwner } from "./api.js";
 import { ManagedRuntimeContext, Result, setResultForTest, type Result as ResultType } from "./effect-ts.js";
 import * as Component from "./Component.js";
@@ -136,7 +136,7 @@ export function renderWithLayer<R>(
  * const ApiMock = mockService(Api, { fetch: () => Effect.succeed("mocked") });
  */
 export function mockService<I, S>(
-  tag: ServiceMap.Key<I, S>,
+  tag: Context.Key<I, S>,
   impl: S,
 ): Layer.Layer<I, never, never> {
   return Layer.succeed(tag, impl);

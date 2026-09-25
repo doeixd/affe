@@ -1,4 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
+import { Effect, Layer, Context } from "effect";
 import * as Behavior from "./Behavior.js";
 import * as Component from "./Component.js";
 import * as Element from "./Element.js";
@@ -7,7 +7,7 @@ import * as ServerRoute from "./ServerRoute.js";
 import * as Style from "./Style.js";
 import * as View from "./View.js";
 
-/** Severity levels used by all AF-UI diagnostic producers. */
+/** Severity levels used by all Affe diagnostic producers. */
 export type DiagnosticSeverity = "error" | "warning" | "info";
 
 export type DiagnosticSource =
@@ -52,7 +52,7 @@ export interface ReporterService {
   readonly reporter: Reporter;
 }
 
-export const ReporterTag = ServiceMap.Service<ReporterService>("DiagnosticsReporter");
+export const ReporterTag = Context.Service<ReporterService>("DiagnosticsReporter");
 
 /**
  * Create a diagnostic reporter.

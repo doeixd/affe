@@ -1,4 +1,4 @@
-import { Effect, Layer, ServiceMap } from "effect";
+import { Effect, Layer, Context } from "effect";
 
 export interface Todo {
   readonly id: string;
@@ -21,7 +21,7 @@ export interface TodoApi {
   readonly clearCompleted: () => Effect.Effect<number, TodoError>;
 }
 
-export const TodoApi = ServiceMap.Service<TodoApi>("TodoApi");
+export const TodoApi = Context.Service<TodoApi>("TodoApi");
 
 export function createInMemoryTodoApi(initial: ReadonlyArray<Todo> = []): TodoApi {
   let todos = [...initial];
@@ -88,7 +88,7 @@ export function createInMemoryTodoApi(initial: ReadonlyArray<Todo> = []): TodoAp
 export const TodoApiLive = Layer.succeed(
   TodoApi,
   createInMemoryTodoApi([
-    { id: "1", title: "Try effect-atom-jsx", completed: false, createdAt: Date.now() - 60000 },
+    { id: "1", title: "Try Affe", completed: false, createdAt: Date.now() - 60000 },
     { id: "2", title: "Ship TodoMVC", completed: true, createdAt: Date.now() - 30000 },
   ]),
 );

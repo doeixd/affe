@@ -40,7 +40,7 @@ Everything here is implemented today or is tracked release-blocking work.
 - Reactivity key witnesses (P2) — small, closes the last magic-string
   surface; **in scope**
 
-### AF-UI component model (web platform only)
+### Affe component model (web platform only)
 
 - `Component.make` + plain setup Effect (builder available, not required),
   state ownership helpers (`state`/`query`/`action`/`optimistic`)
@@ -68,7 +68,7 @@ Everything here is implemented today or is tracked release-blocking work.
   release-blocking core done
 - Declared-vs-rendered diagnostics + platform validation; **diagnostics
   pipeline + `af-ui doctor` CLI + opt-in dev auto-report (P3)** shipped
-- Test kit on `effect-atom-jsx/testing` (P5): `render`, `behaviorDriver`,
+- Test kit on `@doeixd/affe/testing` (P5): `render`, `behaviorDriver`,
   `resolveQuery`/`resolveAction`, story/scene helpers — shipped
 
 ### Routing / server (single canonical generation)
@@ -122,7 +122,7 @@ findings. Status:
   / `streamDeferredLoaderScripts` — unescaped JSON in `<script>`). Fixed +
   regression test.
 - **No JSX types** — the library shipped zero JSX type infrastructure
-  (`jsxImportSource: effect-atom-jsx` resolved to nothing). Added
+  (`jsxImportSource: @doeixd/affe` resolved to nothing). Added
   `src/jsx-runtime.ts` + `./jsx-runtime`/`./jsx-dev-runtime` exports.
 - **`render` not top-level** — README quick start imported it top-level but it
   lived only in `/runtime`. Now re-exported (with SSR entry points).
@@ -156,8 +156,13 @@ core is the only hard external blocker for cutting `1.0.0`.
   renderers. The claim stays "your components are verified against declared
   platform vocabularies," nothing more.
 - **ADR-005 family hydration identity** (validation modes, eviction
-  controls). Proposal only today; current `hydrate` strict mode is enough
-  for v1.
+  controls). **IMPLEMENTED 2026-07-27** — `Atom.Family` gained
+  `keys()`/`entries()`/`size` + `capacity` (FIFO) eviction;
+  `Hydration.dehydrateFamily`/`hydrateFamilies`/`hydrateFamiliesEffect` carry
+  family members across SSR by identity; `ValidationMode`
+  (`off`/`loose`/`strict`) unifies drift diagnostics. See
+  `docs/adr/ADR-005-family-hydration-identity.md`. A non-FIFO eviction
+  *policy* (LRU/TTL) remains a v1.x follow-up.
 - **Package split (P7).** **DECIDED 2026-07-06: confirmed** — v1 ships one
   package. Split re-evaluated post-v1 only.
 - **Depth beyond shipped MVPs (2026-07-09 backlog close):** full WAI-ARIA

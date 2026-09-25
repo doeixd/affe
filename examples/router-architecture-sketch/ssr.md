@@ -2,7 +2,7 @@
 
 ```ts
 import { Effect, Layer } from "effect";
-import { Route } from "effect-atom-jsx";
+import { Route } from "@doeixd/affe";
 import { UsersLive } from "./domain-services.js";
 import { appRoutes } from "./app-routes.js";
 

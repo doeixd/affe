@@ -1,4 +1,4 @@
-import { createComponent } from "effect-atom-jsx/runtime";
+import { createComponent } from "@doeixd/affe/runtime";
 
 export function SmokeComponent({ count }) {
   return (

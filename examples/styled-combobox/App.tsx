@@ -1,4 +1,4 @@
-import { StyledComposables } from "effect-atom-jsx";
+import { StyledComposables } from "@doeixd/affe";
 
 const UserPicker = StyledComposables.createStyledCombobox<string>({
   filter: (item, query) => item.toLowerCase().includes(query.toLowerCase()),

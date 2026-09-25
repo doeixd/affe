@@ -2,7 +2,7 @@
  * Schema Form — AtomSchema with Atom/Registry rendering.
  */
 import { Schema, Effect, Option } from "effect";
-import { Atom, AtomSchema, AtomLogger } from "effect-atom-jsx";
+import { Atom, AtomSchema, AtomLogger } from "@doeixd/affe";
 
 const AgeSchema = Schema.Int;
 const NameSchema = Schema.String;

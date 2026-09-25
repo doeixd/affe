@@ -2,7 +2,7 @@
 
 ```ts
 import { Effect, Schema } from "effect";
-import { Component, Route } from "effect-atom-jsx";
+import { Component, Route } from "@doeixd/affe";
 import { UsersService, type User } from "./domain-services.js";
 
 const RootLayout = Component.from<{}>(() => (

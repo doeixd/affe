@@ -2,13 +2,13 @@ Yes — probably **yes**, but only if they preserve the same “typed surface”
 
 My instinct is:
 
-**If AF-UI has typed control-flow primitives, they should not just render conditionally — they should preserve or transform slot information in a principled way.**
+**If Affe has typed control-flow primitives, they should not just render conditionally — they should preserve or transform slot information in a principled way.**
 
 That’s the important part.
 
 What this means
 
-In a system like AF-UI, control flow is not only about runtime branching. It also affects the **structural contract** exposed to external style/behavior attachment.
+In a system like Affe, control flow is not only about runtime branching. It also affects the **structural contract** exposed to external style/behavior attachment.
 
 So primitives like:
 
@@ -88,7 +88,7 @@ That is likely the right default.
 
 ### 3. Iteration primitives should produce typed collections
 
-If AF-UI already cares about cardinality, then list-like control flow should preserve that.
+If Affe already cares about cardinality, then list-like control flow should preserve that.
 
 So `ForEach` or `Repeat` shouldn’t just return a bag of nodes. It should produce something like:
 
@@ -109,7 +109,7 @@ That would let behaviors like:
 
 attach to the collection in a type-safe way.
 
-This feels like a very natural fit for AF-UI.
+This feels like a very natural fit for Affe.
 
 ### 4. Control-flow primitives should probably be first-class structural operators
 
@@ -155,7 +155,7 @@ For example:
 * `Optional<A>` → maybe `PartialSlots<A>` or just `{}`
 * `Wrap<A>` → remapped or augmented slot surface
 
-That fits AF-UI very well.
+That fits Affe very well.
 
 What I would avoid
 
@@ -185,9 +185,9 @@ A short design rule version:
 * optional structure is **not externally attachable unless explicitly modeled**
 * advanced branch-aware slot typing should be opt-in, not default
 
-That would keep AF-UI coherent.
+That would keep Affe coherent.
 
-If you want, I can sketch what `If`, `Match`, and `ForEach` APIs should look like in AF-UI terms.
+If you want, I can sketch what `If`, `Match`, and `ForEach` APIs should look like in Affe terms.
 
 Yes — **Effect already gives you good raw ingredients**, but not the finished UI abstraction.
 
@@ -198,9 +198,9 @@ The most relevant primitives are:
 * **`Effect.all`** for traversing/collecting many effects across arrays, structs, and records, which is a natural base for typed list rendering / repeated structure. The docs show it combining effects from iterables, structs, and records into correspondingly typed outputs. ([effect.website][3])
 * **`Layer`** for environment-provided capabilities like theme, renderer, router, focus manager, platform services, and so on. Effect describes `Layer` as a recipe for producing services with dependencies and safe acquisition/release. ([effect-ts.github.io][4])
 
-So for AF-UI, I’d say:
+So for Affe, I’d say:
 
-**Effect has the right semantic building blocks for typed control flow, but AF-UI would still need to define the UI-specific slot algebra on top of them.**
+**Effect has the right semantic building blocks for typed control flow, but Affe would still need to define the UI-specific slot algebra on top of them.**
 
 That distinction matters.
 
@@ -248,9 +248,9 @@ Effect does **not** natively know anything about:
 * behavior/style attachment compatibility
 * renderer-level structural guarantees
 
-Those are AF-UI inventions, not Effect primitives.
+Those are Affe inventions, not Effect primitives.
 
-So if you build typed control-flow primitives in AF-UI, Effect can help with:
+So if you build typed control-flow primitives in Affe, Effect can help with:
 
 * computation
 * branching
@@ -258,7 +258,7 @@ So if you build typed control-flow primitives in AF-UI, Effect can help with:
 * environment
 * sequencing
 
-But AF-UI still has to define rules like:
+But Affe still has to define rules like:
 
 * `If<A, B>` returns the **common guaranteed slots**
 * `ForEach<A>` returns **collection slots**
@@ -272,7 +272,7 @@ My practical take
 So the answer is:
 
 **Yes, Effect has very good primitives for the logic side of typed control flow.**
-But **AF-UI still needs its own higher-level view/control-flow layer** that translates those primitives into structural slot guarantees.
+But **Affe still needs its own higher-level view/control-flow layer** that translates those primitives into structural slot guarantees.
 
 If I were designing it, I would lean on:
 
@@ -282,11 +282,11 @@ If I were designing it, I would lean on:
 * `Layer` for renderer/theme/platform/environment
 * ordinary `Effect` itself for async/suspense/boundary-style composition ([effect.website][1])
 
-But I would **not** expose raw Effect APIs as the UI API. I’d wrap them in AF-UI-specific primitives with slot-aware typing.
+But I would **not** expose raw Effect APIs as the UI API. I’d wrap them in Affe-specific primitives with slot-aware typing.
 
-A good AF-UI design principle would be:
+A good Affe design principle would be:
 
-**Effect handles the control-flow computation; AF-UI handles the structural meaning of that control flow.**
+**Effect handles the control-flow computation; Affe handles the structural meaning of that control flow.**
 
 That’s the clean split.
 

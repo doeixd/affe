@@ -1,7 +1,7 @@
 /**
  * Counter — callable-atom example.
  */
-import { Atom } from "effect-atom-jsx";
+import { Atom } from "@doeixd/affe";
 import { AsyncUserCard } from "./AsyncExample.js";
 
 function LocalCounter() {
@@ -51,7 +51,7 @@ function SharedCounter() {
 export function App() {
   return (
     <main>
-      <h1>effect-atom-jsx</h1>
+      <h1>Affe</h1>
       <p>Fine-grained reactivity powered by Atom and Registry.</p>
       <LocalCounter />
       <SharedCounter />

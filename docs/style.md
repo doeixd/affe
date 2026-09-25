@@ -10,7 +10,7 @@ Use this guide for current public APIs. Older style design notes live in
 ## Golden Path
 
 ```ts
-import { Component, Element, Style, View } from "effect-atom-jsx";
+import { Component, Element, Style, View } from "@doeixd/affe";
 import { Effect } from "effect";
 
 const CardSlots = View.Slots.define({
@@ -99,7 +99,7 @@ Behavior-created or setup-created state can drive style pieces without coupling
 the behavior to the style implementation.
 
 ```ts
-import { Behavior, Style } from "effect-atom-jsx";
+import { Behavior, Style } from "@doeixd/affe";
 
 const IsOpen = Behavior.binding<"isOpen", boolean>("isOpen");
 

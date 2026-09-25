@@ -6,7 +6,7 @@ global.Node = jsdom.window.Node;
 global.Element = jsdom.window.Element;
 global.HTMLElement = jsdom.window.HTMLElement;
 
-import { Atom, Registry, render, createSignal } from "effect-atom-jsx";
+import { Atom, Registry, render, createSignal } from "@doeixd/affe";
 import { SmokeComponent } from "./Component.js";
 
 console.log("--- Starting Manual ESM Smoke Test ---");

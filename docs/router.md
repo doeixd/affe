@@ -10,7 +10,7 @@ New application docs and examples should prefer route nodes.
 ## Golden Path
 
 ```ts
-import { Component, Route } from "effect-atom-jsx";
+import { Component, Route } from "@doeixd/affe";
 import { Effect, Schema } from "effect";
 
 const Home = Route.index(HomePage).pipe(
@@ -167,9 +167,11 @@ const router = yield* Route.RouterTag;
 yield* router.preload?.("/users/ada");
 ```
 
-`Route.prefetch(...)` is available when you have an explicit route tree and a
-typed link helper. `Route.runMatchedLoaders(url)` runs registry-backed loaders;
-`Route.runMatchedLoaders(root, url)` runs loaders from an explicit tree.
+`Route.prefetch(source, to, params)` and `Route.runMatchedLoaders(source, url)`
+both take an explicit **route source**: a route tree root, or a
+`Route.registry([...])` built from `Component.route`-decorated components. There
+is no global route registry — `router.preload(...)` resolves the source from
+`Route.routeSourceLayer(app)`, and does nothing if that layer is absent.
 
 ## Lazy Components
 

@@ -1,4 +1,4 @@
-export const MetadataTokenTypeId: unique symbol = Symbol.for("effect-atom-jsx/MetadataToken");
+export const MetadataTokenTypeId: unique symbol = Symbol.for("affe/MetadataToken");
 
 export interface MetadataToken<Kind extends string, Name extends string> {
   readonly [MetadataTokenTypeId]: {

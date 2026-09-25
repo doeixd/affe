@@ -28,7 +28,7 @@ function scaffoldComponent(name, outDir) {
   write(
     file,
     `import { Effect } from "effect";
-import { Behavior, Component, Element, Style, View } from "effect-atom-jsx";
+import { Behavior, Component, Element, Style, View } from "@doeixd/affe";
 
 export const ${name}Slots = View.Slots.define({
   root: { capability: Element.Capability.Container },
@@ -86,7 +86,7 @@ function scaffoldProject(dir) {
           dev: "echo Configure bundler + babel-plugin-jsx-dom-expressions (see README)",
         },
         dependencies: {
-          "effect-atom-jsx": "latest",
+          "@doeixd/affe": "latest",
           effect: "^4.0.0-beta.29",
         },
         devDependencies: {
@@ -106,7 +106,7 @@ function scaffoldProject(dir) {
           module: "ESNext",
           moduleResolution: "bundler",
           jsx: "preserve",
-          jsxImportSource: "effect-atom-jsx",
+          jsxImportSource: "@doeixd/affe",
           strict: true,
           skipLibCheck: true,
         },
@@ -122,15 +122,15 @@ function scaffoldProject(dir) {
 
 Scaffolded by \`create-af-ui\`.
 
-- JSX: \`jsxImportSource: effect-atom-jsx\`
-- Babel: \`babel-plugin-jsx-dom-expressions\` with \`moduleName: "effect-atom-jsx/runtime"\`
-- Golden path: \`docs/SLOT_CONTRACT_GOLDEN_PATH.md\` in effect-atom-jsx
+- JSX: \`jsxImportSource: @doeixd/affe\`
+- Babel: \`babel-plugin-jsx-dom-expressions\` with \`moduleName: "@doeixd/affe/runtime"\`
+- Golden path: \`docs/SLOT_CONTRACT_GOLDEN_PATH.md\` in Affe
 `,
   );
   scaffoldComponent("Field", path.join(root, "src"));
   write(
     path.join(root, "src", "App.tsx"),
-    `import { render } from "effect-atom-jsx";
+    `import { render } from "@doeixd/affe";
 import { StyledField } from "./Field.js";
 
 function App() {

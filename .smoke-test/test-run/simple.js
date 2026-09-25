@@ -1,4 +1,4 @@
-import { Atom, Registry } from "effect-atom-jsx";
+import { Atom, Registry } from "@doeixd/affe";
 
 const count = Atom.make(42);
 const registry = Registry.make();

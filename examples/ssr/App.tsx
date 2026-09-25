@@ -17,7 +17,7 @@ import {
   hydrateRoot,
   setRequestEvent,
   render,
-} from "effect-atom-jsx";
+} from "@doeixd/affe";
 
 // ─── Shared component ─────────────────────────────────────────────────────────
 

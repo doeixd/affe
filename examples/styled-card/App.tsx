@@ -1,4 +1,4 @@
-import { Component, Element, Style, StyleUtils } from "effect-atom-jsx";
+import { Component, Element, Style, StyleUtils } from "@doeixd/affe";
 import { Effect } from "effect";
 
 const cardRecipe = Style.recipe({

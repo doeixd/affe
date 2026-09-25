@@ -10,7 +10,7 @@ import { Owner, runWithOwner } from "./owner.js";
 import { createEffect, getOwner, onCleanup } from "./api.js";
 import * as Atom from "./Atom.js";
 
-const TypeId = "~effect-atom-jsx/Registry" as const;
+const TypeId = "~affe/Registry" as const;
 
 export interface Registry {
   readonly [TypeId]: typeof TypeId;

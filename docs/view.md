@@ -20,7 +20,7 @@ Component<Props, Req, E, Bindings, SlotContract> -> View<Slots>
 ## Golden Path
 
 ```tsx
-import { Component, Element, View } from "effect-atom-jsx";
+import { Component, Element, View } from "@doeixd/affe";
 import { Effect } from "effect";
 
 const FieldSlots = View.Slots.define({

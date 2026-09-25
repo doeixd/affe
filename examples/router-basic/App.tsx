@@ -1,4 +1,4 @@
-import { Component, Route, WithLayer } from "effect-atom-jsx";
+import { Component, Route, WithLayer } from "@doeixd/affe";
 import { Schema } from "effect";
 
 const HomeBase = Route.page(

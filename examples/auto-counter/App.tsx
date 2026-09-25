@@ -1,4 +1,4 @@
-import { Component, Element, View } from "effect-atom-jsx";
+import { Component, Element, View } from "@doeixd/affe";
 
 const TICK_INTERVAL_MS = 1000;
 

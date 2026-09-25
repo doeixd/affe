@@ -78,7 +78,7 @@ function moduleSpecifier(modulePath: string): string {
 function formatTargets(targets: readonly Diagnostics.DoctorTarget[], report: Diagnostics.DoctorReport): string {
   if (targets.length === 0) return "No diagnostic targets found.";
   const lines = [
-    `AF-UI doctor: ${report.errorCount} error(s), ${report.warningCount} warning(s), ${report.infoCount} info.`,
+    `Affe doctor: ${report.errorCount} error(s), ${report.warningCount} warning(s), ${report.infoCount} info.`,
   ];
   for (const target of targets) {
     lines.push(`\n${target.name}:`);

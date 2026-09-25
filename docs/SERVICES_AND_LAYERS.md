@@ -1,6 +1,6 @@
 # Services and Layers
 
-How dependency injection works in effect-atom-jsx: where services enter, how
+How dependency injection works in affe: where services enter, how
 requirements flow through the types, who shares which instance, and when to
 use which provision tier.
 
@@ -15,7 +15,7 @@ the component tree:
 
 ```ts
 import { Layer } from "effect";
-import { Atom, Component, Reactivity } from "effect-atom-jsx";
+import { Atom, Component, Reactivity } from "@doeixd/affe";
 
 // The single composition root.
 const AppLayer = Layer.mergeAll(ApiLive, ThemeLive, Reactivity.live);
@@ -101,7 +101,7 @@ means `Req = never` and the component mounts anywhere.
 
 **How do setup helpers see services provided later in the pipe?**
 Capture-at-setup: `Component.query`, `Component.action`, and
-`Component.optimistic(...).action(...)` capture the setup-time `ServiceMap`
+`Component.optimistic(...).action(...)` capture the setup-time `Context`
 when the handle is created and use it for every later run. An action invoked
 long after setup returned still executes against the services the component
 was built with — including ones supplied by `withLayer`. Corollary: layers

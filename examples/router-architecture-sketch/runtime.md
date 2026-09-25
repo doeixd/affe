@@ -1,7 +1,7 @@
 # Router Runtime Sketch
 
 ```ts
-import { RouterRuntime } from "effect-atom-jsx/router-runtime";
+import { RouterRuntime } from "@doeixd/affe/router-runtime";
 import { appRoutes } from "./app-routes.js";
 import { serverRoutes } from "./server-routes.js";
 

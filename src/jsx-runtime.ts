@@ -1,8 +1,8 @@
 /**
  * JSX runtime types for the web platform, resolved via
- * `"jsxImportSource": "effect-atom-jsx"`. The actual JSX-to-DOM transform is
+ * `"jsxImportSource": "@doeixd/affe"`. The actual JSX-to-DOM transform is
  * performed by `babel-plugin-jsx-dom-expressions` (classic runtime,
- * `moduleName: "effect-atom-jsx"`); this module exists so `tsc` can type-check
+ * `moduleName: "@doeixd/affe"`); this module exists so `tsc` can type-check
  * JSX in consumer code.
  *
  * Values in attributes and children may be static, or reactive: a
@@ -29,14 +29,14 @@ export type JSXChildren = unknown;
 // the transform — not tsc — produces real DOM nodes.
 export function jsx(type: unknown, props: unknown, key?: unknown): JSX.Element;
 export function jsx(): JSX.Element {
-  throw new Error("[effect-atom-jsx] jsx-runtime is types-only; use babel-plugin-jsx-dom-expressions to transform JSX.");
+  throw new Error("[affe] jsx-runtime is types-only; use babel-plugin-jsx-dom-expressions to transform JSX.");
 }
 
 export const jsxs = jsx;
 export const jsxDEV = jsx;
 
 /** Fragment marker. */
-export const Fragment: unknown = Symbol.for("effect-atom-jsx/Fragment");
+export const Fragment: unknown = Symbol.for("affe/Fragment");
 
 export namespace JSX {
   /** The result of a JSX expression (a DOM node or reactive node at runtime). */

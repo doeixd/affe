@@ -1,7 +1,7 @@
 # Exit Animation Ownership (P10)
 
 **Status:** decided 2026-07-09  
-**Decision owner:** AF-UI runtime / renderer contract
+**Decision owner:** Affe runtime / renderer contract
 
 ## Question
 

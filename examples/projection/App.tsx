@@ -1,4 +1,4 @@
-import { Atom, Async } from "effect-atom-jsx";
+import { Atom, Async } from "@doeixd/affe";
 import { Effect, Layer } from "effect";
 
 const runtime = Atom.runtime(Layer.empty);

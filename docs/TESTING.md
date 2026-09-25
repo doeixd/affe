@@ -1,11 +1,11 @@
 # Testing Guide
 
-DOM-free test harness for `effect-atom-jsx`. Works in vitest's default Node environment — no jsdom required.
+DOM-free test harness for `@doeixd/affe`. Works in vitest's default Node environment — no jsdom required.
 
 ## Installation
 
 ```ts
-import { withTestLayer, renderWithLayer, mockService } from "effect-atom-jsx/testing";
+import { withTestLayer, renderWithLayer, mockService } from "@doeixd/affe/testing";
 ```
 
 ## API
@@ -139,7 +139,7 @@ const harness = withTestLayer(TestLayer);
 ### Component render + behavior driver
 
 ```ts
-import { render, expectStyle, step, scene, resolveQuery, Result } from "effect-atom-jsx/testing";
+import { render, expectStyle, step, scene, resolveQuery, Result } from "@doeixd/affe/testing";
 
 const rendered = await render(Field, { props: { label: "Name" } });
 rendered.driver.press("submit");
@@ -183,7 +183,7 @@ resolveAction(save, Result.failure(new ValidationError()));
 Opt in at the composition root so mount/render auto-runs slot-contract and view validators:
 
 ```ts
-import { Diagnostics, Component } from "effect-atom-jsx";
+import { Diagnostics, Component } from "@doeixd/affe";
 
 const AppLayer = Layer.mergeAll(
   Diagnostics.devLayer(), // console + dedupe; omit in production

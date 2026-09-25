@@ -5,19 +5,21 @@
     "noEmit": true,
     "rootDir": ".",
     "jsx": "preserve",
-    "jsxImportSource": "effect-atom-jsx",
+    "jsxImportSource": "@doeixd/affe",
     // TS7 removed baseUrl; keep path mappings relative to this config file.
     "paths": {
-      "effect-atom-jsx": ["./src/index.ts"],
-      "effect-atom-jsx/jsx-runtime": ["./src/jsx-runtime.ts"],
-      "effect-atom-jsx/jsx-dev-runtime": ["./src/jsx-runtime.ts"],
-      "effect-atom-jsx/testing": ["./src/testing.ts"],
-      "effect-atom-jsx/runtime": ["./src/runtime.ts"],
-      "effect-atom-jsx/advanced": ["./src/advanced.ts"],
-      "effect-atom-jsx/internals": ["./src/internals.ts"],
-      "effect-atom-jsx/server": ["./src/server.ts"],
-      "effect-atom-jsx/router-runtime": ["./src/router-runtime.ts"],
-      "effect-atom-jsx/*": ["./src/*"]
+      "@doeixd/affe": ["./src/index.ts"],
+      "@doeixd/affe/jsx-runtime": ["./src/jsx-runtime.ts"],
+      "@doeixd/affe/jsx-dev-runtime": ["./src/jsx-runtime.ts"],
+      "@doeixd/affe/testing": ["./src/testing.ts"],
+      "@doeixd/affe/runtime": ["./src/runtime.ts"],
+      "@doeixd/affe/advanced": ["./src/advanced.ts"],
+      "@doeixd/affe/internals": ["./src/internals.ts"],
+      "@doeixd/affe/server": ["./src/server.ts"],
+      "@doeixd/affe/router-runtime": ["./src/router-runtime.ts"],
+      "@doeixd/affe-permissive": ["./packages/permissive/src/index.ts"],
+      "@doeixd/affe-permissive/client": ["./packages/permissive/src/client.ts"],
+      "@doeixd/affe/*": ["./src/*"]
     }
   },
   "include": ["examples/**/*.ts", "examples/**/*.tsx"],
