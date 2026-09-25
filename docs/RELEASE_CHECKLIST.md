@@ -89,8 +89,7 @@ certification theater. See `docs/V1_SCOPE.md` Deferred.
 
 ## How to release
 
-1. On `main`, with CI green, bump `version` in `package.json`, regenerate the
-   deprecated alias (`node scripts/generate-effect-atom-jsx-alias.mjs`), and
+1. On `main`, with CI green, bump `version` in `package.json` and
    move the `CHANGELOG.md` "Unreleased" entries under the new version heading.
 2. Run locally: `npm run build && npm run typecheck:all && npm test &&
    npm run verify:package` (and `npm run test:browser` if Chromium is
@@ -102,7 +101,5 @@ certification theater. See `docs/V1_SCOPE.md` Deferred.
    `@doeixd/affe` with npm provenance. Versions containing a hyphen
    (`0.7.0-rc.1`) publish under the `next` dist-tag. The workflow needs the
    `NPM_TOKEN` repository secret.
-4. Deprecated alias (`effect-atom-jsx`), once per breaking core release and
-   only after `@doeixd/affe` is on npm: `cd deprecated/effect-atom-jsx &&
-   npm publish --access public`, then
-   `npm deprecate effect-atom-jsx "Renamed to @doeixd/affe"`.
+4. Leave the old `effect-atom-jsx` package on npm untouched: do not publish
+   to it or deprecate it.

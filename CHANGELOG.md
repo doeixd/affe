@@ -145,10 +145,9 @@ regression test that fails on the previous code. Highlights:
   workspace packages are `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and
   `@doeixd/affe-permissive`. Replace `effect-atom-jsx` with `@doeixd/affe` in
   imports, subpaths, `jsxImportSource`, and the Babel `moduleName`.
-- **Deprecation alias.** `deprecated/effect-atom-jsx` publishes
-  `effect-atom-jsx@0.6.0`, which re-exports every `@doeixd/affe` subpath for
-  the transition window. Regenerate it with
-  `node scripts/generate-effect-atom-jsx-alias.mjs`.
+- **No alias release.** The existing `effect-atom-jsx` package on npm is
+  left as it is: no re-exporting alias is published and it is not marked
+  deprecated. New code installs `@doeixd/affe`.
 - **Breaking: internal identifiers.** Symbol keys, Schema brands, error tags,
   and service keys move from `effect-atom-jsx/...` and `@effect-atom-jsx/...`
   to `affe/...`; the hydration marker is `~affe/DehydratedAtom`, the HMR key

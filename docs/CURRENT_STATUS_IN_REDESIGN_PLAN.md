@@ -8,8 +8,8 @@ specs; no open design question in any lane)
 
 - **Renamed to Affe.** The package is `@doeixd/affe`, with
   `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and `@doeixd/affe-permissive`;
-  `deprecated/effect-atom-jsx` is the re-exporting alias. What landed and
-  what is still open (logo, domain, alias window, repo rename) is recorded in
+  the old `effect-atom-jsx` npm package is left as it is (no alias). What landed and
+  what is still open (logo, domain, repo rename) is recorded in
   `docs/RENAME_AFFE.md`.
 - **The suite now passes on Linux.** 28 tests in
   `resume-extract-plugin.test.ts`, `resume-extract-vite.test.ts`, and

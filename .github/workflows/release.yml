@@ -44,5 +44,3 @@ jobs:
           npm publish --provenance --access public --tag "$TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # The deprecated effect-atom-jsx alias re-exports @doeixd/affe. Publish
-      # it only when explicitly requested (see docs/RELEASE_CHECKLIST.md).
