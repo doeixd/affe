@@ -28,13 +28,23 @@ const run = (cmd, args, cwd) =>
 try {
   const packed = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", work], root));
   const tarball = path.join(work, packed[0].filename);
+  // The published add-on packages, packed the same way (build them first:
+  // `npm run build:packages`).
+  const addOns = ["agent", "css", "permissive"].map((dir) => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, "packages", dir, "package.json"), "utf8"));
+    if (manifest.private) throw new Error(`packages/${dir} is private`);
+    if (manifest.version !== pkg.version) throw new Error(`packages/${dir} is ${manifest.version}, core is ${pkg.version}`);
+    const [info] = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", work], path.join(root, "packages", dir)));
+    if (!info.files.some((file) => file.path === "dist/index.js")) throw new Error(`${manifest.name} packs no dist/ (run npm run build:packages)`);
+    return { manifest, tarball: path.join(work, info.filename) };
+  });
   const consumer = path.join(work, "consumer");
   fs.mkdirSync(path.join(consumer, "src"), { recursive: true });
   fs.writeFileSync(
     path.join(consumer, "package.json"),
     JSON.stringify({ name: "affe-verify-consumer", private: true, type: "module" }),
   );
-  run("npm", ["install", "--no-audit", "--no-fund", tarball, `effect@${pkg.peerDependencies.effect}`], consumer);
+  run("npm", ["install", "--no-audit", "--no-fund", tarball, ...addOns.map((addOn) => addOn.tarball), `effect@${pkg.peerDependencies.effect}`], consumer);
 
   // 1. Every public subpath imports.
   const failures = [];
@@ -49,8 +59,20 @@ try {
       failures.push(specifier);
     }
   }
+  for (const { manifest } of addOns) {
+    for (const key of Object.keys(manifest.exports)) {
+      if (key === "./package.json") continue;
+      const specifier = key === "." ? manifest.name : `${manifest.name}/${key.slice(2)}`;
+      try {
+        run(process.execPath, ["--input-type=module", "-e", `await import(${JSON.stringify(specifier)})`], consumer);
+        ok += 1;
+      } catch {
+        failures.push(specifier);
+      }
+    }
+  }
   if (failures.length > 0) throw new Error(`subpaths failed to import:\n  ${failures.join("\n  ")}`);
-  console.log(`✓ ${ok} subpaths import`);
+  console.log(`✓ ${ok} subpaths import (core and ${addOns.map((a) => a.manifest.name).join(", ")})`);
 
   // 2. The shipped types check strictly for a golden-path consumer.
   fs.writeFileSync(
@@ -81,6 +103,38 @@ export const describe = (r: Result<number, string>) =>
 export const html = () => renderToString(() => <p>{count()} {doubled()}</p>);
 `,
   );
+  fs.writeFileSync(
+    path.join(consumer, "src", "add-ons.ts"),
+    `import { Effect, Schema } from "effect";
+import * as Agent from "${pkg.name}/Agent";
+import * as Portable from "${pkg.name}/Portable";
+import { mcpAuthLayer, mcpServer } from "@doeixd/affe-ui-agent";
+import { cssLayerOrder, foundationStylesheet, tokenVariableName } from "@doeixd/affe-css";
+import { permissiveClient } from "@doeixd/affe-permissive/client";
+
+const addTodo = Portable.code({
+  id: "todo.add",
+  buildId: "my-app-build-1",
+  captures: Schema.Struct({}),
+  run: (_captures, title: string) => Effect.succeed({ title }),
+});
+const catalog = Agent.catalog({
+  addTodo: Agent.expose(addTodo, {
+    args: Schema.Tuple([Schema.String]),
+    success: Schema.Struct({ title: Schema.String }),
+    description: "Add a todo item",
+    access: { agent: true },
+  }),
+});
+export const callOnce = Effect.gen(function* () {
+  const server = yield* mcpServer(catalog);
+  const auth = mcpAuthLayer({ authenticate: () => Effect.succeed({ caller: "mcp", user: "user-42", lineage: undefined }) });
+  return yield* server.callTool({ name: "addTodo", arguments: { title: "Ship it" } }).pipe(Effect.provide(auth));
+});
+export const css: string = foundationStylesheet() + tokenVariableName("space.md") + cssLayerOrder.join(",");
+export const clientLayer = permissiveClient().layer;
+`,
+  );
   const tsc = path.join(root, "node_modules", "typescript", "bin", "tsc");
   for (const [module, resolution] of [["ESNext", "bundler"], ["nodenext", "nodenext"]]) {
     fs.writeFileSync(
@@ -96,6 +150,11 @@ export const html = () => renderToString(() => <p>{count()} {doubled()}</p>);
     run(process.execPath, [tsc, "-p", "tsconfig.json"], consumer);
     console.log(`✓ types check (${resolution})`);
   }
+  // Apps may be on TypeScript 5: the shipped declarations must check there
+  // too (the package itself builds with TypeScript 7).
+  run("npm", ["install", "--no-audit", "--no-fund", "--no-save", "typescript@5.9"], consumer);
+  run(process.execPath, [path.join(consumer, "node_modules", "typescript", "bin", "tsc"), "-p", "tsconfig.json"], consumer);
+  console.log("✓ types check with TypeScript 5.9");
 
   // 3. A project from create-affe installs, type-checks and builds against
   //    the packed core (its @doeixd/affe dependency points at the tarball).

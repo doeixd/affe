@@ -40,6 +40,33 @@ describe("package release surface", () => {
     ]));
   });
 
+  it("releases every public workspace package in step with the core", () => {
+    const core = JSON.parse(fs.readFileSync("package.json", "utf8")) as {
+      readonly version: string;
+      readonly peerDependencies: Record<string, string>;
+    };
+    for (const dir of ["agent", "css", "permissive"]) {
+      const addOn = JSON.parse(fs.readFileSync(`packages/${dir}/package.json`, "utf8")) as {
+        readonly name: string;
+        readonly private?: boolean;
+        readonly version: string;
+        readonly files: ReadonlyArray<string>;
+        readonly dependencies?: Record<string, string>;
+        readonly peerDependencies: Record<string, string>;
+      };
+      expect(addOn.private, addOn.name).toBeUndefined();
+      expect(addOn.version, addOn.name).toBe(core.version);
+      // The core is a peer (one copy in an app), never a bundled dependency,
+      // and never the repo-local `file:` link.
+      expect(addOn.dependencies?.["@doeixd/affe"], addOn.name).toBeUndefined();
+      expect(addOn.peerDependencies["@doeixd/affe"], addOn.name).toBe(`^${core.version}`);
+      expect(addOn.peerDependencies.effect, addOn.name).toBe(core.peerDependencies.effect);
+      expect(addOn.files, addOn.name).toEqual(expect.arrayContaining(["dist", "README.md", "LICENSE"]));
+      expect(fs.existsSync(`packages/${dir}/README.md`), addOn.name).toBe(true);
+      expect(fs.existsSync(`packages/${dir}/LICENSE`), addOn.name).toBe(true);
+    }
+  });
+
   it("is published as @doeixd/affe", () => {
     const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")) as { readonly name: string };
     expect(pkg.name).toBe("@doeixd/affe");

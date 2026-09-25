@@ -23,34 +23,34 @@ import * as Agent from "@doeixd/affe/Agent";
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class McpUnknownToolError extends Schema.TaggedError<McpUnknownToolError>(
+export class McpUnknownToolError extends /*#__PURE__*/ (() => Schema.TaggedError<McpUnknownToolError>(
   "@doeixd/affe-ui-agent/McpUnknownToolError",
 )("McpUnknownToolError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 /**
  * Distinct from {@link McpUnknownToolError} on purpose: "hidden by exposure
  * flags" and "does not exist" must be distinguishable codes, or a probe
  * cannot be told apart from a typo and a single catch-all satisfies both.
  */
-export class McpToolNotExposedError extends Schema.TaggedError<McpToolNotExposedError>(
+export class McpToolNotExposedError extends /*#__PURE__*/ (() => Schema.TaggedError<McpToolNotExposedError>(
   "@doeixd/affe-ui-agent/McpToolNotExposedError",
 )("McpToolNotExposedError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 /**
  * The server requires authentication (the default) but no {@link McpAuth}
  * service was provided. Refused before the tool name is validated.
  */
-export class McpAuthenticationRequiredError extends Schema.TaggedError<McpAuthenticationRequiredError>(
+export class McpAuthenticationRequiredError extends /*#__PURE__*/ (() => Schema.TaggedError<McpAuthenticationRequiredError>(
   "@doeixd/affe-ui-agent/McpAuthenticationRequiredError",
 )("McpAuthenticationRequiredError", {
   message: Schema.String,
-}) {}
+}))() {}
 
 // ─── Pluggable auth ──────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ export interface McpAuthService {
   readonly authenticate: () => Effect.Effect<Agent.CallerContextService, unknown>;
 }
 
-export const McpAuth = Context.Service<McpAuthService>("affe/agent/McpAuth");
+export const McpAuth = /*#__PURE__*/ Context.Service<McpAuthService>("affe/agent/McpAuth");
 
 // ─── Tool listing ────────────────────────────────────────────────────────────
 

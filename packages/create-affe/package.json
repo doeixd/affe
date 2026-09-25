@@ -9,7 +9,8 @@
   },
   "files": [
     "index.mjs",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20.19"
@@ -19,5 +20,11 @@
     "url": "git+https://github.com/doeixd/affe.git",
     "directory": "packages/create-affe"
   },
-  "keywords": ["affe", "effect", "create", "scaffold", "vite"]
+  "keywords": [
+    "affe",
+    "effect",
+    "create",
+    "scaffold",
+    "vite"
+  ]
 }

@@ -1,7 +1,8 @@
 # Event Contracts Plan
 
-**Status:** proposed design; not part of the ratified prerelease scope until
-explicitly accepted.
+**Status:** implemented (2026-07-09). Phases 0–2 are complete and `Event`
+ships in `@doeixd/affe`; the sections below are the design record. For usage,
+see the "Events" section of the README and `docs/TESTING.md`.
 **Supersedes:** the runtime-wrapper proposal recorded in commit `2426e60`.
 **Decision:** Event contracts use Effect `PubSub` and `Stream` as their
 execution engine. This library will not reimplement an event bus, delivery

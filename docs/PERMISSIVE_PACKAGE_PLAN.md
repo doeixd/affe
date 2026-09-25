@@ -1,5 +1,9 @@
 # The permissive package (`@doeixd/affe-permissive`) — milestone plan
 
+Status: **complete** (S0–S6, 2026-08-12). Published as
+`@doeixd/affe-permissive` from 0.6.0, releasing in step with the core; see
+`packages/permissive/README.md`. The log below is the implementation record.
+
 Status: planned 2026-08-12. S0 done (binding-level oversized-payload
 attribution: `largestBindingName`). S1 done (`Resume.spiVersion`, the
 `@doeixd/affe/adapter-spi` subpath with a pinned member list;

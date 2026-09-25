@@ -1,7 +1,8 @@
 name: Release
 
-# Publishes @doeixd/affe and @doeixd/create-affe (which release in step)
-# when a version tag (v1.2.3, v0.6.0-rc.1) is pushed.
+# Publishes @doeixd/affe and the packages that release in step with it
+# (@doeixd/create-affe, @doeixd/affe-ui-agent, @doeixd/affe-css,
+# @doeixd/affe-permissive) when a version tag (v1.2.3, v0.6.0-rc.1) is pushed.
 # Requires the NPM_TOKEN repository secret (an npm automation token with
 # publish rights to the @doeixd scope). Provenance links the published
 # package to this workflow run.
@@ -32,6 +33,7 @@ jobs:
             exit 1
           fi
       - run: npm run build
+      - run: npm run build:packages
       - run: npm run typecheck:all
       - run: npm test
       - run: npm run verify:package
@@ -45,11 +47,14 @@ jobs:
           npm publish --provenance --access public --tag "$TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Publish @doeixd/create-affe
+      # The core first: the others peer on it.
+      - name: Publish the packages that release with the core
         run: |
           VERSION="$(node -p 'require("./package.json").version')"
           TAG=latest
           case "$VERSION" in *-*) TAG=next ;; esac
-          npm publish --provenance --access public --tag "$TAG" --workspace packages/create-affe
+          for workspace in packages/create-affe packages/agent packages/css packages/permissive; do
+            npm publish --provenance --access public --tag "$TAG" --workspace "$workspace"
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

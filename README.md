@@ -54,14 +54,24 @@ npm install @doeixd/affe effect@4.0.0-rc.117
 npm install -D vite @babel/core @babel/preset-typescript babel-plugin-jsx-dom-expressions
 ```
 
-**Effect compatibility:** this package peers on **Effect 4** (a release candidate), pinned to
-exactly `effect@4.0.0-rc.117`. Ship as **0.x prerelease / beta** until
-Effect 4 is stable; a `1.0.0` cut waits on a stable Effect core. See
-`docs/RELEASE_CHECKLIST.md` and `docs/V1_SCOPE.md`.
+**Effect:** Affe is built on Effect 4, which is still a release candidate,
+so it pins the exact version (`effect@4.0.0-rc.117`); install that one. Affe
+stays 0.x until Effect 4 is stable.
 
-**TypeScript:** library typecheck and `tsc` build use **TypeScript 7**
-(`typescript` ^7.0.2). Consumer projects may use TS 5.x+ for app code; the
-package ships `.d.ts` from the TS7 toolchain.
+**TypeScript:** 5.9 or newer. The published types are checked against
+TypeScript 5.9 and 7 on every release.
+
+### Packages
+
+| Package | What it is |
+|---|---|
+| [`@doeixd/affe`](https://www.npmjs.com/package/@doeixd/affe) | The library: atoms, components, styles, router, server, resumability, agent surface. |
+| [`@doeixd/create-affe`](packages/create-affe) | `npm create @doeixd/affe` scaffolds a working Vite app. |
+| [`@doeixd/affe-permissive`](packages/permissive) | Resumability preset: inferred captures and the seroval codec (Maps, Dates, Promises). Experimental. |
+| [`@doeixd/affe-ui-agent`](packages/agent) | MCP server for an agent catalog. Experimental. |
+| [`@doeixd/affe-css`](packages/css) | Zero-JavaScript CSS foundation: theme tokens as custom properties and the cascade-layer order. |
+
+All of them release together under one version.
 
 ### Setup
 
@@ -442,8 +452,9 @@ small JSON manifest. On the client, `Resume.decodeManifest(...)` and
 runtime })` install one listener per event type; the first click loads that
 handler's chunk and runs it. Everything that crosses the wire is
 schema-validated and gated by build id, so a stale or tampered page fails
-closed. Strict mode is plain JSON; `@doeixd/affe-permissive` adds seroval for
-`Map`, `Date` and friends. See `docs/RESUMABILITY_GUIDE.md` and
+closed. Strict mode is plain JSON;
+[`@doeixd/affe-permissive`](packages/permissive) adds seroval for `Map`,
+`Date` and friends. See `docs/RESUMABILITY_GUIDE.md` and
 `examples/resumable-extract`.
 
 ## 9. Agent surface: your actions as tools
@@ -469,7 +480,8 @@ Dispatch authorizes first, rejects stale builds, decodes arguments before the
 handler runs, and asks the `Approval` and `AuditLog` services when the entry
 or catalog requires them (refusing if they are missing). `ViewSpec` is a
 validated, markup-free view format for UI an agent generates, and
-`@doeixd/affe-ui-agent` projects the catalog as an MCP server. See
+[`@doeixd/affe-ui-agent`](packages/agent) projects the catalog as an MCP
+server. See
 `docs/AGENT_SURFACE_GUIDE.md`.
 
 ## Type architecture
