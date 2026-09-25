@@ -2,6 +2,27 @@
 
 ## Unreleased (Redesign Track)
 
+### Slot handles bind to rendered elements
+
+- `View.Slot.ref(Slots, "name")` for the JSX `ref` prop binds a slot handle
+  to the element it names (DQ-073). Styles attached with
+  `Style.attachToSlots` render as inline styles, behavior `setAttr` and
+  `on(...)` listeners reach the element (`press` = click plus Enter/Space on
+  elements without native activation), `focus()`/`blur()` forward, and the
+  element gets `data-af-slot="name"`. SSR output carries the same. Only
+  declared slot names type-check. `Element.ref(handle, name)` does the same
+  for handles outside a contract; a `Collection` slot binds one item handle
+  per element.
+- `Style.extractStatic` now targets `[data-af-slot="<slot>"]` by default
+  (was `.af-<slot>`); pass `selector` to keep class selectors.
+- Attaching a style no longer subscribes the component's render to the
+  bindings it reads (`Style.whenBinding`), so a binding change updates the
+  styled element in place instead of re-rendering the view.
+- The pure token helpers `lookupToken` / `isStructuredTokenLeaf` now live in
+  `style-types.ts` (re-exported from `Theme`, unchanged API), so the style
+  runtime no longer imports `Theme`; a test loads every core module first in
+  a fresh module graph.
+
 ### Release audit: 47 bugs fixed
 
 A pre-release audit of every core subsystem found 47 bugs; each fix has a
@@ -32,8 +53,6 @@ regression test that fails on the previous code. Highlights:
 - `Hydration.hydrate` / `hydrateFamilies` in strict mode now throw a
   `HydrationError` (as documented), and the Effect variants fail with it
   instead of dying. Strict hydration validates before writing anything.
-- Known gap, unchanged: slot handles are not yet bound to rendered DOM
-  elements (`docs/design-questions/components.md`, DQ-073).
 
 ### Dependencies updated to their latest versions
 

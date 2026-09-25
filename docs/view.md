@@ -39,9 +39,9 @@ const Field = Component.make(
   () => Effect.succeed({}),
   (props) =>
     View.fromSlots(FieldSlots, (
-      <label>
-        <span>{props.label}</span>
-        <input />
+      <label ref={View.Slot.ref(FieldSlots, "root")}>
+        <span ref={View.Slot.ref(FieldSlots, "label")}>{props.label}</span>
+        <input ref={View.Slot.ref(FieldSlots, "input")} />
       </label>
     )),
 ).pipe(Component.withSlots(FieldSlots));
@@ -50,6 +50,16 @@ const Field = Component.make(
 `View.fromSlots(...)` creates runtime handles for the contract and attaches
 slot metadata to the returned view. The JSX payload remains renderer-owned; the
 slot contract is the stable API surface.
+
+`View.Slot.ref(Slots, "name")` is how a slot names its element: pass it to the
+JSX `ref` prop and the slot's handle becomes element-backed while that element
+is rendered. Attached styles become inline styles, behavior attributes and
+listeners reach the element (`press` maps to click plus Enter/Space where the
+element has no native activation), `focus()`/`blur()` call the element's, and
+the element is stamped `data-af-slot="name"`; SSR serializes the same. Only
+declared slot names type-check. A slot without a ref stays an in-memory handle.
+A `Collection` slot's ref binds one item handle per element. See
+[Binding Slots To Elements](./SLOT_CONTRACT_GOLDEN_PATH.md#binding-slots-to-elements).
 
 ## Slot Definitions
 

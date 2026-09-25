@@ -4,7 +4,7 @@ import * as Element from "./Element.js";
 import * as MetadataToken from "./MetadataToken.js";
 import * as Theme from "./Theme.js";
 import * as View from "./View.js";
-import { createContext, useContext } from "./api.js";
+import { createContext, untrack, useContext } from "./api.js";
 import { cssValueText, mergeMany, resolveTokenValue, tokenPathForProperty } from "./style-runtime.js";
 import type { SlotStyle, ThemeTokenSchema } from "./style-types.js";
 import { defaultThemeTokens } from "./style-types.js";
@@ -800,8 +800,12 @@ function withThemedViewTransform(
   transform: (result: unknown, props: unknown, bindings: unknown, tokens: ThemeTokenSchema) => unknown,
 ): (component: any) => any {
   const capture = Component.tapSetup((bindings: unknown) => captureThemeTokens(bindings));
+  // Untracked: attaching a style reads bindings (e.g. `whenBinding` piece
+  // selection) and must not subscribe the component's RENDER to them — the
+  // per-property reactions own that tracking. A tracked read here re-rendered
+  // the whole view (fresh elements) on every binding change.
   const view = Component.withViewTransform((result: unknown, props: unknown, bindings: unknown) =>
-    transform(result, props, bindings, capturedThemeTokens(bindings)),
+    untrack(() => transform(result, props, bindings, capturedThemeTokens(bindings))),
   );
   return (component: any) => view(capture(component) as any);
 }
@@ -857,7 +861,7 @@ export interface StaticExtraction<S extends string = string> {
 }
 
 export interface ExtractStaticOptions {
-  /** Selector for one slot's rule; defaults to `.af-<slot>`. */
+  /** Selector for one slot's rule; defaults to `[data-af-slot="<slot>"]`, the attribute `View.Slot.ref` stamps on bound elements. */
   readonly selector?: (slot: string) => string;
   /** Cascade layer the rules land in; defaults to `"components"`. */
   readonly layer?: CssLayer;
@@ -1013,7 +1017,7 @@ function collectSlotParts(piece: StyleValue, parts: SlotCssParts): void {
  *
  * @example
  * const { css, runtimeSlots } = Style.extractStatic(cardStyle)
- * // css → `@layer components { .af-root { display: grid; gap: var(--af-spacing-sm); } }`
+ * // css → `@layer components { [data-af-slot="root"] { display: grid; gap: var(--af-spacing-sm); } }`
  * // runtimeSlots → slots left for `Style.attach*` at runtime
  */
 export function extractStatic<S extends string>(
@@ -1021,7 +1025,7 @@ export function extractStatic<S extends string>(
   options?: ExtractStaticOptions,
 ): StaticExtraction<S> {
   const tokens = options?.tokens ?? defaultThemeTokens;
-  const selectorOf = options?.selector ?? ((slot: string) => `.af-${slot}`);
+  const selectorOf = options?.selector ?? ((slot: string) => `[data-af-slot="${slot}"]`);
   const defaultLayer: CssLayer = options?.layer ?? "components";
   const staticSlots: Array<S> = [];
   const runtimeSlots: Array<S> = [];

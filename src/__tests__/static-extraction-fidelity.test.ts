@@ -43,13 +43,13 @@ describe("static extraction fidelity", () => {
     const extraction = extractStatic(style);
 
     expect(extraction.staticSlots).toEqual(["trigger"]);
-    expect(extraction.css).toContain(".af-trigger { cursor: pointer; }");
+    expect(extraction.css).toContain("[data-af-slot=\"trigger\"] { cursor: pointer; }");
     // Token paths resolve to the shared --af-* namespace inside pseudo rules too.
     expect(extraction.css).toContain(
-      ".af-trigger:hover { background: var(--af-color-accent-hover); }",
+      "[data-af-slot=\"trigger\"]:hover { background: var(--af-color-accent-hover); }",
     );
     // camelCase properties kebab-case in every emitted rule.
-    expect(extraction.css).toContain(".af-trigger:focus-visible { outline-width: 2px; }");
+    expect(extraction.css).toContain("[data-af-slot=\"trigger\"]:focus-visible { outline-width: 2px; }");
   });
 
   it("[K4] machine states extract as data-state attribute selectors (the DQ-056 dormant-widget payoff)", () => {
@@ -66,9 +66,9 @@ describe("static extraction fidelity", () => {
     // `default` is the base rule; every other state is an attribute selector,
     // which is what makes the dormant case free: SSR stamps data-state and
     // the cascade does the rest — no hydration required to look right.
-    expect(extraction.css).toContain(".af-content { display: none; }");
-    expect(extraction.css).toContain('.af-content[data-state="open"] { display: block; }');
-    expect(extraction.css).toContain('.af-content[data-state="closing"] { opacity: 0; }');
+    expect(extraction.css).toContain("[data-af-slot=\"content\"] { display: none; }");
+    expect(extraction.css).toContain('[data-af-slot="content"][data-state="open"] { display: block; }');
+    expect(extraction.css).toContain('[data-af-slot="content"][data-state="closing"] { opacity: 0; }');
   });
 
   it("[K4] media blocks and nested selectors extract in place", () => {
@@ -86,11 +86,11 @@ describe("static extraction fidelity", () => {
 
     expect(extraction.staticSlots).toEqual(["root"]);
     expect(extraction.css).toContain(
-      "@media (min-width: 600px) { .af-root { flex-direction: row; } }",
+      "@media (min-width: 600px) { [data-af-slot=\"root\"] { flex-direction: row; } }",
     );
     // Nested selector keys append; `&` splices the slot selector itself.
-    expect(extraction.css).toContain(".af-root > label { font-weight: 600; }");
-    expect(extraction.css).toContain(".af-root:disabled { opacity: 0.5; }");
+    expect(extraction.css).toContain("[data-af-slot=\"root\"] > label { font-weight: 600; }");
+    expect(extraction.css).toContain("[data-af-slot=\"root\"]:disabled { opacity: 0.5; }");
   });
 
   it("[K4] inLayer overrides the cascade layer per piece; fail-open still swallows the whole slot", () => {
@@ -108,7 +108,7 @@ describe("static extraction fidelity", () => {
     expect(extraction.staticSlots).toEqual(["base"]);
     expect([...extraction.runtimeSlots].sort()).toEqual(["bound", "cond"]);
     expect(extraction.css).toContain("@layer defaults {");
-    expect(extraction.css).toContain(".af-base { box-sizing: border-box; }");
+    expect(extraction.css).toContain("[data-af-slot=\"base\"] { box-sizing: border-box; }");
     expect(extraction.css).not.toContain("hover");
     expect(extraction.css).not.toContain("blue");
   });

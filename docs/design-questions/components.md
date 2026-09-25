@@ -1065,6 +1065,7 @@ house rule, `live-announce.md`.
 
 ## DQ-073 — How does a slot handle bind to the element it names?
 
+- **Status:** decided and implemented (2026-09-25), option 2; see Resolution below.
 - **Severity:** blocking (for any release that advertises slot-attached styles and behaviors)
 - **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` (slot contracts); `docs/archive/AF_UI_CONTRACT.md`
 - **Raised:** 2026-09-25, during the pre-release audit
@@ -1121,3 +1122,23 @@ by querying inside the component's region. Files: `src/Element.ts`,
 new JSX surface and no compiler change, and it can grow into option 1 later.
 Blocking for a release that advertises the feature; otherwise the README must
 keep saying slot handles are not yet bound (it does, since 2026-09-25).
+
+**Resolution (2026-09-25, owner-approved, implemented).** Option 2.
+`View.Slot.ref(slots, "name")` returns a callback for the existing JSX `ref`
+prop; only declared names type-check (`src/type-tests/slot-binding.ts`). It
+resolves the handle when called: the rendering instance's handle (recorded
+on the render owner, so lazily rendered children resolve too), else the
+contract's define-time handle. `Element.bindElement(handle, element, slot)`
+(`src/Element.ts`) makes the handle element-backed: attributes and styles
+replay and write through (`inlineStyleDeclarations` in
+`src/style-runtime.ts`: kebab-case, `px` lengths, `shadow` as `box-shadow`,
+meta keys skipped), handler sets get real listeners (`press` = click plus
+Enter/Space on elements without native activation), `focus`/`blur` forward,
+and `data-af-slot` is stamped; the ref's owner cleanup unbinds. The handle
+keeps its in-memory state, so `emit`, `getAttr`/`getStyle` and the test kit
+are unchanged. `Element.ref(handle, name)` is the contract-free form.
+`Style.extractStatic` defaults to `[data-af-slot="<slot>"]`. Collection
+slots bind one minted item handle per element (render order). Resume
+activation re-renders into the region, so refs re-run; in-place adoption of
+server markup by `data-af-slot` is not built. Option 1 (a dedicated JSX
+prop) can still layer on top. Tests: `src/__tests__/slot-binding.test.ts`.

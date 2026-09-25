@@ -28,10 +28,11 @@ const FieldSlots = View.Slots.define({
 const Field = Component.makeWithSlots(FieldSlots, {
   props: Component.props<{ readonly label: string }>(),
   setup: () => Effect.succeed({}),
+  // `View.Slot.ref` binds each slot to the element it names.
   view: (props) => (
-    <label>
-      <span>{props.label}</span>
-      <input />
+    <label ref={View.Slot.ref(FieldSlots, "root")}>
+      <span ref={View.Slot.ref(FieldSlots, "label")}>{props.label}</span>
+      <input ref={View.Slot.ref(FieldSlots, "input")} />
     </label>
   ),
 });
@@ -74,13 +75,56 @@ const Field = Component.make(
   () => Effect.succeed({}),
   (props) =>
     View.fromSlots(FieldSlots, (
-      <label>
-        <span>{props.label}</span>
-        <input />
+      <label ref={View.Slot.ref(FieldSlots, "root")}>
+        <span ref={View.Slot.ref(FieldSlots, "label")}>{props.label}</span>
+        <input ref={View.Slot.ref(FieldSlots, "input")} />
       </label>
     )),
 ).pipe(Component.withSlots(FieldSlots));
 ```
+
+## Binding Slots To Elements
+
+A slot handle reaches the page only on an element that carries its ref:
+`ref={View.Slot.ref(Slots, "name")}` on the ordinary JSX `ref` prop. The
+name must be declared by the contract (checked at compile time). While that
+element is rendered, the handle is element-backed:
+
+- attached styles are written as inline styles (tokens resolved, numeric
+  lengths in `px`, `shadow` as `box-shadow`); later and reactive changes
+  (`Style.whenBinding`, function values) write through;
+- attributes set by behaviors (`setAttr`) are written through the attribute
+  contract (`null`/`false` on a boolean attribute removes);
+- each event with `on(...)`/`listen(...)` handlers gets a real listener that
+  dispatches to the same handlers `emit` reaches; the abstract `press` event
+  is `click`, plus Enter/Space keydown on elements without native keyboard
+  activation (not buttons, links, or form controls, which already turn those
+  keys into `click`);
+- `focus()`/`blur()` call the element's;
+- the element is stamped `data-af-slot="<name>"`, which `Style.extractStatic`
+  targets by default.
+
+The binding ends when the ref's owner is cleaned up (the element leaves, the
+component re-renders or unmounts): listeners are removed and writes stop.
+The handle keeps its state, so the next element it binds to gets it replayed.
+On the server the same writes serialize into `renderToString` output.
+
+The handle is resolved when `View.Slot.ref(...)` runs: the rendering
+component instance's handle (also inside lazily rendered children such as
+conditionals), otherwise the contract's shared define-time handle. A slot
+without a ref stays an in-memory handle; styles and behaviors still run
+against it, and the test kit drives it without a DOM. For a handle that is
+not in a contract (headless composables), use `Element.ref(handle, "name")`.
+
+**Collections.** A `Collection` slot's ref mints one item handle per element
+it lands on and appends it to the collection while that element is rendered
+(removed when it leaves), so `observeEach` attachments reach every rendered
+item. Items are ordered by when their elements were rendered, which matches
+DOM order for append-only lists but not after a reorder.
+
+**Resumability.** Activation re-renders a resumed component into its region,
+so its refs run again and bind the fresh elements. Server markup is not
+adopted in place by `data-af-slot` yet.
 
 ## The Tiers
 

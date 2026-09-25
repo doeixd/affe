@@ -43,11 +43,13 @@ export const ${name} = Component.make(
   Component.props<{ readonly label: string }>(),
   Component.require<never>(),
   () => Effect.succeed({}),
+  // \`ref={View.Slot.ref(Slots, name)}\` binds each slot to its element:
+  // attached styles, attributes and listeners reach the rendered page.
   (props) =>
     View.fromSlots(${name}Slots, (
-      <label>
-        <span>{props.label}</span>
-        <input />
+      <label ref={View.Slot.ref(${name}Slots, "root")}>
+        <span ref={View.Slot.ref(${name}Slots, "label")}>{props.label}</span>
+        <input ref={View.Slot.ref(${name}Slots, "input")} />
       </label>
     )),
 ).pipe(Component.withSlots(${name}Slots));
@@ -60,7 +62,7 @@ export const ${name}Style = Style.make(${name}Slots, {
 
 export const ${name}Behavior = Behavior.forSlots(${name}Slots)((elements) =>
   Effect.succeed({
-    focus: () => elements.input.focus?.(),
+    focus: () => elements.input.focus(),
   }),
 );
 

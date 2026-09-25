@@ -1,5 +1,10 @@
-import { defaultThemeTokens, type SlotStyle, type ThemeTokenSchema } from "./style-types.js";
-import { isStructuredTokenLeaf, lookupToken } from "./Theme.js";
+import {
+  defaultThemeTokens,
+  isStructuredTokenLeaf,
+  lookupToken,
+  type SlotStyle,
+  type ThemeTokenSchema,
+} from "./style-types.js";
 
 export function mergeStyle(a: SlotStyle, b: SlotStyle): SlotStyle {
   return { ...a, ...b };
@@ -186,4 +191,65 @@ export function cssValueText(property: string, value: unknown): string {
     return `${value}px`;
   }
   return String(value);
+}
+
+/** CSS property name for a style key: camelCase to kebab-case, custom properties verbatim. */
+export function cssPropertyNameOf(prop: string): string {
+  if (prop.startsWith("--") || prop.includes("-")) return prop;
+  const kebab = prop.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  return /^(webkit|moz|ms|o)-/.test(kebab) ? `-${kebab}` : kebab;
+}
+
+/** Affe style shorthands whose CSS property differs from the style key. */
+const shorthandProperty: Readonly<Record<string, string>> = {
+  shadow: "box-shadow",
+};
+
+function lengthText(value: unknown): string {
+  return typeof value === "number" && value !== 0 ? `${value}px` : String(value);
+}
+
+function isShadow(value: object): value is { x: number; y: number; blur: number; spread?: number; color?: string } {
+  const record = value as Record<string, unknown>;
+  return typeof record.x === "number" && typeof record.y === "number";
+}
+
+/**
+ * Serialize one resolved style entry as the inline CSS declarations an
+ * element-backed slot handle writes (DQ-073). `null` text means REMOVE.
+ * Meta keys (`_states`, `__nest`, ...) produce nothing: they are selector
+ * data, rendered by static extraction, not inline declarations. Structured
+ * values expand: a shadow leaf becomes `box-shadow`, a `border` record
+ * becomes `border`, and length tuples join with spaces. Other object values
+ * have no inline form and are skipped.
+ */
+export function inlineStyleDeclarations(
+  prop: string,
+  value: unknown,
+): ReadonlyArray<readonly [name: string, text: string | null]> {
+  if (prop.startsWith("_")) return [];
+  const name = shorthandProperty[prop] ?? cssPropertyNameOf(prop);
+  if (value === null || value === undefined || value === false || value === "") {
+    return [[name, null]];
+  }
+  if (Array.isArray(value)) {
+    return [[name, value.map((part) => cssValueText(prop, part)).join(" ")]];
+  }
+  if (typeof value === "object") {
+    if (isShadow(value)) {
+      const parts = [lengthText(value.x), lengthText(value.y), lengthText(value.blur ?? 0)];
+      if (typeof value.spread === "number") parts.push(lengthText(value.spread));
+      if (value.color !== undefined) parts.push(String(value.color));
+      return [[name, parts.join(" ")]];
+    }
+    const record = value as Record<string, unknown>;
+    if (prop === "border" || prop.startsWith("border")) {
+      const width = record.width === undefined ? "1px" : lengthText(record.width);
+      const style = record.style === undefined ? "solid" : String(record.style);
+      const color = record.color === undefined ? "currentColor" : String(record.color);
+      return [[name, `${width} ${style} ${color}`]];
+    }
+    return [];
+  }
+  return [[name, cssValueText(prop, value)]];
 }

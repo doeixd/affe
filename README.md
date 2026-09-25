@@ -228,11 +228,13 @@ const Field = Component.make(
   Component.props<{ readonly label: string }>(),
   Component.require<never>(),
   () => Effect.succeed({}),
+  // `ref={View.Slot.ref(FieldSlots, name)}` binds a slot to its element, so
+  // what attaches from outside lands on the rendered page.
   (props) =>
     View.fromSlots(FieldSlots, (
-      <label>
-        <span>{props.label}</span>
-        <input />
+      <label ref={View.Slot.ref(FieldSlots, "root")}>
+        <span ref={View.Slot.ref(FieldSlots, "label")}>{props.label}</span>
+        <input ref={View.Slot.ref(FieldSlots, "input")} />
       </label>
     )),
 ).pipe(Component.withSlots(FieldSlots));
@@ -284,12 +286,20 @@ carry tree metadata through `View.fromSlots(...)` / `View.fromJsx(...)`;
 compiler extraction of richer JSX tree metadata remains a tooling concern.
 Platform-agnosticism means your components are *verified* against declared
 platform vocabularies — alternate renderers (TUI, native) are deferred, not
-shipped. Slot handles are renderer-neutral, in-memory handles today:
-attached styles and behaviors run against them (and the test kit drives them),
-but `View.fromSlots(...)` does not yet bind a handle to the DOM element its
-slot names, so slot-attached styles and listeners do not reach the rendered
-page. Static CSS from `Style.extractStatic` targets `.af-<slot>` classes you
-put on the elements yourself.
+shipped.
+
+**What binds to the page:** a slot reaches an element only through
+`ref={View.Slot.ref(Slots, name)}` (or `Element.ref(handle)` for handles
+outside a contract). A bound element gets the slot's attached styles as inline
+styles (tokens resolved, numeric lengths in `px`), attributes set by
+behaviors, real listeners for `on(...)` (`press` = click, plus Enter/Space on
+elements without native keyboard activation), `focus()`/`blur()`, and a
+`data-af-slot="<name>"` stamp; SSR serializes the same. A slot with no `ref`
+stays an in-memory handle (the test kit still drives it). A `Collection` slot
+binds one item handle per element its `ref` lands on, in render order.
+Resumed components bind when activation re-renders them, not by adopting the
+server markup in place. Static CSS from `Style.extractStatic` targets
+`[data-af-slot="<slot>"]` by default.
 
 ## 5. Routing: schema-first, loader-driven
 

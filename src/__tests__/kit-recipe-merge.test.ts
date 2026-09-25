@@ -436,7 +436,7 @@ describe("theme tokens", () => {
     // `--af-*` variable namespace the @doeixd/affe-css foundation emits — extracted
     // CSS stays theme-swappable.
     expect(extraction.css).toContain("@layer components");
-    expect(extraction.css).toContain(".af-root");
+    expect(extraction.css).toContain(`[data-af-slot="root"]`);
     expect(extraction.css).toContain("display: grid;");
     expect(extraction.css).toContain("gap: var(--af-spacing-sm);");
     expect(extraction.css).toContain("padding: var(--af-spacing-md);");

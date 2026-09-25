@@ -16,6 +16,7 @@ describe("create-af-ui scaffold", () => {
     expect(field).toContain("View.Slots.define");
     expect(field).toContain("Component.withSlots");
     expect(field).toContain("Style.attachToSlots");
+    expect(field).toContain(`<input ref={View.Slot.ref(FieldSlots, "input")} />`);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 });

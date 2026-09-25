@@ -45,7 +45,7 @@ const UserCard = Component.make(
     }),
   (_props, bindings) =>
     View.fromSlots(UserSlots, (
-      <article>
+      <article ref={View.Slot.ref(UserSlots, "root")}>
         {Result.builder(bindings.user())
           .onInitial(() => "Loading")
           .onSuccess((user) => <h2>{user.name}</h2>)

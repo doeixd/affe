@@ -61,7 +61,13 @@ const Field = Component.make(
   Component.props<{ label: string }>(),
   Component.require<never>(),
   () => Effect.succeed({}),
-  (props) => View.fromSlots(FieldSlots, <label>{props.label}<input /></label>),
+  // `ref={View.Slot.ref(Slots, name)}` binds a slot to its element (styles, attrs, listeners reach the page).
+  (props) => View.fromSlots(FieldSlots, (
+    <label ref={View.Slot.ref(FieldSlots, "root")}>
+      {props.label}
+      <input ref={View.Slot.ref(FieldSlots, "input")} />
+    </label>
+  )),
 ).pipe(Component.withSlots(FieldSlots));
 
 const Styled = Field.pipe(

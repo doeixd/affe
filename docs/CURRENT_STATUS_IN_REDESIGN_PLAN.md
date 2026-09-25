@@ -39,13 +39,17 @@ specs; no open design question in any lane)
   + SSR; the `create-af-ui` scaffold compiles) found three more: comment
   placeholders crashed SSR, stale `Style.forSlots` in the scaffold and docs,
   and source maps pointing at unshipped files.
-- **Known gap: slot handles are not bound to the DOM.** Now DQ-073. `View.Slots` handles
-  are in-memory (`Element.handleFor`), and `View.fromSlots` never associates
-  one with the element its slot names, so slot-attached styles and behavior
-  listeners do not reach the rendered page. Compile-time contract checks and
-  the DOM-free test kit are unaffected. This needs a design decision (how a
-  JSX node is marked as a slot, and how handles delegate to it) before it is
-  built.
+- **Slot handles bind to rendered elements (DQ-073, implemented).**
+  `ref={View.Slot.ref(Slots, "name")}` (or `Element.ref(handle)` outside a
+  contract) makes the slot's handle element-backed while that element is
+  rendered: attached styles become inline styles, behavior attributes and
+  listeners reach the element (`press` = click plus Enter/Space without
+  native activation), `focus()`/`blur()` forward, the element is stamped
+  `data-af-slot`, and SSR serializes the same. `Style.extractStatic`
+  defaults to `[data-af-slot="<slot>"]`. Collection slots bind one item
+  handle per element; resumed components bind on activation re-render (no
+  in-place adoption of server markup). Slots without a ref stay in-memory.
+  Covered by `src/__tests__/slot-binding.test.ts`.
 - **Gates** (verified 2026-09-25, Linux): `npm run typecheck:all` **0
   errors** across every leg, `npm test` (**1416 passing**, 110 files, plus
   7 in `@doeixd/affe-permissive`), `npm run build`, the four example builds,

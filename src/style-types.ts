@@ -193,3 +193,59 @@ export const defaultThemeTokens: ThemeTokens = {
   transition: { fast: "120ms", normal: "200ms", slow: "320ms" },
   breakpoint: { sm: 640, md: 768, lg: 1024, xl: 1280 },
 };
+
+/** Resolve a token path or short token name against a token schema. */
+export function lookupToken(tokens: ThemeTokenSchema, token: string): unknown {
+  const candidates = [
+    token,
+    `color.${token}`,
+    `spacing.${token}`,
+    `fontSize.${token}`,
+    `fontWeight.${token}`,
+    `radius.${token}`,
+    `shadow.${token}`,
+    `transition.${token}`,
+    `breakpoint.${token}`,
+  ];
+
+  for (const candidate of candidates) {
+    const parts = candidate.split(".");
+    let current: unknown = tokens;
+    let ok = true;
+    for (const part of parts) {
+      if (typeof current !== "object" || current === null || !(part in current)) {
+        ok = false;
+        break;
+      }
+      current = (current as Record<string, unknown>)[part];
+    }
+    if (ok) {
+      return current;
+    }
+  }
+  // Literal-key fallback: several categories use dotted LITERAL keys
+  // ("body.sm" under fontSize), which the path walk above cannot reach —
+  // without this, no fontSize token ever resolved.
+  for (const category of Object.values(tokens)) {
+    if (
+      typeof category === "object" && category !== null
+      && token in (category as Record<string, unknown>)
+    ) {
+      return (category as Record<string, unknown>)[token];
+    }
+  }
+  return token;
+}
+
+/**
+ * A structured token leaf: an object-valued token that is ONE value, not a
+ * group of tokens — today the shadow shape (`{ x, y, blur, color }`). Shared
+ * by composition (a later shadow replaces, never field-merges) and by token
+ * resolution (`shadow: "md"` resolves to the whole object).
+ */
+export function isStructuredTokenLeaf(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.blur === "number"
+    || (typeof record.x === "number" && typeof record.y === "number");
+}

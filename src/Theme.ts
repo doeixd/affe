@@ -9,7 +9,19 @@
  */
 import { Layer, Context } from "effect";
 import * as Atom from "./Atom.js";
-import { defaultThemeTokens, type ThemeTokenSchema, type ThemeTokens, type TokenPathOf } from "./style-types.js";
+import {
+  defaultThemeTokens,
+  isStructuredTokenLeaf,
+  lookupToken,
+  type ThemeTokenSchema,
+  type ThemeTokens,
+  type TokenPathOf,
+} from "./style-types.js";
+
+// Pure token helpers live in `style-types.ts` so the style runtime (and
+// `Element`, which serializes style values) can use them without importing
+// this module, which builds Atom-backed layers at load time.
+export { isStructuredTokenLeaf, lookupToken };
 
 /** Theme service consumed by style token resolution. */
 export interface ThemeService {
@@ -72,49 +84,6 @@ export function define<const Tokens extends ThemeTokenSchema>(tokens: Tokens): T
   };
 }
 
-/** Resolve a token path or short token name against a token schema. */
-export function lookupToken(tokens: ThemeTokenSchema, token: string): unknown {
-  const candidates = [
-    token,
-    `color.${token}`,
-    `spacing.${token}`,
-    `fontSize.${token}`,
-    `fontWeight.${token}`,
-    `radius.${token}`,
-    `shadow.${token}`,
-    `transition.${token}`,
-    `breakpoint.${token}`,
-  ];
-
-  for (const candidate of candidates) {
-    const parts = candidate.split(".");
-    let current: unknown = tokens;
-    let ok = true;
-    for (const part of parts) {
-      if (typeof current !== "object" || current === null || !(part in current)) {
-        ok = false;
-        break;
-      }
-      current = (current as Record<string, unknown>)[part];
-    }
-    if (ok) {
-      return current;
-    }
-  }
-  // Literal-key fallback: several categories use dotted LITERAL keys
-  // ("body.sm" under fontSize), which the path walk above cannot reach —
-  // without this, no fontSize token ever resolved.
-  for (const category of Object.values(tokens)) {
-    if (
-      typeof category === "object" && category !== null
-      && token in (category as Record<string, unknown>)
-    ) {
-      return (category as Record<string, unknown>)[token];
-    }
-  }
-  return token;
-}
-
 /**
  * Resolve a token, following SEMANTIC INDIRECTION (`DQ-061`, ratified): a
  * token whose value is itself a token path ("brand" -> "color.blue500")
@@ -169,19 +138,6 @@ export function compose<
     merged = mergeTokenSchemas(merged, definition.tokens as Record<string, unknown>);
   }
   return define(merged as MergedTokensOf<Definitions>);
-}
-
-/**
- * A structured token leaf: an object-valued token that is ONE value, not a
- * group of tokens — today the shadow shape (`{ x, y, blur, color }`). Shared
- * by composition (a later shadow replaces, never field-merges) and by token
- * resolution (`shadow: "md"` resolves to the whole object).
- */
-export function isStructuredTokenLeaf(value: unknown): boolean {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const record = value as Record<string, unknown>;
-  return typeof record.blur === "number"
-    || (typeof record.x === "number" && typeof record.y === "number");
 }
 
 function isPlainTokenGroup(value: unknown): value is Record<string, unknown> {
