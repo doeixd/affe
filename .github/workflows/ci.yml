@@ -17,12 +17,19 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Type-check (src + tests + examples)
+      # @effect/tsgo-linux-x64 0.24.x ships its native binary without the
+      # executable bit (fixed upstream in later releases); typecheck:effect
+      # spawns it directly.
+      - name: Make the effect-tsgo binary executable
+        run: chmod +x node_modules/@effect/tsgo-linux-x64/lib/tsc node_modules/@effect/tsgo-linux-x64/lib/tsc-next
+      # Build first: the workspace packages (agent, css, permissive) type-check
+      # and test against the core's published dist, as an outside consumer would.
+      - name: Build
+        run: npm run build
+      - name: Type-check (src + tests + examples + packages)
         run: npm run typecheck:all
       - name: Test
         run: npm test
-      - name: Build
-        run: npm run build
 
   bench:
     name: Performance benchmarks (tracked, non-blocking)

@@ -3,7 +3,13 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": ".",
-    "types": ["node", "@playwright/test"]
+    "types": ["node", "@playwright/test"],
+    // Resolve the core against its source, as tsconfig.examples.json does, so
+    // this leg never depends on a dist build.
+    "paths": {
+      "@doeixd/affe": ["./src/index.ts"],
+      "@doeixd/affe/*": ["./src/*"]
+    }
   },
   "include": ["browser-tests/**/*.ts", "playwright.config.ts"],
   "exclude": ["node_modules", "dist", "examples"]

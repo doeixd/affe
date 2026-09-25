@@ -17,6 +17,8 @@
       "@doeixd/affe/internals": ["./src/internals.ts"],
       "@doeixd/affe/server": ["./src/server.ts"],
       "@doeixd/affe/router-runtime": ["./src/router-runtime.ts"],
+      "@doeixd/affe-permissive": ["./packages/permissive/src/index.ts"],
+      "@doeixd/affe-permissive/client": ["./packages/permissive/src/client.ts"],
       "@doeixd/affe/*": ["./src/*"]
     }
   },
