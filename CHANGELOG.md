@@ -12,6 +12,16 @@
   Babel packages and Vite are optional peer dependencies.
 - The CLIs are now `affe` and `affe-doctor` (were `af-ui` / `af-ui-doctor`).
 
+### Add-on packages are published
+
+`@doeixd/affe-permissive` (the resumability preset), `@doeixd/affe-ui-agent`
+(the MCP server for an agent catalog) and `@doeixd/affe-css` (the
+zero-JavaScript CSS foundation) were documented but private. They now publish
+with the core, at the same version, peering on `@doeixd/affe` so an app holds
+one copy of it. Each has a README; `verify:package` installs them from their
+packed tarballs and type-checks their README examples, and
+`npm run set-version` keeps every package on one version.
+
 ### Every example now runs in the browser suite, and the bugs that hid
 
 Fourteen of twenty examples had never been run by a test. Driving each one in

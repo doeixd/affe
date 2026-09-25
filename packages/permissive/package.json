@@ -1,10 +1,28 @@
 {
   "name": "@doeixd/affe-permissive",
-  "version": "0.0.0",
-  "description": "Qwik-parity preset for affe: auto-capture + the universal seroval codec + the reference plugins as a configuration, not a fork. Doubles as the external-style adapter-SPI consumer.",
-  "private": true,
+  "version": "0.6.0",
+  "description": "Affe's permissive resumability preset: automatic capture and the seroval codec, so a resumable page's handlers can close over Maps, Dates and Promises.",
   "type": "module",
   "sideEffects": false,
+  "license": "MIT",
+  "author": "Patrick G",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doeixd/affe.git",
+    "directory": "packages/permissive"
+  },
+  "homepage": "https://github.com/doeixd/affe/tree/main/packages/permissive#readme",
+  "bugs": {
+    "url": "https://github.com/doeixd/affe/issues"
+  },
+  "keywords": [
+    "affe",
+    "effect",
+    "resumability",
+    "seroval",
+    "ssr",
+    "vite"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -18,15 +36,33 @@
     },
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@doeixd/affe": "file:../.."
-  },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta"
+    "@doeixd/affe": "^0.6.0",
+    "effect": "4.0.0-rc.117",
+    "vite": ">=6",
+    "@babel/core": "^7.20.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "@babel/core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@doeixd/affe": "file:../.."
   }
 }

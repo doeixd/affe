@@ -42,7 +42,7 @@ function flattenTokens(
  * expected (`padding: var(--af-spacing-md)`), so these emit `16px`.
  * `fontWeight`, `lineHeight`, `zIndex`, `opacity`, ... stay unitless.
  */
-const lengthTokenCategories = new Set([
+const lengthTokenCategories = /*#__PURE__*/ new Set([
   "spacing",
   "radius",
   "fontSize",
@@ -54,7 +54,7 @@ const lengthTokenCategories = new Set([
 ]);
 
 /** Numeric fields of structured shadow tokens that are lengths. */
-const shadowLengthFields = new Set(["x", "y", "blur", "spread"]);
+const shadowLengthFields = /*#__PURE__*/ new Set(["x", "y", "blur", "spread"]);
 
 function tokenValueText(path: string, value: unknown): string {
   if (typeof value !== "number" || !Number.isFinite(value) || value === 0) {

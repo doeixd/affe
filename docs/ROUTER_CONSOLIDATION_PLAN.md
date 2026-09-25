@@ -1,7 +1,10 @@
 # Router & Data Layer Consolidation Plan
 
 Date: 2026-07-29
-Status: proposed — findings from a full audit of `Route.ts`,
+Status: **implemented.** R1–R5 landed 2026-07-29 → 2026-08-11 and R6 is
+Milestone 11 (done); the "Open decisions" section was settled by
+DQ-030–DQ-038. What follows is the audit record: findings from a full audit
+of `Route.ts`,
 `RouterRuntime.ts`, `router-runtime.ts`, `single-flight-runtime.ts`,
 `SingleFlightTransport.ts`, and `ServerRoute.ts`
 Relationship to the roadmap: this is Milestone 9's consolidation spirit

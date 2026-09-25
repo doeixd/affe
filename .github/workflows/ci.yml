@@ -37,8 +37,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      # Installs the packed tarball into a throwaway project: every subpath
-      # must import and a golden-path file must type-check strictly.
+      - run: npm run build:packages
+      # Installs the packed tarballs (core and add-on packages) into a
+      # throwaway project: every subpath must import and a consumer file must
+      # type-check strictly.
       - run: npm run verify:package
       # Per-feature bundle budgets (atoms, render, component, router).
       - run: npm run size -- --check

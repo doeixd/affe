@@ -1,10 +1,28 @@
 {
   "name": "@doeixd/affe-ui-agent",
-  "version": "0.0.0",
-  "description": "Agent-surface adapters for affe: the MCP projection over the Agent catalog (tools from schemas, dispatch through the one governance pipeline). An adapter package per DQ-096 — never a fork of the core surface.",
-  "private": true,
+  "version": "0.6.0",
+  "description": "MCP server for an Affe agent catalog: your actions as typed tools, dispatched through Affe's governance pipeline (approval, audit, authentication).",
   "type": "module",
   "sideEffects": false,
+  "license": "MIT",
+  "author": "Patrick G",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doeixd/affe.git",
+    "directory": "packages/agent"
+  },
+  "homepage": "https://github.com/doeixd/affe/tree/main/packages/agent#readme",
+  "bugs": {
+    "url": "https://github.com/doeixd/affe/issues"
+  },
+  "keywords": [
+    "affe",
+    "effect",
+    "mcp",
+    "model-context-protocol",
+    "agent",
+    "tools"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,14 +32,22 @@
     },
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
-  "dependencies": {
-    "@doeixd/affe": "file:../.."
-  },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta"
+    "@doeixd/affe": "^0.6.0",
+    "effect": "4.0.0-rc.117"
+  },
+  "devDependencies": {
+    "@doeixd/affe": "file:../.."
   }
 }

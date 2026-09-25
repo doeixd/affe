@@ -1,10 +1,27 @@
 {
   "name": "@doeixd/affe-css",
-  "version": "0.0.0",
-  "description": "Rung zero of the capability ladder: the pure-CSS foundation stylesheet — the absorbed CSS-Tags floor (DQ-063). One token namespace, the ratified @layer order, zero JavaScript required; each later rung (native, dormant, activated) is additive on top of this markup.",
-  "private": true,
+  "version": "0.6.0",
+  "description": "Affe's zero-JavaScript CSS foundation: the theme tokens as CSS custom properties and the cascade-layer order, so markup is styled before any script runs.",
   "type": "module",
   "sideEffects": false,
+  "license": "MIT",
+  "author": "Patrick G",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doeixd/affe.git",
+    "directory": "packages/css"
+  },
+  "homepage": "https://github.com/doeixd/affe/tree/main/packages/css#readme",
+  "bugs": {
+    "url": "https://github.com/doeixd/affe/issues"
+  },
+  "keywords": [
+    "affe",
+    "css",
+    "design-tokens",
+    "cascade-layers",
+    "theme"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,14 +31,22 @@
     },
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
-  "dependencies": {
-    "@doeixd/affe": "file:../.."
-  },
   "peerDependencies": {
-    "effect": ">=4.0.0-beta"
+    "@doeixd/affe": "^0.6.0",
+    "effect": "4.0.0-rc.117"
+  },
+  "devDependencies": {
+    "@doeixd/affe": "file:../.."
   }
 }
