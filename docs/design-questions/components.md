@@ -1062,3 +1062,62 @@ the option-1 shape. Not built pending ratification.
 
 **Related.** DQ-071 (same service-template decision), the services-not-globals
 house rule, `live-announce.md`.
+
+## DQ-073 — How does a slot handle bind to the element it names?
+
+- **Severity:** blocking (for any release that advertises slot-attached styles and behaviors)
+- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` (slot contracts); `docs/archive/AF_UI_CONTRACT.md`
+- **Raised:** 2026-09-25, during the pre-release audit
+
+**What I was doing.** Verifying end to end that `Style.attachToSlots` and
+`Behavior.attachToSlots` affect a rendered page. A slot-contract component with
+an attached style (`backgroundColor: "red"`) and a behavior (`trigger.on("click")`)
+was compiled with the repo's Babel config and mounted with `render()`.
+
+**What is undecided.** Nothing connects a slot handle to a DOM (or server)
+element. `Element.Handle` has one implementation, `makeHandle`
+(`src/Element.ts`), which records attributes, styles and listeners in memory.
+`View.fromSlots` (`src/View.ts` ~1291) stores the rendered node and the handles
+side by side without linking them, and `renderViewResult`
+(`src/Component.ts` ~1132) returns only the node. Observed: the handle reports
+`getStyle("backgroundColor") === "red"`, the element's `style.cssText` is
+empty, a DOM click never reaches the behavior's listener, and SSR output has no
+styles. The only style path that reaches a page is `Style.extractStatic`,
+whose `.af-<slot>` rules need author-written class names. Working examples
+(`styled-combobox`, `styled-card`) bridge by hand (JSX `onInput` calls
+`handle.emit(...)`; styles are printed via `getStyle()`).
+
+**Why it matters.** It is the headline feature: styles and behaviors attach
+from outside, against a published contract. Today that holds at the type level
+and in the DOM-free test kit only.
+
+**Options.**
+
+1. **A `slot` JSX prop** (`<input slot={Anatomy.slots.input} />`) that the
+   runtime turns into a ref binding. *Cost:* JSX typing for the prop in
+   `jsx-runtime.ts`; collides with the HTML `slot` attribute (shadow DOM) unless
+   named differently (e.g. `af:slot`). *Buys:* the binding is visible at the
+   element, and SSR can stamp `data-af-slot`.
+2. **`View.Slot.ref(slot)`** used with the existing `ref` prop
+   (`<input ref={View.Slot.ref(Anatomy.slots.input)} />`). *Cost:* slightly
+   noisier authoring. *Buys:* no new JSX surface; reuses the compiler's `ref`.
+3. **Positional binding from the typed tree** (`View.fromSlots` walks the
+   rendered node and matches the declared tree metadata). *Cost:* depends on
+   tree metadata authors rarely write; fragile under conditionals. *Buys:* no
+   markup changes.
+
+In every option the handle becomes DOM-backed on bind: buffered
+attributes/styles replay through `setAttribute`/`setStyleProperty` (token
+values resolved, lengths in `px`), `listen`/`on` become real listeners
+removed with the component scope, `press` maps to click plus Enter/Space,
+`focus`/`blur` call the element's, and `emit` stays for tests. On the server
+the same writes serialize, and `data-af-slot="<name>"` lets resumption re-bind
+by querying inside the component's region. Files: `src/Element.ts`,
+`src/View.ts`, `src/Component.ts`, `src/dom.ts`, `src/jsx-runtime.ts`,
+`src/Resume.ts`, `src/Style.ts` (default `extractStatic` selector to
+`[data-af-slot=…]`).
+
+**Recommendation (provisional).** Option 2 for the first slice: it needs no
+new JSX surface and no compiler change, and it can grow into option 1 later.
+Blocking for a release that advertises the feature; otherwise the README must
+keep saying slot handles are not yet bound (it does, since 2026-09-25).
