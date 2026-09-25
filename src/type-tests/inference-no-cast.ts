@@ -8,6 +8,7 @@ import { Effect, Layer, Schema } from "effect";
 import * as Atom from "../Atom.js";
 import * as Component from "../Component.js";
 import * as Route from "../Route.js";
+import { For, Match, Optional, Show } from "../effect-ts.js";
 import {
   RouteLoaderTimeoutError,
   runCachedLoader,
@@ -107,3 +108,17 @@ void _transportLayer;
 void _timedResult;
 void _wirePayload;
 void _nestedAt;
+
+// ─── Show / Optional / Match infer the function child's parameter ───────────
+// `children` was typed `((value) => unknown) | unknown`, which collapses to
+// `unknown`, so `{(user) => ...}` had an implicit-any parameter.
+{
+  const user = null as { readonly name: string } | null;
+  Show({ when: user, children: (u) => u.name.toUpperCase() });
+  Optional({ when: user, children: (u) => u.name.toUpperCase() });
+  Match({ when: user, children: (u) => u.name.toUpperCase() });
+  Show({ when: user, children: "static child" });
+  // `For` takes a readonly array (an atom's value usually is one).
+  const names = null as unknown as ReadonlyArray<string>;
+  For({ each: names, children: (name) => name.toUpperCase() });
+}

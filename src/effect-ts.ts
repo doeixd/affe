@@ -2060,12 +2060,26 @@ export function TypedBoundary<E>(props: {
 
 // ─── Switch / Match ───────────────────────────────────────────────────────────
 
+/**
+ * Children of `Show`, `Match` and `Optional`: a node, or a function of the
+ * narrowed value. Spelled out rather than `unknown` so the function form
+ * infers its parameter (`{(user) => ...}`).
+ */
+export type ConditionalChildren<T> =
+  | ((value: NonNullable<T>) => unknown)
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | object;
+
 const MatchTypeId = /*#__PURE__*/ Symbol.for("affe/Match");
 
 type MatchCase<T> = {
   readonly [MatchTypeId]: true;
   readonly when: T | false | null | undefined | 0 | "";
-  readonly children: ((value: NonNullable<T>) => unknown) | unknown;
+  readonly children: ConditionalChildren<T>;
 };
 
 
@@ -2083,7 +2097,7 @@ type MatchCase<T> = {
  */
 export function Match<T>(props: {
   when: T | false | null | undefined | 0 | "";
-  children: ((value: NonNullable<T>) => unknown) | unknown;
+  children: ConditionalChildren<T>;
 }): MatchCase<T> {
   // Getters, not copies: `Switch` reads `when` inside its own tracked scope,
   // so `<Match when={x()}>` follows `x`.
@@ -2155,7 +2169,7 @@ export function Switch(props: {
 export function Optional<T>(props: {
   when: T | null | undefined | Accessor<T | null | undefined>;
   fallback?: () => unknown;
-  children: ((value: NonNullable<T>) => unknown) | unknown;
+  children: ConditionalChildren<T>;
 }): Accessor<unknown> {
   return branch(() => readProp(props.when), (value) => {
     if (value === null || value === undefined) return props.fallback?.() ?? null;
@@ -2307,14 +2321,14 @@ export function MatchTag<T extends Tagged, R>(props: {
  * </For>
  */
 export function For<T>(props: {
-  each: T[] | Accessor<T[]>;
+  each: ReadonlyArray<T> | Accessor<ReadonlyArray<T>>;
   fallback?: () => unknown;
   children: (item: T, index: Accessor<number>) => unknown;
 }): Accessor<unknown[]> {
-  const eachAccessor: Accessor<T[]> =
+  const eachAccessor: Accessor<ReadonlyArray<T>> =
     typeof props.each === "function"
-      ? (props.each as Accessor<T[]>)
-      : () => props.each as T[];
+      ? (props.each as Accessor<ReadonlyArray<T>>)
+      : () => props.each as ReadonlyArray<T>;
 
   // createMemo returns an accessor — insert() detects functions and wraps
   // them in a Computation, so the DOM updates reactively when items change.
@@ -2340,7 +2354,7 @@ export function For<T>(props: {
 export function Show<T>(props: {
   when: T | false | null | undefined | 0 | "";
   fallback?: () => unknown;
-  children: ((value: NonNullable<T>) => unknown) | unknown;
+  children: ConditionalChildren<T>;
 }): Accessor<unknown> {
   return branch(() => props.when, (when) => {
     if (!when) return props.fallback?.() ?? null;
