@@ -1,18 +1,18 @@
 import { Effect, Exit, Schema, Scope } from "effect";
-import * as Component from "effect-atom-jsx/Component";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import * as Component from "@doeixd/affe/Component";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
 import {
   addEventListener,
   delegateEvents,
   template,
-} from "effect-atom-jsx/runtime";
-import { renderToString } from "effect-atom-jsx";
+} from "@doeixd/affe/runtime";
+import { renderToString } from "@doeixd/affe";
 import { SaveCode } from "../actions/save-action.js";
 import { browserState } from "../shared/browser-state.js";
 import { BuildId, SaveButtonActivationCodeId } from "../shared/build.js";
 import { SaveService } from "../shared/save-service.js";
-import * as Portable from "effect-atom-jsx/Portable";
+import * as Portable from "@doeixd/affe/Portable";
 
 const state = browserState();
 if (state !== undefined) {

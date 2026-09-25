@@ -1,7 +1,7 @@
 import { Effect, Layer, ManagedRuntime, Schema } from "effect";
-import * as Portable from "effect-atom-jsx/Portable";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import * as Portable from "@doeixd/affe/Portable";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
 import { resolverEntries } from "virtual:af-resume-entries";
 import type {
   AttributionBrowserState,

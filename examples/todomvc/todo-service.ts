@@ -88,7 +88,7 @@ export function createInMemoryTodoApi(initial: ReadonlyArray<Todo> = []): TodoAp
 export const TodoApiLive = Layer.succeed(
   TodoApi,
   createInMemoryTodoApi([
-    { id: "1", title: "Try effect-atom-jsx", completed: false, createdAt: Date.now() - 60000 },
+    { id: "1", title: "Try Affe", completed: false, createdAt: Date.now() - 60000 },
     { id: "2", title: "Ship TodoMVC", completed: true, createdAt: Date.now() - 30000 },
   ]),
 );

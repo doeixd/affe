@@ -1,5 +1,5 @@
 {
-  "name": "@affe/css",
+  "name": "@doeixd/affe-css",
   "version": "0.0.0",
   "description": "Rung zero of the capability ladder: the pure-CSS foundation stylesheet — the absorbed CSS-Tags floor (DQ-063). One token namespace, the ratified @layer order, zero JavaScript required; each later rung (native, dormant, activated) is additive on top of this markup.",
   "private": true,
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "effect-atom-jsx": "file:../.."
+    "@doeixd/affe": "file:../.."
   },
   "peerDependencies": {
     "effect": ">=4.0.0-beta"

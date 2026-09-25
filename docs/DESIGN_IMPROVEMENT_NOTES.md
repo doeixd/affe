@@ -263,7 +263,7 @@ top of the capability lattice (`src/Element.ts:16`, with `Interactive`,
 slot happily satisfies a TextInput-needing behavior as long as the caller passes
 a contract claiming otherwise.
 
-Why it matters: this is the AF-UI headline guarantee — "attaching the combobox
+Why it matters: this is the Affe headline guarantee — "attaching the combobox
 behavior to a slot lacking text-input capability is a type error" — and it does
 not hold. That guarantee is documented as a principal reason the framework is
 worth its Effect-shaped cost.

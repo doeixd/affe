@@ -360,7 +360,7 @@ interface ActivationService {
   readonly label: Effect.Effect<string, ActivationSetupError>;
 }
 const ActivationService = Context.Service<ActivationService>(
-  "effect-atom-jsx/type-tests/ResumeActivationService",
+  "affe/type-tests/ResumeActivationService",
 );
 const EffectfulAddressableCard = Component.make(
   Component.propsSchema(AddressableProps),

@@ -1,18 +1,18 @@
 import { Effect, Exit, Schema, Scope } from "effect";
-import { hydrateRoot, renderToString } from "effect-atom-jsx";
-import * as Component from "effect-atom-jsx/Component";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import { hydrateRoot, renderToString } from "@doeixd/affe";
+import * as Component from "@doeixd/affe/Component";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
 import {
   insert,
   setAttribute,
   template,
-} from "effect-atom-jsx/runtime";
+} from "@doeixd/affe/runtime";
 import {
   bindStructuralExpression,
   expr,
   structuralExpressionCode,
-} from "effect-atom-jsx/portable-extract";
+} from "@doeixd/affe/portable-extract";
 import { browserState } from "../shared/browser-state.js";
 import {
   BuildId,

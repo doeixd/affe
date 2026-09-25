@@ -65,12 +65,12 @@ recommendations and block only 4 placeholder specs.
 
 ## Grade B — packaging decision already made, build later
 
-5. **AN-3: MCP projection** — ratified to live in the **`@affe/agent`
+5. **AN-3: MCP projection** — ratified to live in the **`@doeixd/affe-agent`
    adapter package**, NOT `src/agent-mcp.ts`. The specs load
    `fromSrc("agent-mcp")` — a premise that contradicts the ratified
    packaging and needs the documented-correction treatment when AN-3 is
    built (harness reads only `src/`; the workspace-package pattern from
-   `@affe/permissive` is the template). Unblocks `mcp-projection` (6).
+   `@doeixd/affe-permissive` is the template). Unblocks `mcp-projection` (6).
 
 ## Grade C — open DQs, each with a recorded recommendation
 
@@ -84,7 +84,7 @@ recommendations and block only 4 placeholder specs.
    queue exposed as a standard query. Blocks 1 governance placeholder.
 8. **DQ-097** (kit catalog entries): rec = kits ship partial entries with
    `access:` mandatory at the app. Blocks 1 placeholder.
-9. **DQ-098** (A2A/ask-agent): rec = userland, with `@affe/agent` named
+9. **DQ-098** (A2A/ask-agent): rec = userland, with `@doeixd/affe-agent` named
    as the escape hatch. Blocks 1 placeholder.
 
 ## Grade D — not agent-lane work
@@ -96,5 +96,5 @@ recommendations and block only 4 placeholder specs.
 ## Build order
 
 AN-1 → AN-2 → AN-4 (with the M11b handle-surface check) → AN-3 as
-`@affe/agent` → ratify DQ-094/095/097/098 → AN-5 (`ViewSpec`). The small
+`@doeixd/affe-agent` → ratify DQ-094/095/097/098 → AN-5 (`ViewSpec`). The small
 independents can interleave anywhere.

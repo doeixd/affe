@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { createSignal, type Accessor } from "./api.js";
 import type { ReactivityService } from "./Reactivity.js";
 
-export const ReactivityKeyTypeId: unique symbol = Symbol.for("effect-atom-jsx/Reactivity/Key");
+export const ReactivityKeyTypeId: unique symbol = Symbol.for("affe/Reactivity/Key");
 export type ReactivityKeyTypeId = typeof ReactivityKeyTypeId;
 
 /**

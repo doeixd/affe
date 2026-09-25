@@ -41,7 +41,7 @@ Status key: ☐ pending · ✅ ratified · ❌ rejected.
 
 ## Group B — the three parked DQs blocking `future/` reds
 
-### ✅ 2. DQ-063 — CSS-Tags: absorb as `@affe/css` or depend externally?
+### ✅ 2. DQ-063 — CSS-Tags: absorb as `@doeixd/affe-css` or depend externally?
 
 - **Blocks:** `recipe-merge.spec.ts` (1 of its 2 reds).
 - **Premise check:** the entry's deciding fact ("upstream's release cadence
@@ -51,8 +51,8 @@ Status key: ☐ pending · ✅ ratified · ❌ rejected.
   stranger's work, and "depend externally" still couples Theme's typed token
   references (`DQ-061`, built) to names living in a second repo with a
   second release cadence.
-- **Recommendation:** **Option 1 — absorb as `@affe/css`**, a workspace
-  package beside `@affe/permissive` and `@affe/agent` (the packaging
+- **Recommendation:** **Option 1 — absorb as `@doeixd/affe-css`**, a workspace
+  package beside `@doeixd/affe-permissive` and `@doeixd/affe-agent` (the packaging
   playbook now exists and is exercised twice). The token namespace, the
   ratified `@layer` order, and Theme's typed references version together as
   one surface; upstream CSS-Tags remains the design source, absorbed

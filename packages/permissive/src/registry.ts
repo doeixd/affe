@@ -13,7 +13,7 @@
  * handle.
  */
 
-import type * as Serialization from "effect-atom-jsx/Serialization";
+import type * as Serialization from "@doeixd/affe/Serialization";
 
 export interface HandleRegistry {
   /** Bind a stable key to a live handle. Re-registering a key replaces it. */

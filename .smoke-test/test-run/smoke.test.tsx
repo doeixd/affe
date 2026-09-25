@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { Atom, Registry, render, createSignal } from "effect-atom-jsx";
+import { Atom, Registry, render, createSignal } from "@doeixd/affe";
 import { Effect } from "effect";
 
-describe("effect-atom-jsx smoke test", () => {
+describe("Affe smoke test", () => {
   it("should handle basic atom state", () => {
     const count = Atom.make<number>(0);
     const registry = Registry.make();
@@ -34,7 +34,7 @@ describe("effect-atom-jsx smoke test", () => {
   });
 
   it("should support effect integration", async () => {
-    const { queryEffect } = await import("effect-atom-jsx");
+    const { queryEffect } = await import("@doeixd/affe");
     const data = queryEffect(() => Effect.succeed("hello"));
     
     // We need to wait for the effect to run

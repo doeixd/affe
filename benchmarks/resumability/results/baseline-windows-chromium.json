@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "benchmark": "effect-atom-jsx/resumability-m8c1",
+  "benchmark": "@doeixd/affe/resumability-m8c1",
   "generatedAt": "2026-07-30T18:31:48.028Z",
   "buildId": "resumability-m8c1-benchmark-v1",
   "browser": {

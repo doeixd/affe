@@ -9,7 +9,7 @@ code identity, build stamp, resolver table, or generated export.
 The pieces:
 
 - [`vite.config.ts`](vite.config.ts) enables
-  `resumeExtract` from `effect-atom-jsx/compiler/resume-extract-vite`. The
+  `resumeExtract` from `@doeixd/affe/compiler/resume-extract-vite`. The
   transform hoists the marker into an exported `Portable.code` with the
   generated identity `app/note-button.ts#$0` and serves
   `virtual:af-resume-entries` with a lazy loader per generated definition.

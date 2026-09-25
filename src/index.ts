@@ -1,11 +1,11 @@
 /**
- * effect-atom-jsx — main entry point.
+ * Affe — main entry point.
  *
  * Re-exports the full public API: reactive primitives, DOM helpers,
  * and Effect-TS integration.
  *
  * The babel-plugin-jsx-dom-expressions should point to
- * "effect-atom-jsx/runtime" for compiled JSX output.
+ * "@doeixd/affe/runtime" for compiled JSX output.
  */
 
 // ─── Atom API (Jotai-style ergonomics on top of reactive core) ────────────────
@@ -90,7 +90,7 @@ export {
 } from "./effect-ts.js";
 
 // User-facing app entry points (mount + SSR). The compiler-internal DOM
-// helpers (template/insert/spread/…) stay in the `effect-atom-jsx/runtime`
+// helpers (template/insert/spread/…) stay in the `@doeixd/affe/runtime`
 // subpath that babel-plugin-jsx-dom-expressions targets.
 export {
   render,

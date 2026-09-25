@@ -6,7 +6,7 @@ import {
   createOptimistic,
   defineMutation,
   useService,
-} from "effect-atom-jsx";
+} from "@doeixd/affe";
 import { Effect } from "effect";
 import { TodoApi, type Todo, type TodoError } from "./todo-service.js";
 
@@ -183,7 +183,7 @@ export function TodoMvcApp() {
     <section class="shell">
       <header class="hero">
         <h1>TodoMVC</h1>
-        <p>effect-atom-jsx + Effect services + optimistic actions</p>
+        <p>Affe + Effect services + optimistic actions</p>
       </header>
 
       <section class="card">

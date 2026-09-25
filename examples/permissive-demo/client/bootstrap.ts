@@ -1,6 +1,6 @@
 import { Effect, ManagedRuntime } from "effect";
-import * as Resume from "effect-atom-jsx/Resume";
-import { permissiveClient } from "@affe/permissive/client";
+import * as Resume from "@doeixd/affe/Resume";
+import { permissiveClient } from "@doeixd/affe-permissive/client";
 import { resolverEntries } from "virtual:af-resume-entries";
 import { initBrowserState } from "../shared/browser-state.js";
 import { BuildId } from "../shared/build.js";

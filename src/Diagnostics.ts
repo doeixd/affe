@@ -7,7 +7,7 @@ import * as ServerRoute from "./ServerRoute.js";
 import * as Style from "./Style.js";
 import * as View from "./View.js";
 
-/** Severity levels used by all AF-UI diagnostic producers. */
+/** Severity levels used by all Affe diagnostic producers. */
 export type DiagnosticSeverity = "error" | "warning" | "info";
 
 export type DiagnosticSource =

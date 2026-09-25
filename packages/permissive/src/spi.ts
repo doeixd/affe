@@ -5,7 +5,7 @@
  * browser bundle.
  */
 
-import { spiVersion } from "effect-atom-jsx/adapter-spi";
+import { spiVersion } from "@doeixd/affe/adapter-spi";
 
 export { spiVersion };
 
@@ -24,7 +24,7 @@ export class SpiVersionMismatchError extends Error {
     readonly supported: string,
   ) {
     super(
-      `@affe/permissive was built against adapter SPI "${supported}" but the installed effect-atom-jsx exposes "${installed}". Upgrade whichever side is behind; running mismatched would fail at the first SPI call instead of here.`,
+      `@doeixd/affe-permissive was built against adapter SPI "${supported}" but the installed Affe exposes "${installed}". Upgrade whichever side is behind; running mismatched would fail at the first SPI call instead of here.`,
     );
   }
 }

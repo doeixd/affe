@@ -417,7 +417,7 @@ API from `DQ-085`).
    `kebab-case.ts` internals — which these already follow).
 2. **Rename during AN-1 implementation.** *Cost:* touches every spec. *Buys:* a
    naming review with implementation knowledge.
-3. **Consolidate** — e.g. fold `agent-mcp.ts` into an `@affe/agent` adapter
+3. **Consolidate** — e.g. fold `agent-mcp.ts` into an `@doeixd/affe-agent` adapter
    package per §6, and fold `view-spec-json-render.ts` into `ViewSpec.ts`.
    *Cost:* package boundary decision pulled earlier. *Buys:* fewer top-level
    modules; matches §6's stated library boundary.
@@ -425,7 +425,7 @@ API from `DQ-085`).
 **Recommendation.** Ratify option 1 for `src/Agent.ts` and
 `src/reactivity-push.ts` (they are inside §6's stated library boundary and
 follow existing file conventions), and apply option 3 to `src/agent-mcp.ts` —
-§6 already says MCP is a "small `@affe/agent` adapter package", so a `src/`
+§6 already says MCP is a "small `@doeixd/affe-agent` adapter package", so a `src/`
 module contradicts the plan. Defer `ViewSpec.ts` naming until `DQ-090` and
 `DQ-094` settle the IR.
 
@@ -436,7 +436,7 @@ recorded as provisional, not adopted.
 
 **RATIFIED 2026-08-12** (user-approved via TRIAGE-2026-08-12.md): as recommended — `src/Agent.ts`
 and `src/reactivity-push.ts` adopted as-is with their listed exports;
-`agent-mcp` folds into the `@affe/agent` adapter package (no `src/` module);
+`agent-mcp` folds into the `@doeixd/affe-agent` adapter package (no `src/` module);
 `ViewSpec.ts`/`view-spec-json-render.ts` naming stays deferred behind
 `DQ-090`/`DQ-094`.
 
@@ -499,13 +499,13 @@ default was rejected as a hope, not a guarantee.
 - **Owning plan:** `docs/AGENT_NATIVE_NOTES.md` §8 open question 5
 - **Raised:** 2026-07-30, triage
 - **Blocks specs:** `future/agent/mcp-projection.spec.ts:214`
-  (`unbuilt("A2A / ask-agent bridge surface (in @affe/agent or out of scope)")`)
+  (`unbuilt("A2A / ask-agent bridge surface (in @doeixd/affe-agent or out of scope)")`)
 
 **What I was doing.** Triaging the remaining §8 question.
 
 **What is undecided.** §1's table already says `ask-agent` is "out of scope for
 the UI library; an app-level action like any other", while §8.5 re-opens it as
-"explicitly out of library scope, or does `@affe/agent` ship an optional bridge
+"explicitly out of library scope, or does `@doeixd/affe-agent` ship an optional bridge
 once someone needs it?". So the two sections disagree by degree, not substance.
 
 **Why it matters.** Very little today — this genuinely does not block anything.
@@ -516,7 +516,7 @@ invites a bridge to land in `src/` rather than in an adapter.
 
 1. **Userland, permanently.** *Cost:* every app that wants agent delegation
    writes it. *Buys:* the library boundary in §6 stays exactly as stated.
-2. **Optional `@affe/agent` bridge, when demanded.** *Cost:* an adapter package
+2. **Optional `@doeixd/affe-agent` bridge, when demanded.** *Cost:* an adapter package
    grows a feature with no current user. *Buys:* a sanctioned home if the demand
    arrives, keeping it out of `src/`.
 3. **Library scope.** *Cost:* an agent loop in a UI library — explicitly listed
@@ -524,7 +524,7 @@ invites a bridge to land in `src/` rather than in an adapter.
 
 **Recommendation.** Option 1 with option 2 named as the escape hatch: resolve
 §8.5 by deleting it in favour of §1's already-stated answer, adding one sentence
-that if a bridge is ever built it belongs in `@affe/agent`, never in `src/`.
+that if a bridge is ever built it belongs in `@doeixd/affe-agent`, never in `src/`.
 This is close to already-decided; it is here only because two sections disagree.
 
 **What I did in the meantime.** `unbuilt(...)` retained; re-point at `DQ-098`.
@@ -534,7 +534,7 @@ This is close to already-decided; it is here only because two sections disagree.
 **RATIFIED 2026-08-17** (user-delegated via TRIAGE-2026-08-17-ratification.md):
 option 1 with option 2 as the named escape hatch — §8.5 resolved in favour of
 §1's answer (userland; an app-level action like any other), with the boundary
-sentence recorded: an A2A bridge, if ever built, lives in `@affe/agent`,
+sentence recorded: an A2A bridge, if ever built, lives in `@doeixd/affe-agent`,
 never in `src/`.
 </content>
 </invoke>

@@ -5,7 +5,7 @@ import * as Element from "./Element.js";
 import * as Portable from "./Portable.js";
 import * as View from "./View.js";
 
-const BehaviorTypeId: unique symbol = Symbol.for("effect-atom-jsx/Behavior");
+const BehaviorTypeId: unique symbol = Symbol.for("affe/Behavior");
 
 /**
  * Effectful behavior that attaches logic to selected elements.
@@ -127,7 +127,7 @@ export function inspectAttachment(
  * never as a synchronous throw at the factory call site.
  */
 export class BehaviorOptionsError extends Schema.TaggedErrorClass<BehaviorOptionsError>(
-  "@effect-atom-jsx/BehaviorOptionsError",
+  "affe/BehaviorOptionsError",
 )("BehaviorOptionsError", {
   behavior: Schema.String,
   message: Schema.String,

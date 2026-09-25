@@ -1,10 +1,14 @@
-# effect-atom-jsx
+# Affe
+
+> Affe (German for "monkey", pronounced "AH-fuh") was called `effect-atom-jsx`
+> until this release. Install `@doeixd/affe` and replace `effect-atom-jsx` with
+> `@doeixd/affe` in imports and in `jsxImportSource`; the API is unchanged.
 
 Effect-native reactive state and inside-out UI. One algebra from a counter
 atom to a full-stack, schema-validated, single-flight application.
 
 ```ts
-import { Atom } from "effect-atom-jsx";
+import { Atom } from "@doeixd/affe";
 
 const count = Atom.make(0);
 
@@ -25,7 +29,7 @@ typed, lifecycles are scoped, and everything composes with `.pipe()`.
 | **Atoms** | Callable fine-grained state, derived atoms, families, schema-validated forms |
 | **Async** | `Result`-based queries, actions, retry/polling schedules, optimistic updates |
 | **Reactivity** | Semantic key-based invalidation as an Effect service |
-| **AF-UI** | Components with published slot contracts; styles and behaviors attach from outside |
+| **Affe** | Components with published slot contracts; styles and behaviors attach from outside |
 | **Router** | Schema-first routes, loaders with SWR caching, typed links, head metadata |
 | **Single flight** | One round-trip for a mutation *and* all affected loader data |
 | **Server** | Typed server routes, document rendering, SSR hydration |
@@ -36,7 +40,7 @@ router; the router works without the server runtime.
 ## Install
 
 ```sh
-npm install effect-atom-jsx effect
+npm install @doeixd/affe effect
 ```
 
 **Effect compatibility:** this package peers on **Effect 4 beta**
@@ -52,7 +56,7 @@ package ships `.d.ts` from the TS7 toolchain.
 
 JSX compiles to fine-grained DOM operations via
 `babel-plugin-jsx-dom-expressions`. Point `moduleName` at the
-`effect-atom-jsx/runtime` subpath (that is where the compiler-facing helpers
+`@doeixd/affe/runtime` subpath (that is where the compiler-facing helpers
 live):
 
 ```json
@@ -60,7 +64,7 @@ live):
 {
   "plugins": [
     ["babel-plugin-jsx-dom-expressions", {
-      "moduleName": "effect-atom-jsx/runtime",
+      "moduleName": "@doeixd/affe/runtime",
       "generate": "dom",
       "contextToCustomElements": true
     }]
@@ -74,7 +78,7 @@ For `tsc` to type-check your JSX, set these in `tsconfig.json`:
 {
   "compilerOptions": {
     "jsx": "preserve",
-    "jsxImportSource": "effect-atom-jsx"
+    "jsxImportSource": "@doeixd/affe"
   }
 }
 ```
@@ -82,7 +86,7 @@ For `tsc` to type-check your JSX, set these in `tsconfig.json`:
 Mount an app with `render` (SSR uses `renderToString` / `hydrateRoot`):
 
 ```tsx
-import { render } from "effect-atom-jsx";
+import { render } from "@doeixd/affe";
 
 render(() => <App />, document.getElementById("root")!);
 ```
@@ -95,7 +99,7 @@ Atoms are callable, writable, and fine-grained. No registry ceremony, no
 provider wrapper.
 
 ```ts
-import { Atom } from "effect-atom-jsx";
+import { Atom } from "@doeixd/affe";
 
 const count = Atom.make(0);
 const doubled = Atom.map(count, (n) => n * 2);
@@ -120,7 +124,7 @@ queries, actions. Errors are typed; defects are separate; stale data stays
 renderable while revalidating.
 
 ```ts
-import { Atom, Result } from "effect-atom-jsx";
+import { Atom, Result } from "@doeixd/affe";
 import { Layer } from "effect";
 
 // Bind a runtime once; requirements (R) are eliminated at construction.
@@ -168,7 +172,7 @@ tracked that key — atoms, loaders, components — refreshes automatically, wit
 microtask batching.
 
 ```ts
-import { Reactivity } from "effect-atom-jsx";
+import { Reactivity } from "@doeixd/affe";
 
 // A key witness: the read side and the write side share one literal-typed
 // value, so a typo'd key is a compile error instead of a silent non-refresh.
@@ -192,15 +196,15 @@ Parameterized keys use families (`Reactivity.Key.family("user")`, then
 Swap `Reactivity.live` for `Reactivity.test` in tests and drive invalidation
 manually with `flush()` — no component changes.
 
-## 4. UI: the inside-out component model (AF-UI)
+## 4. UI: the inside-out component model (Affe)
 
-Most frameworks bake structure, style, and behavior into one file. AF-UI
+Most frameworks bake structure, style, and behavior into one file. Affe
 components declare a **slot contract** — a typed description of their
 attachment points — and styles and behaviors attach from outside, checked
 against that contract at compile time.
 
 ```ts
-import { Behavior, Component, Element, Style, View } from "effect-atom-jsx";
+import { Behavior, Component, Element, Style, View } from "@doeixd/affe";
 import { Effect } from "effect";
 
 // One contract: the view is built from it, styles and behaviors are checked
@@ -380,7 +384,7 @@ recover any of it anywhere.
 
 ## Using it inside an existing app
 
-The runtime is self-contained — mount an AF-UI tree inside a React (or
+The runtime is self-contained — mount an Affe tree inside a React (or
 anything) component the way you'd mount a D3 chart, and adopt incrementally:
 atoms first, components where contracts pay off.
 

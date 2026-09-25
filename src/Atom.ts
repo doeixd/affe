@@ -33,10 +33,10 @@ import {
 } from "./reactivity-runtime.js";
 import { SingleFlightTransportTag, type SingleFlightTransportService } from "./SingleFlightTransport.js";
 
-const TypeId = "~effect-atom-jsx/Atom" as const;
-const WritableTypeId = "~effect-atom-jsx/Atom/Writable" as const;
-const ReadonlyTypeId = "~effect-atom-jsx/Atom/Readonly" as const;
-const TypeVarianceId: unique symbol = Symbol.for("effect-atom-jsx/Atom/TypeVariance");
+const TypeId = "~affe/Atom" as const;
+const WritableTypeId = "~affe/Atom/Writable" as const;
+const ReadonlyTypeId = "~affe/Atom/Readonly" as const;
+const TypeVarianceId: unique symbol = Symbol.for("affe/Atom/TypeVariance");
 
 type RefreshRef = {
   readonly get: Accessor<number>;
@@ -1372,7 +1372,7 @@ export const runtimeEffect = <R, E>(layer: Layer.Layer<R, E, never>): Effect.Eff
 export type ReactivityKeysInput =
   RuntimeReactivityKeysInput;
 
-const ReactivityKeysSymbol: unique symbol = Symbol.for("effect-atom-jsx/ReactivityKeys");
+const ReactivityKeysSymbol: unique symbol = Symbol.for("affe/ReactivityKeys");
 
 type ReactivityTagged = {
   [ReactivityKeysSymbol]?: ReadonlyArray<string>;

@@ -1,4 +1,4 @@
-import { Atom, Async, Result, Loading, Errored } from "effect-atom-jsx";
+import { Atom, Async, Result, Loading, Errored } from "@doeixd/affe";
 import { Effect, Stream, Option } from "effect";
 
 type Chunk = Atom.StreamChunk<number>;

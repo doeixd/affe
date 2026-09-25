@@ -102,7 +102,7 @@ export class Computation implements IComputation {
         try {
           this._execute();
         } catch (e) {
-          console.error("[effect-atom-jsx] Unhandled error in reactive computation:", e);
+          console.error("[affe] Unhandled error in reactive computation:", e);
         }
       });
     } finally {
@@ -206,7 +206,7 @@ export class Memo<T> extends Computation implements ISignal<T> {
   /** Read the memoised value; registers this memo as a dep of the caller. */
   get(): T {
     if (!this._initialized) {
-      throw new Error("[effect-atom-jsx] Memo read before initialization (circular dependency?)");
+      throw new Error("[affe] Memo read before initialization (circular dependency?)");
     }
     const observer = getObserver();
     if (observer !== null) {

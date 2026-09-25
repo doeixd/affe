@@ -130,7 +130,7 @@ describe("composables behavior system", () => {
     expect(diagnostics.map((diagnostic) => diagnostic.code)).toEqual(["view:unsupported-slot-event"]);
   });
 
-  it("reports AF-UI metadata diagnostics across view, behavior, and style", () => {
+  it("reports Affe metadata diagnostics across view, behavior, and style", () => {
     const Submit = View.Event.make("submit");
     const Shadow = Style.Property.make("boxShadow");
     const NeedsInput = Behavior.events({

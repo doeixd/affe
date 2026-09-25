@@ -1,4 +1,4 @@
-import type * as Resume from "effect-atom-jsx/Resume";
+import type * as Resume from "@doeixd/affe/Resume";
 
 export type AttributionDensity = 0 | 1 | 24;
 export type AttributionStage =

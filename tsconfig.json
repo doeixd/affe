@@ -11,7 +11,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "jsx": "preserve",
-    "jsxImportSource": "effect-atom-jsx",
+    "jsxImportSource": "@doeixd/affe",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

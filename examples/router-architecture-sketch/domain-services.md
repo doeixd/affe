@@ -2,7 +2,7 @@
 
 ```ts
 import { Effect, Layer, Schema } from "effect";
-import { Atom, Reactivity } from "effect-atom-jsx";
+import { Atom, Reactivity } from "@doeixd/affe";
 
 export type User = {
   readonly id: string;

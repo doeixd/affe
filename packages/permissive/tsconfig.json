@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "jsxImportSource": "effect-atom-jsx",
+    "jsxImportSource": "@doeixd/affe",
     // The package consumes the published core surface, never src/. The
     // enforcement test in src/__tests__/spi-consumer.test.ts pins this.
     "plugins": []

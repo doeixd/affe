@@ -166,7 +166,7 @@ describe("Non-text expression targets", () => {
 
     const compile = (jsx: string) =>
       babel.transformSync(
-        `import { expr } from "effect-atom-jsx/portable-extract";
+        `import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 
 const label = "hi";
@@ -227,7 +227,7 @@ export const view = () => (${jsx});
 
     const compile = (jsx: string): string => {
       const output = babel.transformSync(
-        `import { expr } from "effect-atom-jsx/portable-extract";
+        `import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 
 const label = "hi";

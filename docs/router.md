@@ -10,7 +10,7 @@ New application docs and examples should prefer route nodes.
 ## Golden Path
 
 ```ts
-import { Component, Route } from "effect-atom-jsx";
+import { Component, Route } from "@doeixd/affe";
 import { Effect, Schema } from "effect";
 
 const Home = Route.index(HomePage).pipe(

@@ -321,7 +321,7 @@ describe("Component", () => {
 
     expect(bindings.count()).toBe(2);
     expect(() => bindings.count.set(3)).toThrow(
-      "[effect-atom-jsx/Component.state] cannot write component-local state after its setup scope has closed.",
+      "[affe/Component.state] cannot write component-local state after its setup scope has closed.",
     );
   });
 
@@ -365,7 +365,7 @@ describe("Component", () => {
     expect(effectLog).toEqual([1, 2]);
 
     expect(() => bindings.setStep(3)).toThrow(
-      "[effect-atom-jsx/Component.signal] cannot write component-local state after its setup scope has closed.",
+      "[affe/Component.signal] cannot write component-local state after its setup scope has closed.",
     );
   });
 
@@ -398,10 +398,10 @@ describe("Component", () => {
     Effect.runSync(Scope.close(scope, Exit.void));
 
     expect(() => bindings.save.run(2)).toThrow(
-      "[effect-atom-jsx/Component.action] cannot write component-local state after its setup scope has closed.",
+      "[affe/Component.action] cannot write component-local state after its setup scope has closed.",
     );
     await expect(Effect.runPromise(bindings.save.runEffect(3))).rejects.toThrow(
-      "[effect-atom-jsx/Component.action] cannot write component-local state after its setup scope has closed.",
+      "[affe/Component.action] cannot write component-local state after its setup scope has closed.",
     );
   });
 
@@ -431,10 +431,10 @@ describe("Component", () => {
     Effect.runSync(Scope.close(scope, Exit.void));
 
     expect(() => bindings.save.run(2)).toThrow(
-      "[effect-atom-jsx/Component.optimistic] cannot write component-local state after its setup scope has closed.",
+      "[affe/Component.optimistic] cannot write component-local state after its setup scope has closed.",
     );
     expect(() => bindings.save.clear()).toThrow(
-      "[effect-atom-jsx/Component.optimistic] cannot write component-local state after its setup scope has closed.",
+      "[affe/Component.optimistic] cannot write component-local state after its setup scope has closed.",
     );
   });
 

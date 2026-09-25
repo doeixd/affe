@@ -2,15 +2,15 @@
  * SERVER-ONLY render entry. This module imports the preset (and through it
  * the compiler plugin), so it must never be reachable from the client
  * bundle — the client lazy-loads `pin-board.ts` for its extracted handler,
- * and keeping that module free of `@affe/permissive` is what keeps babel out
+ * and keeping that module free of `@doeixd/affe-permissive` is what keeps babel out
  * of the browser. The Playwright spec pins the resulting chunk size.
  */
 
 import { Effect, Exit, Scope } from "effect";
-import * as Component from "effect-atom-jsx/Component";
-import * as Resume from "effect-atom-jsx/Resume";
-import { renderToString } from "effect-atom-jsx";
-import { permissive } from "@affe/permissive";
+import * as Component from "@doeixd/affe/Component";
+import * as Resume from "@doeixd/affe/Resume";
+import { renderToString } from "@doeixd/affe";
+import { permissive } from "@doeixd/affe-permissive";
 import { BuildId } from "../shared/build.js";
 import { PinBoard } from "./pin-board.js";
 

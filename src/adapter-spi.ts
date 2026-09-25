@@ -1,5 +1,5 @@
 /**
- * The published resumability adapter SPI (`effect-atom-jsx/adapter-spi`).
+ * The published resumability adapter SPI (`@doeixd/affe/adapter-spi`).
  *
  * Owned by `RESUMABILITY_IMPLEMENTATION_PLAN.md` M9 item 2, un-blocked by the
  * permissive-package milestone (`docs/PERMISSIVE_PACKAGE_PLAN.md` S1,

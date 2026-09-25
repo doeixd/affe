@@ -850,7 +850,7 @@ function staticDeclarationValue(
   if (typeof value === "string") {
     // Property-aware, exactly like runtime resolution: a token path becomes a
     // CSS variable reference under the `--af-*` namespace — the SAME names
-    // `@affe/css`'s foundation stylesheet emits — so extracted CSS stays
+    // `@doeixd/affe-css`'s foundation stylesheet emits — so extracted CSS stays
     // theme-swappable at runtime, and CSS keywords (`display: "none"`) are
     // never hijacked by token-leaf name collisions.
     const path = tokenPathForProperty(tokens, cssPropertyName(property), value);

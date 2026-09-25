@@ -7,12 +7,12 @@
  * this file hand-writes a code id, buildId, or resolver export.
  */
 import { Effect, Exit, Schema, Scope } from "effect";
-import * as Component from "effect-atom-jsx/Component";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
-import { addEventListener, insert, template } from "effect-atom-jsx/runtime";
-import { renderToString } from "effect-atom-jsx";
-import { expr, extract } from "effect-atom-jsx/portable-extract";
+import * as Component from "@doeixd/affe/Component";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
+import { addEventListener, insert, template } from "@doeixd/affe/runtime";
+import { renderToString } from "@doeixd/affe";
+import { expr, extract } from "@doeixd/affe/portable-extract";
 import { browserState } from "../shared/browser-state.js";
 import { BuildId } from "../shared/build.js";
 import { NoteService } from "../shared/note-service.js";

@@ -3,12 +3,12 @@
  * contracts:
  *
  *  1. this package is a genuine external-style SPI consumer: it resolves the
- *     core through the published `effect-atom-jsx` subpaths and fails closed
+ *     core through the published `@doeixd/affe` subpaths and fails closed
  *     on an SPI version mismatch;
  *  2. it stays that way: every import in `src/` must be either relative
- *     within the package, `effect`, or a subpath `effect-atom-jsx` actually
- *     publishes in its `exports` map. A deep import (`effect-atom-jsx/src/…`,
- *     `effect-atom-jsx/dist/…`, a `../../../src` escape) fails here, because
+ *     within the package, `effect`, or a subpath `@doeixd/affe` actually
+ *     publishes in its `exports` map. A deep import (`@doeixd/affe/src/…`,
+ *     `@doeixd/affe/dist/…`, a `../../../src` escape) fails here, because
  *     the moment one lands the package stops proving the SPI is sufficient.
  */
 
@@ -30,7 +30,7 @@ const packageRoot = path.resolve(
 );
 const repoRoot = path.resolve(packageRoot, "..", "..");
 
-describe("@affe/permissive scaffold", () => {
+describe("@doeixd/affe-permissive scaffold", () => {
   it("consumes the core through the published adapter-spi subpath", () => {
     // The re-exported spiVersion is the core's own value, reached through
     // workspace resolution of the published subpath — not a copy.
@@ -45,14 +45,14 @@ describe("@affe/permissive scaffold", () => {
     expect(error.message).toContain(spiVersion);
   });
 
-  it("imports only public effect-atom-jsx subpaths — never src/ or dist/ deep imports", () => {
+  it("imports only public Affe subpaths — never src/ or dist/ deep imports", () => {
     const corePkg = JSON.parse(
       fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
     ) as { readonly name: string; readonly exports: Record<string, unknown> };
-    expect(corePkg.name).toBe("effect-atom-jsx");
+    expect(corePkg.name).toBe("@doeixd/affe");
     const publishedSubpaths = new Set(
       Object.keys(corePkg.exports).map((key) =>
-        key === "." ? "effect-atom-jsx" : `effect-atom-jsx/${key.slice(2)}`,
+        key === "." ? "@doeixd/affe" : `affe/${key.slice(2)}`,
       ),
     );
 
@@ -81,8 +81,8 @@ describe("@affe/permissive scaffold", () => {
           continue;
         }
         if (
-          specifier === "effect-atom-jsx" ||
-          specifier.startsWith("effect-atom-jsx/")
+          specifier === "@doeixd/affe" ||
+          specifier.startsWith("affe/")
         ) {
           if (!publishedSubpaths.has(specifier)) violations.push(where);
           continue;

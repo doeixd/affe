@@ -1,4 +1,4 @@
-# Component Kit Plan (working name: @affe/kit)
+# Component Kit Plan (working name: @doeixd/affe-kit)
 
 Date: 2026-07-29 (revised 2026-07-30)
 Status: active — K0 adapter landed and the machine *resume binding* shape
@@ -10,7 +10,7 @@ restore LIVE machines without setup replay); **K0b complete and K0c
 five plus `presence` (+`ReducedMotion` service, DQ-071) and `liveAnnounce`
 (+`LiveAnnouncer` service, DQ-072); `compose` has last-wins truth types +
 `behavior:provides-override` diagnostic (DQ-057); `Mixin.create`/fragments/
-`toBehavior` ship at `effect-atom-jsx/Mixin` with golden press parity
+`toBehavior` ship at `@doeixd/affe/Mixin` with golden press parity
 (DQ-065). Promoted to `src/__tests__`: behavior-catalog, bindable,
 presence. **K1 recipe/styling core landed 2026-08-12**: `mergeRecipes`,
 typed `compound.when`, `extendRecipeSlots` (DQ-062), `cssLayerOrder`,
@@ -138,7 +138,7 @@ No OOP subclass. No `typeahead.extend({ hooks })`.
 
 ```ts
 import { Effect, Schema } from "effect"
-import * as Behavior from "effect-atom-jsx/Behavior"
+import * as Behavior from "@doeixd/affe/Behavior"
 
 // --- options are Schema (extend with normal Schema composition) ---
 export const TypeaheadOptions = Schema.Struct({
@@ -528,7 +528,7 @@ structs the way you merge any Affe/Effect data.
 
 ```ts
 import { Schema } from "effect"
-import * as Style from "effect-atom-jsx/Style"
+import * as Style from "@doeixd/affe/Style"
 
 // Kit: recipe is data (+ thin Style.recipe helper that resolves selection)
 const buttonRecipe = {
@@ -793,8 +793,8 @@ Materializers:
 
 ```ts
 import { Schema } from "effect"
-import * as Mixin from "effect-atom-jsx/Mixin" // or Behavior.Mixin / kit-local
-import * as Behavior from "effect-atom-jsx/Behavior"
+import * as Mixin from "@doeixd/affe/Mixin" // or Behavior.Mixin / kit-local
+import * as Behavior from "@doeixd/affe/Behavior"
 
 // Identity
 Mixin.tag("Typeahead")           // string tag; last wins if repeated
@@ -1007,7 +1007,7 @@ matches reference `typeahead(cfg)` on a fixed element fixture.
 | Phase | Location |
 | --- | --- |
 | First implementation | `src/Mixin.ts` (core) — used by kit catalog; useful beyond kit |
-| Export | `effect-atom-jsx/Mixin` + root namespace |
+| Export | `@doeixd/affe/Mixin` + root namespace |
 | Catalog | `src/behaviors/*.ts` may use Mixin or plain functions interchangeably |
 
 ### Sequencing
@@ -1076,7 +1076,7 @@ integration seams only.
 
 ```ts
 import { Effect, Schema } from "effect"
-import * as Machine from "effect-atom-jsx/Machine"
+import * as Machine from "@doeixd/affe/Machine"
 
 class Idle extends Schema.TaggedClass()("Idle", {}) {}
 class Open extends Schema.TaggedClass()("Open", {
@@ -1210,7 +1210,7 @@ customization requires owning the source, and owned copies rot. The
 inside-out architecture is precisely the removal of that constraint, so the
 kit ships as an ordinary dependency:
 
-- `@affe/kit` is a normal package; `sideEffects: false` + per-widget module
+- `@doeixd/affe-kit` is a normal package; `sideEffects: false` + per-widget module
   boundaries mean consumers import only what they use and tree-shaking
   drops the rest. No CLI, no registry, no generated app code.
 - Every customization shadcn users fork for must be expressible **from
@@ -1549,8 +1549,8 @@ Adoptions:
 5. **Ambient typed tags** (`/// <reference types>` + JSX namespace
    adapters) as the pattern for typing every kit host with zero runtime.
 
-Open question: absorb CSS-Tags into the `@affe/*` workspace as
-`@affe/css` versus depend on it as an external package — same author, so
+Open question: absorb CSS-Tags into the `@doeixd/affe-*` workspace as
+`@doeixd/affe-css` versus depend on it as an external package — same author, so
 alignment is governance, not negotiation; absorption gives the token
 namespace one owner.
 
@@ -1832,7 +1832,7 @@ or (b)); anything marked "open question" below.
 
 ### Where code goes (for now)
 
-The kit's eventual home is the post-rename `@affe/*` workspace, but K0 and
+The kit's eventual home is the post-rename `@doeixd/affe-*` workspace, but K0 and
 the load-bearing behaviors start **in this repo** so they can be tested
 against the live primitives:
 
@@ -1940,11 +1940,11 @@ each with its platform-floor note, then KR docs / K1 per the phasing.
 
 ## Open questions
 
-1. Package naming: `@affe/kit` vs a mascot-adjacent name for the styled
+1. Package naming: `@doeixd/affe-kit` vs a mascot-adjacent name for the styled
    tier (headless tier should stay descriptive regardless).
 2. Machine module location: **decided — core** (`src/Machine.ts` now;
-   `@affe/core` after rename); kit consumes.
-3. Does K2 target the current repo or start in the post-rename `@affe/*`
+   `@doeixd/affe` after rename); kit consumes.
+3. Does K2 target the current repo or start in the post-rename `@doeixd/affe-*`
    workspace? (The kit is the natural first tenant of the new packaging.)
 4. How much of `behaviors.ts` migrates into machines vs stays as plain
    behaviors? (Simple ones — disclosure — do not need a machine; policy:
@@ -1970,7 +1970,7 @@ Still open, surfaced by the same review:
    `roving-tabindex`) are partly broken and none uses the ratified
    two-argument config split. Do they get fixed first (and so re-prove the
    boilerplate honestly), or does the fix land *as* the Mixin migration?
-8. **CSS-Tags: absorb as `@affe/css` vs depend externally** (carried
+8. **CSS-Tags: absorb as `@doeixd/affe-css` vs depend externally** (carried
    forward from rung zero; unchanged).
 9. **Static CSS extraction preserving cross-module `Style.compose`** — the
    stability guarantee is stated but no extraction design shows how a

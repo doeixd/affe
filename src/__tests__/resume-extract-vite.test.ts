@@ -10,7 +10,7 @@ import {
 import * as Portable from "../Portable.js";
 
 const fixture = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const save = extract((captures) => Effect.succeed(captures.label), {
   captures: Schema.Struct({ label: Schema.String }),

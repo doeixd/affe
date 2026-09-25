@@ -23,7 +23,7 @@ below for current authoring.
 ## Golden Path
 
 ```ts
-import { Component, Element, Result, View } from "effect-atom-jsx";
+import { Component, Element, Result, View } from "@doeixd/affe";
 import { Effect } from "effect";
 
 const UserSlots = View.Slots.define({
@@ -266,7 +266,7 @@ const bindings = Effect.runSync(Component.setupEffect(UserCard, { id: "1" }));
 expect(bindings.user()).toBeDefined();
 ```
 
-For behavior, style, and interaction tests use `effect-atom-jsx/testing`; see
+For behavior, style, and interaction tests use `@doeixd/affe/testing`; see
 `docs/TESTING.md`.
 
 ## Related Docs

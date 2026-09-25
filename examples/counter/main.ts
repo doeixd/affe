@@ -1,4 +1,4 @@
-import { renderWithHMR, type ViteHotContext } from "effect-atom-jsx";
+import { renderWithHMR, type ViteHotContext } from "@doeixd/affe";
 import { App } from "./App.js";
 
 const root = document.getElementById("root");

@@ -4,10 +4,10 @@ import type * as Portable from "./Portable.js";
 import type { Result } from "./effect-ts.js";
 
 export const HandleInspectionTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/HandleInspection",
+  "affe/Resume/HandleInspection",
 );
 export const HandleKindTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/HandleKind",
+  "affe/Resume/HandleKind",
 );
 export const BindingReactivityKeyPrefix = "af:binding:" as const;
 
@@ -256,7 +256,7 @@ export interface InspectableActionHandle<A = unknown, E = unknown>
 }
 
 export const ControlledBindingTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/ControlledBinding",
+  "affe/Resume/ControlledBinding",
 );
 
 /**

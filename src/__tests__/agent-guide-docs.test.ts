@@ -47,7 +47,7 @@ describe("AGENT_SURFACE_GUIDE completeness", () => {
     }
   });
 
-  it("documents every @affe/agent MCP error tag, derived from the adapter source", async () => {
+  it("documents every @doeixd/affe-agent MCP error tag, derived from the adapter source", async () => {
     const source = await read("../../packages/agent/src/mcp.ts");
     const tags = [...source.matchAll(/export class (\w+Error) extends/g)].map(
       (match) => match[1]!,

@@ -51,7 +51,7 @@ export type StreamRecord = typeof StreamRecordSchema.Type;
  * unanswerable.
  */
 export class ResumeStreamPayloadTooLargeError extends Schema.TaggedErrorClass<ResumeStreamPayloadTooLargeError>(
-  "@effect-atom-jsx/ResumeStreamPayloadTooLargeError",
+  "affe/ResumeStreamPayloadTooLargeError",
 )("ResumeStreamPayloadTooLargeError", {
   region: Schema.String,
   maximumBytes: Schema.Number,
@@ -61,7 +61,7 @@ export class ResumeStreamPayloadTooLargeError extends Schema.TaggedErrorClass<Re
 
 /** A streamed record referenced code from a different build. */
 export class ResumeStreamRecordBuildError extends Schema.TaggedErrorClass<ResumeStreamRecordBuildError>(
-  "@effect-atom-jsx/ResumeStreamRecordBuildError",
+  "affe/ResumeStreamRecordBuildError",
 )("ResumeStreamRecordBuildError", {
   region: Schema.String,
   expected: Schema.String,

@@ -8,12 +8,12 @@
  * identity and closure-safety policy, but emits an expression definition and
  * binding carrying declared semantic dependencies.
  *
- *     import { extract } from "effect-atom-jsx/portable-extract";
+ *     import { extract } from "@doeixd/affe/portable-extract";
  *     const save = extract((captures) => ..., { captures: SCHEMA, bind: { label } });
  *
  * becomes
  *
- *     import { code as _c, bind as _b } from "effect-atom-jsx/Portable";
+ *     import { code as _c, bind as _b } from "@doeixd/affe/Portable";
  *     export const __afCode$save = _c({ id: "<moduleId>#save", buildId, captures: SCHEMA, run: (captures) => ... });
  *     const save = _b(__afCode$save, { label });
  *
@@ -143,11 +143,11 @@ export interface ResumeExtractDiagnostic {
   readonly column?: number;
 }
 
-const defaultRuntimeModule = "effect-atom-jsx/Portable";
-const defaultExpressionRuntimeModule = "effect-atom-jsx/portable-extract";
+const defaultRuntimeModule = "@doeixd/affe/Portable";
+const defaultExpressionRuntimeModule = "@doeixd/affe/portable-extract";
 const defaultMarkerSuffixes = ["portable-extract"];
 const defaultSchemaModule = "effect";
-const defaultDirectiveModule = "effect-atom-jsx/dom";
+const defaultDirectiveModule = "@doeixd/affe/dom";
 /** Exported name of the per-element resumable-expression directive. */
 const directiveExportName = "resumeExprDirective";
 
@@ -489,7 +489,7 @@ export default function resumeExtractPlugin(
   }
 
   return {
-    name: "af-ui-resume-extract",
+    name: "affe-resume-extract",
     visitor: {
       Program(programPath, state) {
         const options = (state.opts ?? {}) as ResumeExtractOptions;

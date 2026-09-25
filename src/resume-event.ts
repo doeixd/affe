@@ -2,7 +2,7 @@ import { Schema } from "effect";
 import * as Portable from "./Portable.js";
 
 export const EventHandlerTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/EventHandler",
+  "affe/Resume/EventHandler",
 );
 
 export const DeferredNoArgs = "deferred-no-args" as const;
@@ -86,7 +86,7 @@ export const MouseEventProjection: EventProjection<
   capture: (event: Event) => {
     if (!mouseProjectionEventTypes.has(event.type)) {
       throw new TypeError(
-        `[effect-atom-jsx] MouseEventProjection cannot capture the "${event.type}" event type.`,
+        `[affe] MouseEventProjection cannot capture the "${event.type}" event type.`,
       );
     }
     const mouse = event as MouseEvent;

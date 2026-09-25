@@ -1,5 +1,9 @@
 # AF-UI Contract
 
+> **Renamed:** AF-UI is now **Affe**, and `effect-atom-jsx` is published as
+> `@doeixd/affe` (see [RENAME_AFFE.md](../RENAME_AFFE.md)). This contract keeps
+> its filename and original wording; read "AF-UI" and `effect-atom-jsx` as Affe.
+
 This document is the source of truth for aligning `effect-atom-jsx` with the AF-UI vision. It describes the target model the implementation should converge on; older design notes remain useful, but this contract wins when documents disagree.
 
 ## Thesis

@@ -22,7 +22,7 @@ import * as Element from "../Element.js";
 import * as View from "../View.js";
 
 describe("behavior lifecycle", () => {
-  it("[AF-UI] a listener acquired with Element.on is removed when the behavior scope closes", () => {
+  it("[Affe] a listener acquired with Element.on is removed when the behavior scope closes", () => {
     const target = Element.interactive();
     let fired = 0;
 
@@ -51,7 +51,7 @@ describe("behavior lifecycle", () => {
     expect(fired).toBe(1);
   });
 
-  it("[AF-UI] disposal runs each finalizer exactly once and double-dispose is a no-op", async () => {
+  it("[Affe] disposal runs each finalizer exactly once and double-dispose is a no-op", async () => {
     let released = 0;
     let interrupted = 0;
 
@@ -87,7 +87,7 @@ describe("behavior lifecycle", () => {
     expect(interrupted).toBe(1);
   });
 
-  it("[AF-UI] a failed attach releases everything it acquired before failing", () => {
+  it("[Affe] a failed attach releases everything it acquired before failing", () => {
     const target = Element.interactive();
     let released = 0;
     let fired = 0;
@@ -144,7 +144,7 @@ describe("behavior lifecycle", () => {
     expect(released).toBe(1);
   });
 
-  it("[AF-UI] the same behavior attached to two element sets keeps independent lifetimes", () => {
+  it("[Affe] the same behavior attached to two element sets keeps independent lifetimes", () => {
     const first = Element.interactive();
     const second = Element.interactive();
     const hits: Array<string> = [];
@@ -176,7 +176,7 @@ describe("behavior lifecycle", () => {
 });
 
 describe("component-scope disposal", () => {
-  it("[AF-UI] closing the setup scope removes every listener a slot behavior installed", () => {
+  it("[Affe] closing the setup scope removes every listener a slot behavior installed", () => {
     const anatomy = View.Slots.define({
       root: { capability: Element.Capability.Container },
     });
@@ -218,7 +218,7 @@ describe("component-scope disposal", () => {
     expect(fired).toBe(1);
   });
 
-  it("[AF-UI] double-attaching the same behavior to one slot is diagnosed rather than silently duplicated", () => {
+  it("[Affe] double-attaching the same behavior to one slot is diagnosed rather than silently duplicated", () => {
     // RATIFIED DQ-058 (2026-08-12, TRIAGE-2026-08-12.md item 1): a repeat
     // attach of the SAME behavior to a slot it already occupies emits a
     // `component:duplicate-attachment` diagnostic through the opt-in

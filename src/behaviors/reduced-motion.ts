@@ -16,7 +16,7 @@ export interface ReducedMotionService {
 }
 
 const ReducedMotionTag = Context.Service<ReducedMotionService>(
-  "effect-atom-jsx/behaviors/ReducedMotion",
+  "affe/behaviors/ReducedMotion",
 );
 
 /** Build a service from a static value or a live reader. */

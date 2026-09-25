@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://effect-atom-jsx.dev/schemas/resumability-m8c1-result-v2.json",
-  "title": "effect-atom-jsx Milestone 8c.1 benchmark result",
+  "$id": "https://affe.build/schemas/resumability-m8c1-result-v2.json",
+  "title": "Affe Milestone 8c.1 benchmark result",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -20,7 +20,7 @@
       "const": 2
     },
     "benchmark": {
-      "const": "effect-atom-jsx/resumability-m8c1"
+      "const": "@doeixd/affe/resumability-m8c1"
     },
     "generatedAt": {
       "type": "string",

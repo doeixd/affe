@@ -379,7 +379,7 @@ describe("effect-atom style API", () => {
     const missing: string[] = [];
 
     const validState: Array<Hydration.DehydratedAtomValue> = [
-      { "~@effect-atom-jsx/DehydratedAtom": true, key: "count", value: 5, dehydratedAt: Date.now() },
+      { "~affe/DehydratedAtom": true, key: "count", value: 5, dehydratedAt: Date.now() },
     ];
 
     Hydration.hydrate(
@@ -397,7 +397,7 @@ describe("effect-atom style API", () => {
     expect(registry.get(count)).toBe(5);
 
     const unknownState: Array<Hydration.DehydratedAtomValue> = [
-      { "~@effect-atom-jsx/DehydratedAtom": true, key: "missing", value: 1, dehydratedAt: Date.now() },
+      { "~affe/DehydratedAtom": true, key: "missing", value: 1, dehydratedAt: Date.now() },
     ];
 
     Hydration.hydrate(
@@ -416,7 +416,7 @@ describe("effect-atom style API", () => {
     const registry = Registry.make();
     const count = Atom.make(1);
     const state: Array<Hydration.DehydratedAtomValue> = [
-      { "~@effect-atom-jsx/DehydratedAtom": true, key: "missing", value: 1, dehydratedAt: Date.now() },
+      { "~affe/DehydratedAtom": true, key: "missing", value: 1, dehydratedAt: Date.now() },
     ];
 
     await expect(
@@ -491,7 +491,7 @@ describe("effect-atom style API", () => {
     const registry = Registry.make();
     const known = Atom.family((id: number) => Atom.make(id));
     const state: Hydration.DehydratedFamilyValue[] = [
-      { "~@effect-atom-jsx/DehydratedAtom": true, family: "gone", args: [1], value: 5, dehydratedAt: Date.now() },
+      { "~affe/DehydratedAtom": true, family: "gone", args: [1], value: 5, dehydratedAt: Date.now() },
     ];
 
     const unknown: string[] = [];
@@ -513,7 +513,7 @@ describe("effect-atom style API", () => {
     const registry = Registry.make();
     const known = Atom.family((id: number) => Atom.make(id));
     const state: Hydration.DehydratedFamilyValue[] = [
-      { "~@effect-atom-jsx/DehydratedAtom": true, family: "gone", args: [1], value: 5, dehydratedAt: Date.now() },
+      { "~affe/DehydratedAtom": true, family: "gone", args: [1], value: 5, dehydratedAt: Date.now() },
     ];
     await expect(
       Effect.runPromise(Hydration.hydrateFamiliesEffect(registry, state, { known }, { mode: "strict" })),

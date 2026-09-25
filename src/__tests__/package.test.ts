@@ -59,4 +59,31 @@ describe("package release surface", () => {
       expect(fs.existsSync(target), `bin ${name} -> ${target}`).toBe(true);
     }
   });
+
+  it("keeps the deprecated effect-atom-jsx alias re-exporting every core subpath", () => {
+    const core = JSON.parse(fs.readFileSync("package.json", "utf8")) as {
+      readonly name: string;
+      readonly version: string;
+      readonly exports: Record<string, unknown>;
+    };
+    const alias = JSON.parse(fs.readFileSync("deprecated/effect-atom-jsx/package.json", "utf8")) as {
+      readonly name: string;
+      readonly dependencies: Record<string, string>;
+      readonly exports: Record<string, string | Record<string, string>>;
+    };
+
+    expect(core.name).toBe("@doeixd/affe");
+    expect(alias.name).toBe("effect-atom-jsx");
+    expect(alias.dependencies[core.name], "regenerate with scripts/generate-effect-atom-jsx-alias.mjs").toBe(core.version);
+    expect(Object.keys(alias.exports).sort()).toEqual(Object.keys(core.exports).sort());
+
+    for (const [key, entry] of Object.entries(alias.exports)) {
+      if (typeof entry === "string") continue;
+      const target = key === "." ? core.name : `${core.name}/${key.slice(2)}`;
+      for (const file of [entry.import, entry.types]) {
+        const source = fs.readFileSync(`deprecated/effect-atom-jsx/${file}`, "utf8");
+        expect(source, `${key} -> ${file}`).toContain(`export * from "${target}";`);
+      }
+    }
+  });
 });

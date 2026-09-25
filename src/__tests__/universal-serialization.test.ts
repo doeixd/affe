@@ -143,7 +143,7 @@ describe("rich captures through a REAL manifest round trip (M10.1+M10.2 integrat
       readonly record: (labels: ReadonlyArray<string>) => Effect.Effect<void>;
     }
     const Recorder = Context.Service<RichRecorder>(
-      "effect-atom-jsx/test/RichCaptureRecorder",
+      "affe/test/RichCaptureRecorder",
     );
     const code = Portable.code<
       { readonly tags: unknown },

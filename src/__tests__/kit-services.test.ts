@@ -26,7 +26,7 @@ import * as liveAnnounceModule from "../behaviors/live-announce.js";
  *
  * Two of those three claims are about a *mechanism that already exists*
  * (`Component.withLayer` + `Component.require`), so they are specified
- * executably here and tagged `[AF-UI]`: tagging them `[K0b]` would falsely
+ * executably here and tagged `[Affe]`: tagging them `[K0b]` would falsely
  * imply the catalog phase owes the mechanism, when what it owes is the two
  * named services. The services themselves are `unbuilt`, with the reason.
  */
@@ -38,7 +38,7 @@ import { describe, expect, it } from "vitest";
 type Announcement = { readonly politeness: "polite" | "assertive"; readonly message: string };
 
 describe("services swap wholesale in tests", () => {
-  it("[AF-UI] a widget's announcements go through an injected service a mock captures with no DOM", async () => {
+  it("[Affe] a widget's announcements go through an injected service a mock captures with no DOM", async () => {
     const Component = ComponentModule as Record<string, any>;
     const { make, props, require, setup, setupEffect, withLayer } = ((Component) as any);
 
@@ -129,7 +129,7 @@ describe("services swap wholesale in tests", () => {
 });
 
 describe("per-subtree layer isolation", () => {
-  it("[AF-UI] two sibling subtrees given different layers do not cross-contaminate", async () => {
+  it("[Affe] two sibling subtrees given different layers do not cross-contaminate", async () => {
     const Component = ComponentModule as Record<string, any>;
     const { make, props, require, setup, setupEffect, withLayer } = ((Component) as any);
 

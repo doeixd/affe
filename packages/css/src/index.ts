@@ -1,5 +1,5 @@
 /**
- * `@affe/css` — rung zero of the capability ladder: the pure-CSS styling
+ * `@doeixd/affe-css` — rung zero of the capability ladder: the pure-CSS styling
  * floor, absorbed from CSS-Tags per ratified `DQ-063` (token namespace,
  * `@layer` order, and Theme's typed references version as ONE surface).
  *
@@ -10,11 +10,11 @@
  * `Theme` resolve against, and whose `@layer` declaration IS the recipe
  * merge contract (`Style.cssLayerOrder`, ratified).
  *
- * Built against **public `effect-atom-jsx` subpaths only** — the same
- * external-consumer constraint the other `@affe/*` packages pin.
+ * Built against **public `@doeixd/affe` subpaths only** — the same
+ * external-consumer constraint the other `@doeixd/affe-*` packages pin.
  */
-import { cssLayerOrder } from "effect-atom-jsx/Style";
-import { defaultThemeTokens, type ThemeTokenSchema } from "effect-atom-jsx/Theme";
+import { cssLayerOrder } from "@doeixd/affe/Style";
+import { defaultThemeTokens, type ThemeTokenSchema } from "@doeixd/affe/Theme";
 
 /** The one token namespace: `color.text.primary` → `--af-color-text-primary`. */
 export function tokenVariableName(path: string): string {
@@ -71,4 +71,4 @@ export function foundationStylesheet(options?: FoundationOptions): string {
 }
 
 /** The ratified layer order, re-exported so a host never restates it. */
-export { cssLayerOrder } from "effect-atom-jsx/Style";
+export { cssLayerOrder } from "@doeixd/affe/Style";

@@ -22,7 +22,7 @@ import * as StyleModule from "../Style.js";
 import * as ThemeModule from "../Theme.js";
 import * as ViewModule from "../View.js";
 import * as domModule from "../dom.js";
-import * as affeCss from "@affe/css";
+import * as affeCss from "@doeixd/affe-css";
 
 /**
  * Scopes opened by `styleHarness().resolve(...)`. Closed only AFTER a spec's
@@ -433,7 +433,7 @@ describe("theme tokens", () => {
 
     // Extracted CSS lands in the ratified cascade layer, carries the merged
     // cross-module declarations, and resolves token paths to the SAME
-    // `--af-*` variable namespace the @affe/css foundation emits — extracted
+    // `--af-*` variable namespace the @doeixd/affe-css foundation emits — extracted
     // CSS stays theme-swappable.
     expect(extraction.css).toContain("@layer components");
     expect(extraction.css).toContain(".af-root");
@@ -452,7 +452,7 @@ describe("theme tokens", () => {
     expect(extractStatic(style)).toEqual(extraction);
   });
 
-  it("[K1] CSS-Tags rung zero: absorbed as @affe/css (ratified DQ-063)", async () => {
+  it("[K1] CSS-Tags rung zero: absorbed as @doeixd/affe-css (ratified DQ-063)", async () => {
     // The foundation stylesheet is OURS: one token namespace, the ratified
     // @layer order stated first (which is what makes precedence hold
     // regardless of import order), zero JavaScript.

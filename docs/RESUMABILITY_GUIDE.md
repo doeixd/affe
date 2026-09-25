@@ -1,14 +1,14 @@
 # Resumability Guide
 
-This guide explains what resumability means in AF-UI, how it differs from
+This guide explains what resumability means in Affe, how it differs from
 hydration, which APIs opt a component into it, and the security and deployment
 rules every adapter must follow. It documents the runtime protocol of
 `RESUMABILITY_IMPLEMENTATION_PLAN.md` through Milestone 11 and the
-`@affe/permissive` preset package.
+`@doeixd/affe-permissive` preset package.
 
 ## The three capability levels
 
-AF-UI deliberately distinguishes three things that are often conflated:
+Affe deliberately distinguishes three things that are often conflated:
 
 ### 1. Hydration
 
@@ -19,7 +19,7 @@ seeds client atoms with server values, but every component's setup Effect and
 view still execute on the client.
 
 Hydration is the default and remains fully supported. Nothing in this guide is
-required for an ordinary AF-UI application.
+required for an ordinary Affe application.
 
 ### 2. Partial portability
 
@@ -40,7 +40,7 @@ reads a manifest, and lazily loads only the code a user interaction actually
 needs. Client setup and view execution counters stay at zero until (and
 unless) a component genuinely needs activation.
 
-AF-UI today provides resumability for:
+Affe today provides resumability for:
 
 - **Events/actions** — zero-argument portable component actions attached via
   `Resume.event(...)` (Milestone 4, browser-proven).
@@ -298,7 +298,7 @@ Manual `Portable.code` + `Portable.bind` is always available, but the
 companion compiler removes the ceremony. Author with the `extract` marker:
 
 ```ts
-import { extract } from "effect-atom-jsx/portable-extract"
+import { extract } from "@doeixd/affe/portable-extract"
 
 const save = yield* Component.action(
   extract(
@@ -319,7 +319,7 @@ and enable the Vite plugin:
 
 ```ts
 // vite.config.ts
-import { resumeExtract } from "effect-atom-jsx/compiler/resume-extract-vite"
+import { resumeExtract } from "@doeixd/affe/compiler/resume-extract-vite"
 
 export default defineConfig({
   plugins: [
@@ -349,7 +349,7 @@ Resume.installClient({ resolverEntries, ... })
 Milestone 8a also recognizes an explicit text-only `expr(...)` marker:
 
 ```ts
-import { expr } from "effect-atom-jsx/portable-extract"
+import { expr } from "@doeixd/affe/portable-extract"
 
 const countText = expr(
   (_captures, [count]) => `Count: ${count}`,

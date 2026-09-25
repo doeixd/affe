@@ -1,5 +1,5 @@
 /**
- * testing.ts — First-class testing harness for effect-atom-jsx.
+ * testing.ts — First-class testing harness for Affe.
  *
  * Provides utilities to test reactive code that depends on Effect layers
  * and services, without requiring a DOM or jsdom environment.

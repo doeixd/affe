@@ -50,7 +50,7 @@ function transform(
 describe("auto capture synthesis (M10.1)", () => {
   it("synthesizes captures and bind from inferred identifiers and reports them", () => {
     const { code, entries } = transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 function make(label, count) {
   return extract.auto(() => Effect.succeed(label + count));
@@ -74,7 +74,7 @@ function make(label, count) {
     // pass both.
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 const handler = { run() { return extract.auto(() => Effect.succeed(this.value)); } };
 `)
@@ -84,7 +84,7 @@ const handler = { run() { return extract.auto(() => Effect.succeed(this.value));
     // name is a compile error by default, exactly as for explicit captures.
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 function make(apiKey) {
   return extract.auto(() => Effect.succeed(apiKey));
@@ -98,7 +98,7 @@ function make(apiKey) {
     // edge is a correctness bug no heuristic may introduce.
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 const view = expr.auto((deps) => String(deps[0]));
 `)
     ).toThrow(/dependencies|deps/i);
@@ -107,7 +107,7 @@ const view = expr.auto((deps) => String(deps[0]));
     // merge.
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 const label = "x";
 const view = expr.auto((deps) => String(deps[0]), {
@@ -122,7 +122,7 @@ const view = expr.auto((deps) => String(deps[0]), {
     // NEGATIVE CONTROL: dependencies declared, captures inferred — compiles.
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 const label = "x";
 const view = expr.auto((deps) => label + String(deps[0]), {

@@ -1,6 +1,6 @@
 import { Effect, Layer, PubSub, Schema, Context, Stream } from "effect";
 
-export const EventChannelTypeId: unique symbol = Symbol.for("effect-atom-jsx/EventChannel") as typeof EventChannelTypeId;
+export const EventChannelTypeId: unique symbol = Symbol.for("affe/EventChannel") as typeof EventChannelTypeId;
 
 interface ChannelService<Name extends string> {
   readonly _eventChannel: Name;

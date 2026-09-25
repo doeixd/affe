@@ -77,10 +77,10 @@ export const ServerResponseTag = Context.Service<{
   readonly snapshot: () => { readonly status: number; readonly headers: ReadonlyMap<string, ReadonlyArray<string>> };
 }>("ServerResponse");
 
-export const RouteMetaSymbol: unique symbol = Symbol.for("effect-atom-jsx/RouteMeta");
-export const RouteLoaderMetaSymbol: unique symbol = Symbol.for("effect-atom-jsx/RouteLoaderMeta");
-export const RouteNodeSymbol: unique symbol = Symbol.for("effect-atom-jsx/RouteNode");
-export const RouteRegistrySymbol: unique symbol = Symbol.for("effect-atom-jsx/RouteRegistry");
+export const RouteMetaSymbol: unique symbol = Symbol.for("affe/RouteMeta");
+export const RouteLoaderMetaSymbol: unique symbol = Symbol.for("affe/RouteLoaderMeta");
+export const RouteNodeSymbol: unique symbol = Symbol.for("affe/RouteNode");
+export const RouteRegistrySymbol: unique symbol = Symbol.for("affe/RouteRegistry");
 
 export interface RouteMeta<P, Q, H> {
   readonly pattern: string;
@@ -92,7 +92,7 @@ export interface RouteMeta<P, Q, H> {
   readonly id?: string;
 }
 
-export const UnifiedRouteSymbol: unique symbol = Symbol.for("effect-atom-jsx/UnifiedRoute");
+export const UnifiedRouteSymbol: unique symbol = Symbol.for("affe/UnifiedRoute");
 
 type Pipeable<Self> = {
   pipe(): Self;
@@ -461,7 +461,7 @@ export type SingleFlightResponse<A, E = unknown> =
 
 /** The transport failed: network, endpoint, or the action itself. */
 export class SingleFlightInvokeError extends Schema.TaggedErrorClass<SingleFlightInvokeError>(
-  "@effect-atom-jsx/SingleFlightInvokeError",
+  "affe/SingleFlightInvokeError",
 )("SingleFlightInvokeError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Unknown),
@@ -475,7 +475,7 @@ export class SingleFlightInvokeError extends Schema.TaggedErrorClass<SingleFligh
  * retry.
  */
 export class SingleFlightDecodeError extends Schema.TaggedErrorClass<SingleFlightDecodeError>(
-  "@effect-atom-jsx/SingleFlightDecodeError",
+  "affe/SingleFlightDecodeError",
 )("SingleFlightDecodeError", {
   message: Schema.String,
 }) {}
@@ -2703,10 +2703,10 @@ export function loaderData<A>(): Effect.Effect<Atom.ReadonlyAtom<A>, never, Rout
         const current = result();
         const success = loaderSuccess(current);
         if (success !== undefined) return success.value as A;
-        throw new Error("[effect-atom-jsx/Route] loader data not available yet.");
+        throw new Error("[affe/Route] loader data not available yet.");
       }) as Atom.ReadonlyAtom<A>;
     }
-    throw new Error("[effect-atom-jsx/Route] loaderData used without Route.loader.");
+    throw new Error("[affe/Route] loaderData used without Route.loader.");
   });
 }
 
@@ -2758,7 +2758,7 @@ export function link<T extends ComponentType<any, any, any, any, any> | AppRoute
     ? routed[UnifiedRouteSymbol].meta
     : getRouteMeta(asRouteComponent(routedComponent as ComponentType<any, any, any, any, any>));
   if (!meta) {
-    throw new Error("[effect-atom-jsx/Route] Route.link requires a routed component or unified route.");
+    throw new Error("[affe/Route] Route.link requires a routed component or unified route.");
   }
 
   const encodeParams = encodeWithSchema(meta.paramsSchema);

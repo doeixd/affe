@@ -23,7 +23,7 @@ import * as formControlModule from "../behaviors/form-control.js";
  * over plain imports.
  *
  * The widget below plays the part of a published kit widget: the specs may only
- * touch its exported layers, exactly as a consumer of `@affe/kit` could. If a
+ * touch its exported layers, exactly as a consumer of `@doeixd/affe-kit` could. If a
  * spec here needs anything that is not reachable from outside, that is the bug.
  */
 import { Effect, Exit, Scope } from "effect";

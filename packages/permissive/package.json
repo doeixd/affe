@@ -1,7 +1,7 @@
 {
-  "name": "@affe/permissive",
+  "name": "@doeixd/affe-permissive",
   "version": "0.0.0",
-  "description": "Qwik-parity preset for effect-atom-jsx: auto-capture + the universal seroval codec + the reference plugins as a configuration, not a fork. Doubles as the external-style adapter-SPI consumer.",
+  "description": "Qwik-parity preset for affe: auto-capture + the universal seroval codec + the reference plugins as a configuration, not a fork. Doubles as the external-style adapter-SPI consumer.",
   "private": true,
   "type": "module",
   "sideEffects": false,
@@ -24,7 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "effect-atom-jsx": "file:../.."
+    "@doeixd/affe": "file:../.."
   },
   "peerDependencies": {
     "effect": ">=4.0.0-beta"

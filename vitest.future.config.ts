@@ -13,14 +13,14 @@ const here = (relative: string) => fileURLToPath(new URL(relative, import.meta.u
 export default defineConfig({
   resolve: {
     // Same aliasing rule as vitest.config.ts: adapter packages under test
-    // resolve the public core subpaths to `src/` and `@affe/agent` to its
+    // resolve the public core subpaths to `src/` and `@doeixd/affe-agent` to its
     // source, so specs and adapters share one module identity.
     alias: {
-      "effect-atom-jsx/Agent": here("./src/Agent.ts"),
-      "@affe/agent": here("./packages/agent/src/index.ts"),
-      "@affe/css": here("./packages/css/src/index.ts"),
-      "effect-atom-jsx/Style": here("./src/Style.ts"),
-      "effect-atom-jsx/Theme": here("./src/Theme.ts"),
+      "@doeixd/affe/Agent": here("./src/Agent.ts"),
+      "@doeixd/affe-agent": here("./packages/agent/src/index.ts"),
+      "@doeixd/affe-css": here("./packages/css/src/index.ts"),
+      "@doeixd/affe/Style": here("./src/Style.ts"),
+      "@doeixd/affe/Theme": here("./src/Theme.ts"),
     },
   },
   test: {

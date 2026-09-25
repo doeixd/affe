@@ -61,7 +61,7 @@ interface RetryScheduleService {
   readonly delay: number;
 }
 const RetryScheduleService = Context.Service<RetryScheduleService>(
-  "effect-atom-jsx/type-tests/RetryScheduleService",
+  "affe/type-tests/RetryScheduleService",
 );
 const serviceRetrySchedule = Schedule.recurs(1).pipe(
   Schedule.addDelay(() =>

@@ -2,6 +2,26 @@
 
 ## Unreleased (Redesign Track)
 
+### Renamed to Affe (`@doeixd/affe`)
+
+- **Package rename** (docs/RENAME_AFFE.md). `effect-atom-jsx` is now Affe,
+  published as `@doeixd/affe`; the `@affe` npm scope was unavailable, so the
+  workspace packages are `@doeixd/affe-agent`, `@doeixd/affe-css`, and
+  `@doeixd/affe-permissive`. Replace `effect-atom-jsx` with `@doeixd/affe` in
+  imports, subpaths, `jsxImportSource`, and the Babel `moduleName`.
+- **Deprecation alias.** `deprecated/effect-atom-jsx` publishes
+  `effect-atom-jsx@0.6.0`, which re-exports every `@doeixd/affe` subpath for
+  the transition window. Regenerate it with
+  `node scripts/generate-effect-atom-jsx-alias.mjs`.
+- **Breaking: internal identifiers.** Symbol keys, Schema brands, error tags,
+  and service keys move from `effect-atom-jsx/...` and `@effect-atom-jsx/...`
+  to `affe/...`; the hydration marker is `~affe/DehydratedAtom`, the HMR key
+  `affe:dispose`, and diagnostics are prefixed `[affe]`. Values dehydrated by
+  an `effect-atom-jsx` release are not read by `@doeixd/affe`; resume
+  manifests are build-ID gated, so a deploy never mixes the two.
+- The resume extraction plugin is named `affe-resume-extract`. Wire formats
+  (`af:*`, `data-af-*`, `virtual:af-resume-entries`) are unchanged.
+
 ### ADR-005 — family cache & hydration identity (2026-07-27)
 
 - **`Atom.Family` enumeration + eviction.** New `keys()`, `entries()`, and

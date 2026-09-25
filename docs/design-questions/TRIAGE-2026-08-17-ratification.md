@@ -1,6 +1,6 @@
 # Ratification brief — the four parked agent-lane DQs (2026-08-17)
 
-Prepared in discovery mode after AN-1–AN-4 and `@affe/agent` (AN-3) landed:
+Prepared in discovery mode after AN-1–AN-4 and `@doeixd/affe-agent` (AN-3) landed:
 each item restates the open question, what it blocks, and a recommendation
 with the code-level premises re-verified today. The entries were written
 2026-07-30, **before** the agent lane existed in source; several premises have
@@ -48,7 +48,7 @@ Status key: ☐ pending · ✅ ratified · ❌ rejected.
     claim is a library boundary, like `SafeHtml`) and
     `src/view-spec-json-render.ts` (kebab-case internal — a target-format
     projection in core, same precedent as `result-wire.ts`). The lowering
-    stays out of `@affe/agent`: it has no adapter dependency and the specs
+    stays out of `@doeixd/affe-agent`: it has no adapter dependency and the specs
     import it as a core module.
 - **Premise check:** verified today — §7 item 5 still reads "json-render
   Phase 1 (typed catalog + spec validator)"; the json-render plan's Phase 1
@@ -112,14 +112,14 @@ Status key: ☐ pending · ✅ ratified · ❌ rejected.
 - **Blocks:** `future/agent/mcp-projection.spec.ts` (1 red — the file's
   last; promotes on this decision alone, since the resolution is a boundary
   statement, not a feature).
-- **Context change:** `@affe/agent` now **exists** (AN-3), so the escape
+- **Context change:** `@doeixd/affe-agent` now **exists** (AN-3), so the escape
   hatch named by the recommendation has a concrete home rather than a
   hypothetical one.
 - **Recommendation (= the entry's own):** **Option 1 with option 2 as the
   named escape hatch** — resolve the §1-vs-§8.5 disagreement in favour of
   §1's already-stated answer: `ask-agent` is out of library scope, an
   app-level action like any other. Delete §8.5 and add one sentence: *if* an
-  A2A bridge is ever built, it lives in `@affe/agent`, never in `src/`. The
+  A2A bridge is ever built, it lives in `@doeixd/affe-agent`, never in `src/`. The
   spec's `unbuilt` marker is then rewritten as a small boundary pin (e.g.
   asserting the decision is recorded / no `askAgent` export exists in core)
   or simply deleted with the decision cited — either discharges the file.

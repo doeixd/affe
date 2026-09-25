@@ -1,7 +1,7 @@
 {
-  "name": "@affe/agent",
+  "name": "@doeixd/affe-agent",
   "version": "0.0.0",
-  "description": "Agent-surface adapters for effect-atom-jsx: the MCP projection over the Agent catalog (tools from schemas, dispatch through the one governance pipeline). An adapter package per DQ-096 — never a fork of the core surface.",
+  "description": "Agent-surface adapters for affe: the MCP projection over the Agent catalog (tools from schemas, dispatch through the one governance pipeline). An adapter package per DQ-096 — never a fork of the core surface.",
   "private": true,
   "type": "module",
   "sideEffects": false,
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "effect-atom-jsx": "file:../.."
+    "@doeixd/affe": "file:../.."
   },
   "peerDependencies": {
     "effect": ">=4.0.0-beta"

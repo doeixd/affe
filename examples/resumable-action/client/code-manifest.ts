@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type * as Portable from "effect-atom-jsx/Portable";
+import type * as Portable from "@doeixd/affe/Portable";
 import { browserState } from "../shared/browser-state.js";
 import {
   SaveButtonActivationCodeId,

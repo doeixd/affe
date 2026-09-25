@@ -219,7 +219,7 @@ export function resumeExtract(
   };
 
   return {
-    name: "af-ui-resume-extract",
+    name: "affe-resume-extract",
     enforce: "pre",
     configResolved(config) {
       projectRoot ??= normalizePath(config.root);

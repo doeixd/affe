@@ -1,6 +1,6 @@
 # Services and Layers
 
-How dependency injection works in effect-atom-jsx: where services enter, how
+How dependency injection works in affe: where services enter, how
 requirements flow through the types, who shares which instance, and when to
 use which provision tier.
 
@@ -15,7 +15,7 @@ the component tree:
 
 ```ts
 import { Layer } from "effect";
-import { Atom, Component, Reactivity } from "effect-atom-jsx";
+import { Atom, Component, Reactivity } from "@doeixd/affe";
 
 // The single composition root.
 const AppLayer = Layer.mergeAll(ApiLive, ThemeLive, Reactivity.live);

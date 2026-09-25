@@ -51,10 +51,10 @@ import { currentComponentScope } from "./component-scope.js";
 import { normalizeReactivityKeys } from "./reactivity-runtime.js";
 import { currentLoaderCacheStore } from "./router-runtime.js";
 
-export const ComponentTypeId: unique symbol = Symbol.for("effect-atom-jsx/Component");
+export const ComponentTypeId: unique symbol = Symbol.for("affe/Component");
 
-const ComponentImplTypeId: unique symbol = Symbol.for("effect-atom-jsx/ComponentImpl");
-const ComponentSetupTypeId: unique symbol = Symbol.for("effect-atom-jsx/ComponentSetup");
+const ComponentImplTypeId: unique symbol = Symbol.for("affe/ComponentImpl");
+const ComponentSetupTypeId: unique symbol = Symbol.for("affe/ComponentSetup");
 
 /**
  * Runtime slot handle map exposed by legacy bindings-based components.
@@ -221,7 +221,7 @@ export interface BindOptions<A> {
 }
 
 const BindingSourceTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Component/BindingSource",
+  "affe/Component/BindingSource",
 );
 
 /**
@@ -651,7 +651,7 @@ function internals<Props, Req, E, Bindings, SlotContract>(
   component: Component<Props, Req, E, Bindings, SlotContract>,
 ): InternalComponent<Props, Req, E, Bindings> {
   if (!isInternalComponent<Props, Req, E, Bindings>(component)) {
-    throw new Error("[effect-atom-jsx/Component] expected a Component value.");
+    throw new Error("[affe/Component] expected a Component value.");
   }
   return component;
 }
@@ -1147,7 +1147,7 @@ function renderViewResult(
 }
 
 const SlotInstanceContractTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Component/SlotInstanceContract",
+  "affe/Component/SlotInstanceContract",
 );
 
 /**
@@ -1433,7 +1433,7 @@ function setupLifetime(label: string): Effect.Effect<SetupLifetime> {
       isDisposed: () => disposed,
       assertLive: () => {
         if (disposed) {
-          throw new Error(`[effect-atom-jsx/${label}] cannot write component-local state after its setup scope has closed.`);
+          throw new Error(`[affe/${label}] cannot write component-local state after its setup scope has closed.`);
         }
       },
     };
@@ -2768,7 +2768,7 @@ export function guard<Req, E>(
  * the behavior itself.
  */
 const attachmentRegistryKey = Symbol.for(
-  "effect-atom-jsx/Component/attachmentRegistry",
+  "affe/Component/attachmentRegistry",
 );
 
 /**
@@ -2777,7 +2777,7 @@ const attachmentRegistryKey = Symbol.for(
  * COMPONENT-owned atom and its initial value (for shape compatibility).
  */
 const providedStateRegistryKey = Symbol.for(
-  "effect-atom-jsx/Component/providedStateRegistry",
+  "affe/Component/providedStateRegistry",
 );
 
 type ProvidedStateRegistry = Map<string, { readonly atom: unknown; readonly initial: unknown }>;

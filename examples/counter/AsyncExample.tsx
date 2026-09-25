@@ -6,7 +6,7 @@
  * instead of thrown exceptions, with automatic cancellation of stale requests
  * when the user-id atom changes.
  */
-import { Atom, atomEffect, Async } from "effect-atom-jsx";
+import { Atom, atomEffect, Async } from "@doeixd/affe";
 import { Effect, pipe } from "effect";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────

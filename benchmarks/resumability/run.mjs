@@ -601,7 +601,7 @@ try {
 
   const result = {
     schemaVersion: 2,
-    benchmark: "effect-atom-jsx/resumability-m8c1",
+    benchmark: "affe/resumability-m8c1",
     generatedAt: new Date().toISOString(),
     buildId: "resumability-m8c1-benchmark-v1",
     browser: {

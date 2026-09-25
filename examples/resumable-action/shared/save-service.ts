@@ -5,5 +5,5 @@ export interface SaveService {
 }
 
 export const SaveService = Context.Service<SaveService>(
-  "effect-atom-jsx/example/ResumableSaveService",
+  "affe/example/ResumableSaveService",
 );

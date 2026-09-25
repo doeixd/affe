@@ -47,7 +47,7 @@ export interface ReactivityBroadcastPublisher {
 }
 
 export const ReactivityBroadcast = Context.Service<ReactivityBroadcastPublisher>(
-  "effect-atom-jsx/ReactivityPush/Broadcast",
+  "affe/ReactivityPush/Broadcast",
 );
 
 export interface ReactivityBroadcastBus {

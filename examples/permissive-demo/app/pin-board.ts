@@ -9,10 +9,10 @@
  */
 
 import { Effect } from "effect";
-import * as Component from "effect-atom-jsx/Component";
-import * as Resume from "effect-atom-jsx/Resume";
-import { addEventListener, template } from "effect-atom-jsx/runtime";
-import { extract } from "effect-atom-jsx/portable-extract";
+import * as Component from "@doeixd/affe/Component";
+import * as Resume from "@doeixd/affe/Resume";
+import { addEventListener, template } from "@doeixd/affe/runtime";
+import { extract } from "@doeixd/affe/portable-extract";
 import { browserState } from "../shared/browser-state.js";
 
 const buttonTemplate = template(

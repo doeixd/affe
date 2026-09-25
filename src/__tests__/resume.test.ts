@@ -48,7 +48,7 @@ interface SaveService {
 }
 
 const SaveService = Context.Service<SaveService>(
-  "effect-atom-jsx/test/ResumeSaveService",
+  "affe/test/ResumeSaveService",
 );
 
 const SaveCode = Portable.code({

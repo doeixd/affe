@@ -7,7 +7,7 @@
  */
 
 import { Effect, Schema } from "effect";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import * as Serialization from "@doeixd/affe/Serialization";
 import { describe, expect, it } from "vitest";
 import { createHandleRegistry, permissive, spiVersion } from "../index.js";
 
@@ -17,7 +17,7 @@ describe("permissive()", () => {
 
     expect(preset.spiVersion).toBe(spiVersion);
     expect(preset.vitePlugins).toHaveLength(1);
-    expect(preset.vitePlugins[0]?.name).toBe("af-ui-resume-extract");
+    expect(preset.vitePlugins[0]?.name).toBe("affe-resume-extract");
     // The pairing is explicit and identical: the manifest's serializer stamp
     // (DQ-012) means a client on a different codec fails closed, so shipping
     // different layers on the two fields would be a footgun, not flexibility.
@@ -72,7 +72,7 @@ describe("permissive()", () => {
     const clientHandle = { kind: "fake-client-handle" };
     // A plain object is not a state handle; mark it like one so the codec's
     // reference plugin claims it. Symbol.for matches the core's brand.
-    const brand = Symbol.for("effect-atom-jsx/Resume/HandleKind");
+    const brand = Symbol.for("affe/Resume/HandleKind");
     const asHandle = (value: object): object =>
       Object.assign(Object.create(null), value, { [brand]: "state" });
     const liveServer = asHandle(serverHandle);

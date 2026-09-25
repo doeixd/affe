@@ -1,14 +1,14 @@
 /**
- * `@affe/permissive` — Qwik-parity as a configuration, not a fork.
+ * `@doeixd/affe-permissive` — Qwik-parity as a configuration, not a fork.
  *
  * Owning plan: `docs/PERMISSIVE_PACKAGE_PLAN.md`. This package builds against
- * **public `effect-atom-jsx` subpaths only** — that constraint IS the adapter
+ * **public `@doeixd/affe` subpaths only** — that constraint IS the adapter
  * SPI test M9 requires, and the enforcement test in `src/__tests__/` fails on
  * any deep import.
  *
  * This is the BUILD/SERVER entry: `permissive()` constructs the compiler
  * plugin, so importing it belongs in vite configs and server code. Client
- * bundles import `@affe/permissive/client` instead, which carries only the
+ * bundles import `@doeixd/affe-permissive/client` instead, which carries only the
  * codec layer and the hydration registry.
  */
 
@@ -39,4 +39,4 @@ export {
   serovalAsyncLayer,
   serovalSerializerId,
   serovalAsyncSerializerId,
-} from "effect-atom-jsx/Serialization";
+} from "@doeixd/affe/Serialization";

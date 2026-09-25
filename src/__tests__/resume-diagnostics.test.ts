@@ -60,7 +60,7 @@ describe("Resumability diagnostics completeness", () => {
   it("[M9] reports an oversized capture as a source-located build diagnostic, not a throw", () => {
     const diagnostics: Array<Record<string, unknown>> = [];
     const output = babel.transformSync(
-      `import { extract } from "effect-atom-jsx/portable-extract";
+      `import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 
 const payload = ${JSON.stringify("x".repeat(400))};
@@ -102,7 +102,7 @@ export const save = extract((captures) => Effect.succeed(captures.payload), {
     // above forever.
     const clean: Array<Record<string, unknown>> = [];
     const cleanOutput = babel.transformSync(
-      `import { extract } from "effect-atom-jsx/portable-extract";
+      `import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 
 const payload = "small";

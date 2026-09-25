@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { resumeExtract } from "effect-atom-jsx/compiler/resume-extract-vite";
+import { resumeExtract } from "@doeixd/affe/compiler/resume-extract-vite";
 import { BuildId } from "./shared/build.js";
 
 export default defineConfig({

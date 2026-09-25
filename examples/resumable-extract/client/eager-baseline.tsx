@@ -1,6 +1,6 @@
 import { Effect, Exit, Scope } from "effect";
-import * as Component from "effect-atom-jsx/Component";
-import { hydrateRoot } from "effect-atom-jsx";
+import * as Component from "@doeixd/affe/Component";
+import { hydrateRoot } from "@doeixd/affe";
 import { browserState } from "../shared/browser-state.js";
 
 const EagerBaseline = Component.make(

@@ -35,11 +35,11 @@ describe("withViteHMR", () => {
     }, h.hot);
 
     expect(h.acceptCount).toBe(1);
-    expect(typeof h.hot.data["effect-atom-jsx:dispose"]).toBe("function");
+    expect(typeof h.hot.data["affe:dispose"]).toBe("function");
 
     h.triggerDispose();
     expect(disposed).toBe(true);
-    expect(h.hot.data["effect-atom-jsx:dispose"]).toBeUndefined();
+    expect(h.hot.data["affe:dispose"]).toBeUndefined();
   });
 
   it("disposes previous instance on hot replace", () => {

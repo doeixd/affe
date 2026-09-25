@@ -1,15 +1,15 @@
 Yes, absolutely. In fact, **this is a textbook example of what a Dialect is meant to be.** 
 
-If you look closely at AF-UI's architecture, it isn't actually a "UI Framework" in the React sense—it is a **semantic compiler for user interfaces**. It separates structure (Views), logic (Behaviors/Components), and appearance (Styles), and strictly validates their intersections using "Capabilities" (Traits) and "Requirements" (Bubbling). 
+If you look closely at Affe's architecture, it isn't actually a "UI Framework" in the React sense—it is a **semantic compiler for user interfaces**. It separates structure (Views), logic (Behaviors/Components), and appearance (Styles), and strictly validates their intersections using "Capabilities" (Traits) and "Requirements" (Bubbling). 
 
-This maps 1:1 onto the new Gen2 Kernel. By implementing AF-UI as `dialect.afui`, Gen2's engine handles all the requirement bubbling, slot capability checking, and target rendering for you.
+This maps 1:1 onto the new Gen2 Kernel. By implementing Affe as `dialect.afui`, Gen2's engine handles all the requirement bubbling, slot capability checking, and target rendering for you.
 
-Here is exactly how AF-UI is modeled as a Gen2 Dialect.
+Here is exactly how Affe is modeled as a Gen2 Dialect.
 
 ---
 
-### 1. The AF-UI Dialect Definition
-In Gen2, we define the semantic vocabulary of AF-UI without writing any runtime rendering code. We just define the Nodes, Edges, and Traits.
+### 1. The Affe Dialect Definition
+In Gen2, we define the semantic vocabulary of Affe without writing any runtime rendering code. We just define the Nodes, Edges, and Traits.
 
 ```typescript
 import { defineDialect, defineNodeKind, defineEdgeKind, defineTrait } from "@gen2/core";
@@ -110,7 +110,7 @@ export const ModalComponent = gen.afui.component("Modal", {
 
 ### 3. The Compiler Passes (Where Gen2 does the heavy lifting)
 
-In standard AF-UI, you would have to write complex TypeScript types to ensure a Behavior doesn't attach to a Slot that lacks the right capabilities. In Gen2, you write a **Verification Pass**.
+In standard Affe, you would have to write complex TypeScript types to ensure a Behavior doesn't attach to a Slot that lacks the right capabilities. In Gen2, you write a **Verification Pass**.
 
 #### A. Slot Capability Verification Pass
 This runs during the `Verify` phase. It ensures you didn't accidentally attach a "Press" behavior to a "Text" element.
@@ -141,7 +141,7 @@ const verifyBehaviorCapabilities = definePass({
 ```
 
 #### B. Requirement Bubbling Pass
-AF-UI relies on Effect's `Req` and `E` (Requirements and Errors) bubbling up. Gen2 handles this natively via its generic trait bubbling passes.
+Affe relies on Effect's `Req` and `E` (Requirements and Errors) bubbling up. Gen2 handles this natively via its generic trait bubbling passes.
 
 If `modalBehavior` requires the `AuthSession` Context, the `AttachesBehavior` edge acts as a conduit. The Gen2 compiler automatically infers that `ModalComponent` now requires `AuthSession`. 
 
@@ -149,7 +149,7 @@ If `modalBehavior` requires the `AuthSession` Context, the `AttachesBehavior` ed
 
 ### 4. Target Generation (The "Platform" Layer)
 
-In your spec, you mention that AF-UI is completely decoupled from the Web DOM and relies on a `Platform` to render to Web (CSS/HTML), TUI, or React Native.
+In your spec, you mention that Affe is completely decoupled from the Web DOM and relies on a `Platform` to render to Web (CSS/HTML), TUI, or React Native.
 
 In Gen2, a **Platform** is literally just a **Target Emitter Pass**.
 
@@ -191,18 +191,18 @@ const TuiTarget = defineTarget({
 ### Why this is a match made in heaven
 
 1. **The "No Props" Rule:** By enforcing that Behaviors and Styles attach to *Slots* (via Graph Edges) rather than passing props through React JSX, you perfectly align with Gen2's Graph philosophy.
-2. **Style Handles:** AF-UI "Style Handles" are just Nodes in the graph. You can swap them out by mutating the `AttachesStyle` edge before the Emit pass runs, achieving theme customization without forking components.
-3. **Effect-TS Integration:** Because Gen2 treats `Effect` as a first-class Target/Adapter (from the Phase 4/5 implementation guides), AF-UI's reliance on Effect Services and Context maps natively to Gen2's `RequirementNode` and `ProviderNode` primitives.
+2. **Style Handles:** Affe "Style Handles" are just Nodes in the graph. You can swap them out by mutating the `AttachesStyle` edge before the Emit pass runs, achieving theme customization without forking components.
+3. **Effect-TS Integration:** Because Gen2 treats `Effect` as a first-class Target/Adapter (from the Phase 4/5 implementation guides), Affe's reliance on Effect Services and Context maps natively to Gen2's `RequirementNode` and `ProviderNode` primitives.
 
-**Conclusion:** Yes, AF-UI is not just a dialect—it is the *perfect* UI dialect for Gen2. It proves that the MLIR-style graph architecture scales all the way up to complex visual rendering and interaction logic.
+**Conclusion:** Yes, Affe is not just a dialect—it is the *perfect* UI dialect for Gen2. It proves that the MLIR-style graph architecture scales all the way up to complex visual rendering and interaction logic.
 
 Yes, absolutely. Not only *can* one UI abstraction handle both, but **they are actually the exact same abstraction viewed from two different angles.** 
 
 In compiler terms:
-*   **AF-UI** is the **Authoring API and Type System** (how a human writes safe UI code, using slots, capabilities, and inside-out composition).
+*   **Affe** is the **Authoring API and Type System** (how a human writes safe UI code, using slots, capabilities, and inside-out composition).
 *   **JSON-Render** is the **Serialization Format and Target** (how that UI tree is shipped over the wire, rendered dynamically, or generated by an AI).
 
-If you build `dialect.ui` correctly in the Gen2 Kernel, AF-UI becomes the way you build the graph, and JSON-Render becomes the artifact that gets emitted.
+If you build `dialect.ui` correctly in the Gen2 Kernel, Affe becomes the way you build the graph, and JSON-Render becomes the artifact that gets emitted.
 
 Here is how one unified `dialect.ui` handles both paradigms seamlessly.
 
@@ -210,11 +210,11 @@ Here is how one unified `dialect.ui` handles both paradigms seamlessly.
 
 ### 1. The Unified Core Concepts
 
-To satisfy both AF-UI's strictness and JSON-Render's dynamic declarative nature, the UI Dialect needs these primitives:
+To satisfy both Affe's strictness and JSON-Render's dynamic declarative nature, the UI Dialect needs these primitives:
 
 1.  **Catalog Components (Tags):** The physical building blocks (`Box`, `Button`). They declare their allowed Props and **Slots**.
 2.  **Views (Trees):** The structural arrangement of components.
-3.  **Bindings (Edges):** The connections that link UI to State (JSON-Render's `$state`) or Logic (AF-UI's `Behaviors`).
+3.  **Bindings (Edges):** The connections that link UI to State (JSON-Render's `$state`) or Logic (Affe's `Behaviors`).
 
 ### 2. Modeling the IR (The Shared Dialect)
 
@@ -225,7 +225,7 @@ Here is what the IR looks like inside the Gen2 compiler. Notice how it satisfies
 const ButtonCatalogEntry = gen.ui.catalogComponent("Button", {
   props: gen.types.object({ label: gen.types.string() }),
   slots: {
-    // AF-UI requires this capability to know what behaviors can attach
+    // Affe requires this capability to know what behaviors can attach
     root: gen.ui.slotCapability([ElementInteractive]), 
   }
 });
@@ -239,14 +239,14 @@ const TweetView = gen.ui.view("TweetView", {
 });
 ```
 
-### 3. How AF-UI Uses This Graph (Inside-Out Composition)
+### 3. How Affe Uses This Graph (Inside-Out Composition)
 
-AF-UI wants to attach **Behaviors** and **Styles** to slots *from the outside*, ensuring compile-time type safety. 
+Affe wants to attach **Behaviors** and **Styles** to slots *from the outside*, ensuring compile-time type safety. 
 
 In Gen2, this is just emitting an **Edge** into the graph.
 
 ```typescript
-// AF-UI Authoring Style
+// Affe Authoring Style
 const LikeBehavior = gen.ui.behavior({
   requires: [ElementInteractive], // Capability checking
   effects: [gen.effects.dbWrite()],
@@ -284,15 +284,15 @@ const JsonRenderTarget = defineTarget({
     // 2. EMIT THE SPEC (The View)
     const views = graph.nodesOfKind(UiView).map(view => {
       
-      // Find behaviors attached to this view via AF-UI's "AttachesBehavior" edge
+      // Find behaviors attached to this view via Affe's "AttachesBehavior" edge
       const behaviors = graph.edgesFrom(view, AttachesBehavior);
       
       return {
         type: view.root.component.name,
         props: view.root.props,
         
-        // Translate AF-UI Behavior Edges into JSON-Render syntax!
-        // AF-UI's 'onPress' becomes JSON-Render's action dispatcher.
+        // Translate Affe Behavior Edges into JSON-Render syntax!
+        // Affe's 'onPress' becomes JSON-Render's action dispatcher.
         ...(behaviors.length > 0 && {
           onPress: { 
             action: behaviors[0].actionName, 
@@ -310,7 +310,7 @@ const JsonRenderTarget = defineTarget({
 ### 5. Bridging State (Effect Atoms vs. JSON Pointers)
 
 The biggest difference between the two is state management:
-*   **AF-UI** binds to Effect Atoms or native signals.
+*   **Affe** binds to Effect Atoms or native signals.
 *   **JSON-Render** uses JSON Pointer strings (`"$state": "/user/name"`).
 
 **The Solution:** Typed `StateResource` Nodes.
@@ -321,16 +321,16 @@ const CurrentUser = gen.state.resource("CurrentUser", {
   type: User
 });
 
-// AF-UI binds via the typed reference
+// Affe binds via the typed reference
 gen.ui.attachBehavior(UpdateNameBehavior, {
   bindState: CurrentUser.fields.name 
 });
 ```
 
-When compiling for React/AF-UI, the Target Emitter converts this into an `Atom.get(CurrentUser).name`.
+When compiling for React/Affe, the Target Emitter converts this into an `Atom.get(CurrentUser).name`.
 When compiling for JSON-Render, the Target Emitter converts the exact same graph edge into the JSON Pointer `{"$bindState": "/CurrentUser/name"}`.
 
-### The Ultimate Synergy: AI-Generated AF-UI
+### The Ultimate Synergy: AI-Generated Affe
 
 By unifying these under one dialect, you unlock a superpower: **Safe AI UI Generation.**
 
@@ -340,7 +340,7 @@ With the Gen2 `dialect.ui`:
 1. You export the **JSON-Render Catalog**.
 2. The AI generates a JSON-Render Spec.
 3. You ingest that Spec back into Gen2 at runtime or build-time.
-4. Gen2's **Verification Passes** run AF-UI's strict capability checks against the AI's output.
+4. Gen2's **Verification Passes** run Affe's strict capability checks against the AI's output.
 5. If the AI tried to attach a `LikeBehavior` to a `Text` slot, Gen2 rejects the AI's spec with a strict `afui:capability-mismatch` diagnostic before it ever reaches the client.
 
 ### Summary
@@ -348,7 +348,7 @@ With the Gen2 `dialect.ui`:
 Yes, one abstraction handles both perfectly. 
 
 *   **`dialect.ui`** is the vocabulary. 
-*   **AF-UI** is the structural philosophy we use to guarantee type safety in the AST (Slots, Capabilities, Inside-Out).
+*   **Affe** is the structural philosophy we use to guarantee type safety in the AST (Slots, Capabilities, Inside-Out).
 *   **JSON-Render** is the serialization strategy we use to transport that AST over the network, render it without compilation, or feed it to an AI.
 
 
@@ -358,7 +358,7 @@ It also matches what Gen2 already has. The current UI system is already describe
 
 So my take is:
 
-> Yes, this is the right direction. But I would not make “AF-UI” the core UI model. I would make a general `ui` dialect, where AF-UI is an authoring style and JSON-Render is a target/serialization format.
+> Yes, this is the right direction. But I would not make “Affe” the core UI model. I would make a general `ui` dialect, where Affe is an authoring style and JSON-Render is a target/serialization format.
 
 ## What I would adopt
 
@@ -525,7 +525,7 @@ That makes codegen, JSON-render, Effect, and AI validation much safer.
 
 ### 4. JSON-Render should be a target, not the source of truth
 
-The uploaded proposal says AF-UI is authoring and JSON-Render is serialization/target. I agree. 
+The uploaded proposal says Affe is authoring and JSON-Render is serialization/target. I agree. 
 
 The canonical Gen2 source should be:
 
@@ -746,7 +746,7 @@ I would take the idea, but frame it like this:
 ```txt id="wlr3i2"
 dialect.ui is the canonical graph vocabulary.
 
-AF-UI is an authoring pattern:
+Affe is an authoring pattern:
   inside-out composition
   slots
   behaviors
@@ -778,7 +778,7 @@ Bottom line: **yes, this is a very good fit for the revised Gen2 kernel.** It is
 
 The current `src/ui/ui.ts` is already **halfway to the proposed `dialect.ui`**. It is not just a React-ish UI helper layer. It already models UI semantically: platform-agnostic views, slots, components, forms, styles, behaviors, themes, platforms, and renderers. The file comment explicitly says slots expose typed attachment points so styles/behaviors can be applied from outside without forking generated source. 
 
-So the uploaded AF-UI/JSON-Render idea is not foreign to the repo. It is basically a cleaner, graph-kernel-native version of what Gen2 already started building. 
+So the uploaded Affe/JSON-Render idea is not foreign to the repo. It is basically a cleaner, graph-kernel-native version of what Gen2 already started building. 
 
 ## Current UI concepts → revised kernel concepts
 
@@ -909,15 +909,15 @@ DesignSystemNode
 
 But I would not literally put all behavior inside DesignSystem. Behavior is interaction logic and may have effects/requirements; style/design tokens are presentation. They should connect, but not collapse.
 
-## How the uploaded AF-UI idea maps to current UI
+## How the uploaded Affe idea maps to current UI
 
-The uploaded idea says AF-UI is the authoring style and JSON-Render is the serialization/target format.  That maps well to current Gen2 like this:
+The uploaded idea says Affe is the authoring style and JSON-Render is the serialization/target format.  That maps well to current Gen2 like this:
 
 ```txt
 Current Slot/View/Component/Style/Behavior model
   -> becomes canonical ui graph
 
-AF-UI-style API
+Affe-style API
   -> ergonomic authoring frontend over that graph
 
 JSON-Render
@@ -963,7 +963,7 @@ Do not rewrite UI first. After the kernel exists, migrate UI in this order:
 
 ## Bottom line
 
-The current UI layer is already conceptually aligned with the AF-UI proposal. It has slots, capabilities, external behavior/style attachment, platform abstraction, widgets, forms, themes, and validation. 
+The current UI layer is already conceptually aligned with the Affe proposal. It has slots, capabilities, external behavior/style attachment, platform abstraction, widgets, forms, themes, and validation. 
 
 The revised kernel makes it cleaner:
 
@@ -983,7 +983,7 @@ Current validators
 Current platforms/renderers
   become target dialects/emitters.
 
-AF-UI
+Affe
   becomes the ergonomic authoring API.
 
 JSON-Render
@@ -1000,7 +1000,7 @@ The best framing is:
 dialect.ui
   canonical graph vocabulary
 
-AF-UI
+Affe
   authoring style / philosophy
   slots, capabilities, inside-out composition
 
@@ -1012,7 +1012,7 @@ React / Solid / React Native / TUI
   target emitters over the same UI graph
 ```
 
-The doc explicitly makes that distinction: AF-UI is the authoring/type-system side, while JSON-Render is the serialization/target side. That is the right separation. 
+The doc explicitly makes that distinction: Affe is the authoring/type-system side, while JSON-Render is the serialization/target side. That is the right separation. 
 
 ## What is good
 
@@ -1083,7 +1083,7 @@ That is exactly what a compiler can verify and lower.
 
 The doc is directionally right, but I would tighten a few things.
 
-### 1. Do not make “AF-UI” the canonical IR
+### 1. Do not make “Affe” the canonical IR
 
 I would not name the core dialect `afui`.
 
@@ -1093,13 +1093,13 @@ I would name it:
 ui
 ```
 
-Then AF-UI is one authoring pattern over it.
+Then Affe is one authoring pattern over it.
 
 ```txt
 ui dialect
   canonical graph model
 
-AF-UI
+Affe
   strict authoring frontend
 
 JSON-Render
@@ -1443,7 +1443,7 @@ The clean final framing:
 ```txt
 dialect.ui is the canonical semantic UI graph.
 
-AF-UI is the strict authoring style:
+Affe is the strict authoring style:
   slots, behaviors, styles, capabilities, inside-out composition.
 
 JSON-Render is an artifact/import target:

@@ -12,29 +12,29 @@ import * as Serialization from "./serialization-core.js";
 import { makeResourceCacheIdentity } from "./cache-identity.js";
 
 export const CodeTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Portable/Code",
+  "affe/Portable/Code",
 );
 export const BoundCodeTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Portable/BoundCode",
+  "affe/Portable/BoundCode",
 );
 export const ExecutableInspectionTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Portable/ExecutableInspection",
+  "affe/Portable/ExecutableInspection",
 );
 
 /** Stable logical code identity. This is an address, never executable source. */
 export const CodeId = Schema.String.check(Schema.isNonEmpty()).pipe(
-  Schema.brand("@effect-atom-jsx/Portable/CodeId"),
+  Schema.brand("affe/Portable/CodeId"),
 );
 export type CodeId = typeof CodeId.Type;
 
 /** Deployment/build identity used to reject stale manifests. */
 export const BuildId = Schema.String.check(Schema.isNonEmpty()).pipe(
-  Schema.brand("@effect-atom-jsx/Portable/BuildId"),
+  Schema.brand("affe/Portable/BuildId"),
 );
 export type BuildId = typeof BuildId.Type;
 
 export class PortableCodeNotFoundError extends Schema.TaggedErrorClass<PortableCodeNotFoundError>(
-  "@effect-atom-jsx/PortableCodeNotFoundError",
+  "affe/PortableCodeNotFoundError",
 )("PortableCodeNotFoundError", {
   id: CodeId,
   reason: Schema.String,
@@ -45,7 +45,7 @@ export class PortableCodeNotFoundError extends Schema.TaggedErrorClass<PortableC
 }
 
 export class PortableCodeLoadError extends Schema.TaggedErrorClass<PortableCodeLoadError>(
-  "@effect-atom-jsx/PortableCodeLoadError",
+  "affe/PortableCodeLoadError",
 )("PortableCodeLoadError", {
   id: CodeId,
   reason: Schema.String,
@@ -56,7 +56,7 @@ export class PortableCodeLoadError extends Schema.TaggedErrorClass<PortableCodeL
 }
 
 export class PortableCodeIdentityMismatchError extends Schema.TaggedErrorClass<PortableCodeIdentityMismatchError>(
-  "@effect-atom-jsx/PortableCodeIdentityMismatchError",
+  "affe/PortableCodeIdentityMismatchError",
 )("PortableCodeIdentityMismatchError", {
   requested: CodeId,
   loaded: CodeId,
@@ -68,7 +68,7 @@ export class PortableCodeIdentityMismatchError extends Schema.TaggedErrorClass<P
 }
 
 export class PortableBuildMismatchError extends Schema.TaggedErrorClass<PortableBuildMismatchError>(
-  "@effect-atom-jsx/PortableBuildMismatchError",
+  "affe/PortableBuildMismatchError",
 )("PortableBuildMismatchError", {
   id: CodeId,
   expected: BuildId,
@@ -81,7 +81,7 @@ export class PortableBuildMismatchError extends Schema.TaggedErrorClass<Portable
 }
 
 export class PortableCaptureEncodeError extends Schema.TaggedErrorClass<PortableCaptureEncodeError>(
-  "@effect-atom-jsx/PortableCaptureEncodeError",
+  "affe/PortableCaptureEncodeError",
 )("PortableCaptureEncodeError", {
   id: CodeId,
   reason: Schema.String,
@@ -92,7 +92,7 @@ export class PortableCaptureEncodeError extends Schema.TaggedErrorClass<Portable
 }
 
 export class PortableCaptureDecodeError extends Schema.TaggedErrorClass<PortableCaptureDecodeError>(
-  "@effect-atom-jsx/PortableCaptureDecodeError",
+  "affe/PortableCaptureDecodeError",
 )("PortableCaptureDecodeError", {
   id: CodeId,
   reason: Schema.String,
@@ -495,7 +495,7 @@ export interface ResolverService {
 }
 
 export const Resolver = Context.Service<ResolverService>(
-  "effect-atom-jsx/Portable/Resolver",
+  "affe/Portable/Resolver",
 );
 
 export type ResolverEntries = Readonly<Record<string, AnyCode | CodeLoader>>;

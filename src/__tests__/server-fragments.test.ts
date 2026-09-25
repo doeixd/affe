@@ -44,7 +44,7 @@ interface RecorderService {
 }
 
 const Recorder = Context.Service<RecorderService>(
-  "effect-atom-jsx/test/ServerFragmentsRecorder",
+  "affe/test/ServerFragmentsRecorder",
 );
 
 function makeSink(): {

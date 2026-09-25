@@ -1,4 +1,4 @@
-export const SafeHtmlTypeId: unique symbol = Symbol.for("effect-atom-jsx/SafeHtml");
+export const SafeHtmlTypeId: unique symbol = Symbol.for("affe/SafeHtml");
 
 export interface SafeHtml {
   readonly [SafeHtmlTypeId]: true;

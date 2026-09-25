@@ -1,6 +1,6 @@
 ---
 name: architecture-reference
-description: "Deep reference on effect-atom-jsx/Affe typed tags, views, templates, props/components, actions/mutations/queries, and the json-render proposal"
+description: "Deep reference on Affe typed tags, views, templates, props/components, actions/mutations/queries, and the json-render proposal"
 metadata: 
   node_type: memory
   type: reference
@@ -8,7 +8,7 @@ metadata:
   modified: 2026-07-30T11:24:37.839Z
 ---
 
-# effect-atom-jsx (Affe) architecture reference (as of 2026-07-30)
+# Affe architecture reference (as of 2026-07-30)
 
 Verified against source by exploration agents; line anchors approximate (heavy churn on branch agent/resumability-foundation).
 
@@ -68,7 +68,7 @@ Reactivity: `Reactivity.Key.make/family` branded witnesses; `Reactivity.tracked(
 
 Four docs copied from ../gen2 as reference: README, gen-ui.md (motivation + 9 IR primitives), ui-dialect-af-ui-json-render.md (gen2 dialect mapping, 1459 lines), gen-ui-implementation-plan.md (4-phase plan, 1733 lines).
 
-**Core thesis**: don't make JSON Render's JSON schema the core model — build a typed semantic UI IR (catalog entries, view tree nodes, typed state paths, binding/computed/action IR), then *lower* to JSON Render (`$state`/`$bindState`/`$template`/`$computed` + JSON Pointers) as one target among many (React/Solid/RN/TUI/email). AF-UI = authoring/type system; JSON-Render = serialization/target.
+**Core thesis**: don't make JSON Render's JSON schema the core model — build a typed semantic UI IR (catalog entries, view tree nodes, typed state paths, binding/computed/action IR), then *lower* to JSON Render (`$state`/`$bindState`/`$template`/`$computed` + JSON Pointers) as one target among many (React/Solid/RN/TUI/email). Affe = authoring/type system; JSON-Render = serialization/target.
 
 **Key IR shapes**: `ComponentCatalogEntry<P,E,S>` (props SemanticType, slots, allowed_events, target_platforms); `UiNode = element|text|fragment|repeat|conditional` with visible_when/enabled_when; `ViewTree{root}`. Bindings via typed refs (never raw string paths in core); actions reference stable ActionFunction/portable IDs, never closures — which makes the tree resumability-friendly by construction.
 

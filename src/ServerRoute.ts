@@ -6,9 +6,9 @@ import { renderToString } from "./dom.js";
 import { extractPatternParams, matchPatternSegments } from "./route-pattern.js";
 import type { AnyRoute, AppRouteNode } from "./Route.js";
 
-export const ServerRouteNodeSymbol: unique symbol = Symbol.for("effect-atom-jsx/ServerRouteNode");
+export const ServerRouteNodeSymbol: unique symbol = Symbol.for("affe/ServerRouteNode");
 
-/** Kind of server route handled by the AF-UI server bridge. */
+/** Kind of server route handled by the Affe server bridge. */
 export type ServerRouteKind = "action" | "document" | "json" | "resource";
 
 type AnyServerRouteNode = ServerRouteNode<any, any, any, any, any, any, any>;
@@ -635,7 +635,7 @@ export function executeWithServices<T extends AnyServerRouteNode>(
       })), {} as CookiesOf<T>);
 
       if (!route.handler) {
-        throw new Error("[effect-atom-jsx/ServerRoute] execute requires a handler.");
+        throw new Error("[affe/ServerRoute] execute requires a handler.");
       }
 
       const exit = await Effect.runPromise(Effect.exit(
@@ -704,7 +704,7 @@ export function runDocument(
   options?: { readonly layer?: import("effect").Layer.Layer<any> },
 ): Effect.Effect<Route.RenderRequestResult, never> {
   if (route.kind !== "document" || !route.app) {
-    throw new Error("[effect-atom-jsx/ServerRoute] runDocument requires a document route with an app route tree.");
+    throw new Error("[affe/ServerRoute] runDocument requires a document route with an app route tree.");
   }
   return Route.renderRequest(route.app, {
     request,

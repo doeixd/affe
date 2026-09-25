@@ -11,12 +11,12 @@
  *    `Resume.mountFragment` into the host's `slot` region.
  */
 import { Effect, Stream } from "effect";
-import * as Component from "effect-atom-jsx/Component";
-import * as Portable from "effect-atom-jsx/Portable";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
-import { addEventListener, template } from "effect-atom-jsx/runtime";
-import { renderToStream, renderToString } from "effect-atom-jsx";
+import * as Component from "@doeixd/affe/Component";
+import * as Portable from "@doeixd/affe/Portable";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
+import { addEventListener, template } from "@doeixd/affe/runtime";
+import { renderToStream, renderToString } from "@doeixd/affe";
 import { SaveCode } from "../actions/save-action.js";
 import { BuildId } from "../shared/build.js";
 import { SaveService } from "../shared/save-service.js";

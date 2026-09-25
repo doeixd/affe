@@ -45,35 +45,35 @@ import * as ViewSpec from "./ViewSpec.js";
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
 export class AgentToolNotFoundError extends Schema.TaggedErrorClass<AgentToolNotFoundError>(
-  "@effect-atom-jsx/AgentToolNotFoundError",
+  "affe/AgentToolNotFoundError",
 )("AgentToolNotFoundError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
 export class AgentArgsDecodeError extends Schema.TaggedErrorClass<AgentArgsDecodeError>(
-  "@effect-atom-jsx/AgentArgsDecodeError",
+  "affe/AgentArgsDecodeError",
 )("AgentArgsDecodeError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
 export class AgentErrorEncodeError extends Schema.TaggedErrorClass<AgentErrorEncodeError>(
-  "@effect-atom-jsx/AgentErrorEncodeError",
+  "affe/AgentErrorEncodeError",
 )("AgentErrorEncodeError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
 export class AgentBuildIdMissingError extends Schema.TaggedErrorClass<AgentBuildIdMissingError>(
-  "@effect-atom-jsx/AgentBuildIdMissingError",
+  "affe/AgentBuildIdMissingError",
 )("AgentBuildIdMissingError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
 export class GovernanceUnsatisfiedError extends Schema.TaggedErrorClass<GovernanceUnsatisfiedError>(
-  "@effect-atom-jsx/GovernanceUnsatisfiedError",
+  "affe/GovernanceUnsatisfiedError",
 )("GovernanceUnsatisfiedError", {
   tool: Schema.String,
   /** The missing service's name — what "fail closed" makes actionable. */
@@ -82,14 +82,14 @@ export class GovernanceUnsatisfiedError extends Schema.TaggedErrorClass<Governan
 }) {}
 
 export class ApprovalDeniedError extends Schema.TaggedErrorClass<ApprovalDeniedError>(
-  "@effect-atom-jsx/ApprovalDeniedError",
+  "affe/ApprovalDeniedError",
 )("ApprovalDeniedError", {
   summary: Schema.String,
   reason: Schema.String,
 }) {}
 
 export class AuthorizationDeniedError extends Schema.TaggedErrorClass<AuthorizationDeniedError>(
-  "@effect-atom-jsx/AuthorizationDeniedError",
+  "affe/AuthorizationDeniedError",
 )("AuthorizationDeniedError", {
   tool: Schema.String,
   reason: Schema.String,
@@ -104,7 +104,7 @@ export interface CallerContextService {
   readonly lineage: unknown;
 }
 export const CallerContext = Context.Service<CallerContextService>(
-  "effect-atom-jsx/Agent/CallerContext",
+  "affe/Agent/CallerContext",
 );
 
 /** Human (or policy) sign-off for calls that declared an approval need. */
@@ -112,13 +112,13 @@ export interface ApprovalService {
   readonly require: (summary: string) => Effect.Effect<void, unknown>;
 }
 export const Approval = Context.Service<ApprovalService>(
-  "effect-atom-jsx/Agent/Approval",
+  "affe/Agent/Approval",
 );
 
 // ─── ApprovalStore (DQ-095) ──────────────────────────────────────────────────
 
 export class ApprovalNotFoundError extends Schema.TaggedErrorClass<ApprovalNotFoundError>(
-  "@effect-atom-jsx/ApprovalNotFoundError",
+  "affe/ApprovalNotFoundError",
 )("ApprovalNotFoundError", {
   id: Schema.String,
   message: Schema.String,
@@ -242,7 +242,7 @@ export interface AuthorizerService {
   readonly authorize: (tool: string) => Effect.Effect<void, unknown>;
 }
 export const Authorizer = Context.Service<AuthorizerService>(
-  "effect-atom-jsx/Agent/Authorizer",
+  "affe/Agent/Authorizer",
 );
 
 /** Durable audit sink for mutating dispatches. */
@@ -250,7 +250,7 @@ export interface AuditLogService {
   readonly record: (entry: AuditRecord) => Effect.Effect<void, unknown>;
 }
 export const AuditLog = Context.Service<AuditLogService>(
-  "effect-atom-jsx/Agent/AuditLog",
+  "affe/Agent/AuditLog",
 );
 
 export interface AuditRecord {
@@ -293,7 +293,7 @@ export function agentLayer(options: { readonly caller: string }): Layer.Layer<
 
 // ─── Secrets (DQ-085) ────────────────────────────────────────────────────────
 
-const SecretAnnotationKey = "effect-atom-jsx/Agent/secret";
+const SecretAnnotationKey = "affe/Agent/secret";
 
 /**
  * Mark a field schema as SECRET: its decoded value never appears in audit
@@ -370,7 +370,7 @@ export interface CatalogEntry {
   readonly render?: unknown;
 }
 
-const CatalogTypeId: unique symbol = Symbol.for("effect-atom-jsx/Agent/Catalog");
+const CatalogTypeId: unique symbol = Symbol.for("affe/Agent/Catalog");
 
 export type CatalogEntries = Readonly<Record<string, CatalogEntry>>;
 
@@ -403,7 +403,7 @@ function entryOf(
 // ─── Kit-shipped suggestions (DQ-097) ────────────────────────────────────────
 
 const SuggestedEntryTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Agent/SuggestedEntry",
+  "affe/Agent/SuggestedEntry",
 );
 
 /**
@@ -1076,21 +1076,21 @@ export function makeDispatcher<Provided, LE>(
 // ─── Result rendering (AN-4) ─────────────────────────────────────────────────
 
 export class AgentRenderTargetMissingError extends Schema.TaggedErrorClass<AgentRenderTargetMissingError>(
-  "@effect-atom-jsx/AgentRenderTargetMissingError",
+  "affe/AgentRenderTargetMissingError",
 )("AgentRenderTargetMissingError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
 export class AgentRenderPropsError extends Schema.TaggedErrorClass<AgentRenderPropsError>(
-  "@effect-atom-jsx/AgentRenderPropsError",
+  "affe/AgentRenderPropsError",
 )("AgentRenderPropsError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
 export class AgentRenderError extends Schema.TaggedErrorClass<AgentRenderError>(
-  "@effect-atom-jsx/AgentRenderError",
+  "affe/AgentRenderError",
 )("AgentRenderError", {
   tool: Schema.String,
   message: Schema.String,

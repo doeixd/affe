@@ -12,7 +12,7 @@ import { Effect } from "effect";
 
 /** Branded marker interface for dehydrated atom entries. */
 export interface DehydratedAtom {
-  readonly "~@effect-atom-jsx/DehydratedAtom": true;
+  readonly "~affe/DehydratedAtom": true;
 }
 
 /** A dehydrated atom entry containing the serialized key, value, and timestamp. */
@@ -84,7 +84,7 @@ export const dehydrate = (
   const ts = Date.now();
   for (const [key, atom] of entries) {
     out.push({
-      "~@effect-atom-jsx/DehydratedAtom": true,
+      "~affe/DehydratedAtom": true,
       key,
       value: registry.get(atom),
       dehydratedAt: ts,
@@ -132,13 +132,13 @@ export const hydrate = (
 
   const reportUnknown = options?.onUnknownKey ?? (warn
     ? (key: string) => {
-      console.warn(`[effect-atom-jsx] Hydration: server key "${key}" has no matching resolver.`);
+      console.warn(`[affe] Hydration: server key "${key}" has no matching resolver.`);
     }
     : undefined);
 
   const reportMissing = options?.onMissingKey ?? (warn
     ? (key: string) => {
-      console.warn(`[effect-atom-jsx] Hydration: resolver key "${key}" missing from dehydrated state.`);
+      console.warn(`[affe] Hydration: resolver key "${key}" missing from dehydrated state.`);
     }
     : undefined);
 
@@ -255,7 +255,7 @@ export const dehydrateFamily = (
   for (const [args, atom] of source.entries()) {
     if (options?.filter !== undefined && !options.filter(args, atom)) continue;
     out.push({
-      "~@effect-atom-jsx/DehydratedAtom": true,
+      "~affe/DehydratedAtom": true,
       family,
       args,
       value: registry.get(atom),
@@ -300,7 +300,7 @@ export const hydrateFamilies = (
       const key = familyMemberKey(entry.family, entry.args);
       options?.onUnknownKey?.(key);
       if (mode === "loose") {
-        console.warn(`[effect-atom-jsx] Hydration: family "${entry.family}" has no matching resolver.`);
+        console.warn(`[affe] Hydration: family "${entry.family}" has no matching resolver.`);
       }
       if (mode === "strict") {
         throw { _tag: "HydrationUnknownKeys", keys: [key] } as const;
@@ -317,7 +317,7 @@ export const hydrateFamilies = (
       if (!seenFamilies.has(key)) {
         options?.onMissingKey?.(key);
         if (mode === "loose") {
-          console.warn(`[effect-atom-jsx] Hydration: family resolver "${key}" received no dehydrated members.`);
+          console.warn(`[affe] Hydration: family resolver "${key}" received no dehydrated members.`);
         }
       }
     }

@@ -40,7 +40,7 @@ Everything here is implemented today or is tracked release-blocking work.
 - Reactivity key witnesses (P2) — small, closes the last magic-string
   surface; **in scope**
 
-### AF-UI component model (web platform only)
+### Affe component model (web platform only)
 
 - `Component.make` + plain setup Effect (builder available, not required),
   state ownership helpers (`state`/`query`/`action`/`optimistic`)
@@ -68,7 +68,7 @@ Everything here is implemented today or is tracked release-blocking work.
   release-blocking core done
 - Declared-vs-rendered diagnostics + platform validation; **diagnostics
   pipeline + `af-ui doctor` CLI + opt-in dev auto-report (P3)** shipped
-- Test kit on `effect-atom-jsx/testing` (P5): `render`, `behaviorDriver`,
+- Test kit on `@doeixd/affe/testing` (P5): `render`, `behaviorDriver`,
   `resolveQuery`/`resolveAction`, story/scene helpers — shipped
 
 ### Routing / server (single canonical generation)
@@ -122,7 +122,7 @@ findings. Status:
   / `streamDeferredLoaderScripts` — unescaped JSON in `<script>`). Fixed +
   regression test.
 - **No JSX types** — the library shipped zero JSX type infrastructure
-  (`jsxImportSource: effect-atom-jsx` resolved to nothing). Added
+  (`jsxImportSource: @doeixd/affe` resolved to nothing). Added
   `src/jsx-runtime.ts` + `./jsx-runtime`/`./jsx-dev-runtime` exports.
 - **`render` not top-level** — README quick start imported it top-level but it
   lived only in `/runtime`. Now re-exported (with SSR entry points).

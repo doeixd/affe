@@ -73,7 +73,7 @@ there means a spec has a genuine mistake in it.
 | Path | Subject | Owning plan |
 | --- | --- | --- |
 | `harness.ts` | `loadSrc`/`fromSrc`/`pick`/`unbuilt` | — |
-| `components/` | slots, views, styles, behaviors, kit | `COMPONENT_KIT_PLAN.md`, AF-UI contract |
+| `components/` | slots, views, styles, behaviors, kit | `COMPONENT_KIT_PLAN.md`, Affe contract |
 | `agent/` | action catalog, MCP/HTTP surfaces, generative UI | `AGENT_NATIVE_NOTES.md`, `af-ui-json-render/` |
 | `security/` | trust boundaries, wire validation, authorization | `docs/design-questions/platform.md` |
 

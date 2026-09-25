@@ -76,7 +76,7 @@ export function template(
 
     if (typeof document === "undefined") {
       throw new Error(
-        "[effect-atom-jsx/template] cannot instantiate a DOM template without a document or active SSR render.",
+        "[affe/template] cannot instantiate a DOM template without a document or active SSR render.",
       );
     }
     let reusable = browserTemplates.get(document);
@@ -722,7 +722,7 @@ export function resumeExprDirective(
         break;
       case "text":
         throw new TypeError(
-          "[effect-atom-jsx] A text expression target is inserted, not attached to a host element.",
+          "[affe] A text expression target is inserted, not attached to a host element.",
         );
     }
   }
@@ -959,7 +959,7 @@ export interface ViteHotContext {
 export function withViteHMR(
   dispose: () => void,
   hot?: ViteHotContext,
-  key = "effect-atom-jsx:dispose",
+  key = "affe:dispose",
 ): () => void {
   if (!hot) return dispose;
 
@@ -983,7 +983,7 @@ export function renderWithHMR(
   fn: () => unknown,
   container: Element,
   hot?: ViteHotContext,
-  key = "effect-atom-jsx:dispose",
+  key = "affe:dispose",
 ): () => void {
   return withViteHMR(render(fn, container), hot, key);
 }

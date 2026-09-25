@@ -79,7 +79,7 @@ function schemaError(message: string, value?: unknown): Schema.SchemaError {
 // for the process, resolvable back to the SAME live handle. This is the
 // DEFAULT resolver — sufficient in-process (SSR tests, same-runtime
 // transfer). Cross-process restore goes through the pluggable
-// `StateHandleResolver` below (S4); `@affe/permissive`'s hydration registry
+// `StateHandleResolver` below (S4); `@doeixd/affe-permissive`'s hydration registry
 // is the wiring that makes the keys the client's.
 const stateHandleKeys = new WeakMap<object, string>();
 const stateHandlesByKey = new Map<string, WeakRef<object>>();
@@ -111,7 +111,7 @@ function hydrationKeyOf(handle: object): string {
  * The key is deliberately opaque to the codec: a handle object carries no
  * intrinsic cross-process identity (binding names attach in component setup,
  * after creation), so meaningful keys are exactly what the wiring layer —
- * e.g. `@affe/permissive`'s hydration registry — exists to provide.
+ * e.g. `@doeixd/affe-permissive`'s hydration registry — exists to provide.
  */
 export interface StateHandleResolver {
   readonly keyOf?: (handle: object) => string | undefined;

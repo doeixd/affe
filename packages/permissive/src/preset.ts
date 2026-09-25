@@ -19,8 +19,8 @@ import type { Layer } from "effect";
 import {
   resumeExtract,
   type ResumeExtractViteOptions,
-} from "effect-atom-jsx/compiler/resume-extract-vite";
-import * as Serialization from "effect-atom-jsx/Serialization";
+} from "@doeixd/affe/compiler/resume-extract-vite";
+import * as Serialization from "@doeixd/affe/Serialization";
 import { assertSpiCompatible, spiVersion } from "./spi.js";
 
 export interface PermissiveOptions {

@@ -17,7 +17,7 @@
  * Plus one negative guarantee across all of them: no inline event handler
  * attribute is ever emitted.
  *
- * Owning plans: `AGENT_NATIVE_NOTES.md` §10 (`DQ-090`), AF-UI contract
+ * Owning plans: `AGENT_NATIVE_NOTES.md` §10 (`DQ-090`), Affe contract
  * (`SafeHtml`), `ROUTER_CONSOLIDATION_PLAN.md` R2 (loader scripts).
  */
 
@@ -42,7 +42,7 @@ import {
   XssPayload,
 } from "./security-support.js";
 
-describe("[SEC/AF-UI] SSR text escaping", () => {
+describe("[SEC/Affe] SSR text escaping", () => {
   it("escapes an XSS-shaped string in text position and still renders it as visible text", async () => {
     // This property already holds. It is asserted anyway because it is the one
     // place a regression would be catastrophic and silent: a future
@@ -108,7 +108,7 @@ describe("[SEC/AF-UI] SSR text escaping", () => {
   });
 });
 
-describe("[SEC/AF-UI] SafeHtml is the only markup channel", () => {
+describe("[SEC/Affe] SafeHtml is the only markup channel", () => {
   it("renders branded SafeHtml as markup and refuses a look-alike that is not branded", async () => {
     const SafeHtml = SafeHtmlModule;
     const View = ViewModule;

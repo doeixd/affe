@@ -107,7 +107,7 @@ export function makeDismissLayerStack(): DismissLayerStackService {
 }
 
 const DismissLayerStackTag = Context.Service<DismissLayerStackService>(
-  "effect-atom-jsx/behaviors/DismissLayerStack",
+  "affe/behaviors/DismissLayerStack",
 );
 
 /**

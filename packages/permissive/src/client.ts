@@ -1,5 +1,5 @@
 /**
- * `@affe/permissive/client` — the browser-safe entry (S5).
+ * `@doeixd/affe-permissive/client` — the browser-safe entry (S5).
  *
  * The main entry's `permissive()` builds the compiler plugin, so importing it
  * drags `resume-extract-vite` (and babel) into whatever bundle it lands in.
@@ -8,7 +8,7 @@
  */
 
 import type { Layer } from "effect";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import * as Serialization from "@doeixd/affe/Serialization";
 import { assertSpiCompatible, spiVersion } from "./spi.js";
 
 export {

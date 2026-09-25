@@ -1,6 +1,6 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
 import { CodeManifest } from "./code-manifest.js";
 import { browserState } from "../shared/browser-state.js";
 import { BuildId } from "../shared/build.js";

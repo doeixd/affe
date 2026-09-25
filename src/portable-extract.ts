@@ -116,7 +116,7 @@ export function extract<
   _options: ExtractOptions<Captures, EncodedCaptures>,
 ): Portable.BoundCode<Captures, EncodedCaptures, Args, A, E, R> {
   throw new Error(
-    "[effect-atom-jsx] Portable extract(...) was called without the companion "
+    "[affe] Portable extract(...) was called without the companion "
       + "resume-extract compiler transform. Either enable the transform or use "
       + "Portable.code(...) + Portable.bind(...) directly.",
   );
@@ -152,7 +152,7 @@ export function autoExtract<Args extends ReadonlyArray<unknown>, A, E, R>(
   R
 > {
   throw new Error(
-    "[effect-atom-jsx] Portable extract.auto(...) was called without the "
+    "[affe] Portable extract.auto(...) was called without the "
       + "companion resume-extract compiler transform. Either enable the "
       + "transform or use Portable.code(...) + Portable.bind(...) directly.",
   );
@@ -184,7 +184,7 @@ export function expr<
   >,
 ): ResumableExpression<A> {
   throw new Error(
-    "[effect-atom-jsx] Portable expr(...) was called without the companion "
+    "[affe] Portable expr(...) was called without the companion "
       + "resume-extract compiler transform. Enable the transform or use an "
       + "ordinary JSX expression that activates with its component.",
   );
@@ -219,7 +219,7 @@ export function autoExpr<
   _options: ExprAutoOptions<Dependencies, EncodedDependencies>,
 ): ResumableExpression<A> {
   throw new Error(
-    "[effect-atom-jsx] Portable expr.auto(...) was called without the "
+    "[affe] Portable expr.auto(...) was called without the "
       + "companion resume-extract compiler transform. Enable the transform or "
       + "use an ordinary JSX expression that activates with its component.",
   );

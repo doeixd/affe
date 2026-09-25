@@ -2,7 +2,7 @@
  * runtime.ts — The module that babel-plugin-jsx-dom-expressions imports from.
  *
  * Configure babel with:
- *   { moduleName: "effect-atom-jsx/runtime", generate: "dom" }
+ *   { moduleName: "@doeixd/affe/runtime", generate: "dom" }
  *
  * All exports here match the interface the compiled JSX output expects.
  */

@@ -35,7 +35,7 @@ still resolves. The decision and its rejected alternatives live in the plan.
 | DQ-057 | Last-wins TRUTH types: variadic `compose` over a tuple with `MergeAll` bindings (later keys override), `provides`/`events`/`emits` stay last-wins with a `behavior:provides-override` diagnostic through the DQ-058 reporter channel (report, never block). Deps stay intersection (inputs). Pipe landed. Rejected: intersection-with-conflict-errors — it outlaws the sanctioned REPLACE path. | ratified 2026-08-12, `COMPONENT_KIT_PLAN.md` K0b |
 | DQ-065 | Option 1 confirmed and DISCHARGED: the five factories were fixed first and now prove the boilerplate; `Mixin` (K0c) proceeds, extracted from the working shape — it must collapse the three observed repetitions (factory name, doubled witness names, options pick-list) and desugar to the same Schema+Behavior patterns, never a second runtime. | ratified 2026-08-12, `COMPONENT_KIT_PLAN.md` K0c |
 | DQ-056 | OUTCOME: the 2026-08-17 `whenBinding` fix answers it — per-property reactive accessors (`handle.setStyle` reaction), whole-piece re-resolution per read, branch-off unsets (K1 null-unset); non-conditional pieces keep resolve-once. Residual: dormancy (snapshot-driven styling of dormant regions) stays with the resume lane, gated on a real consumer. | ratified 2026-08-17, TRIAGE-2026-08-17-components.md item 1 |
-| DQ-063 | Absorb as **`@affe/css`** (workspace package; CSS-Tags is this repo's author's own project, so absorption is deliberate ownership, not a fork) — token namespace, `@layer` order, and Theme's typed refs version as one surface. Build lands with the kit milestone. | ratified 2026-08-17, item 2 |
+| DQ-063 | Absorb as **`@doeixd/affe-css`** (workspace package; CSS-Tags is this repo's author's own project, so absorption is deliberate ownership, not a fork) — token namespace, `@layer` order, and Theme's typed refs version as one surface. Build lands with the kit milestone. | ratified 2026-08-17, item 2 |
 | DQ-064 | Static extraction: per-module with the **slot** as the fail-open unit (fully-resolvable-in-module slots extract; boundary-crossing slots runtime-compose whole; binding-conditional pieces are never extracted — they are reactive per DQ-056). Owned by **K4**. | ratified 2026-08-17, item 3 |
 | DQ-066 | `press` gains a `now?: () => number` seam + `clickSuppressionMs` Schema knob (injected-seam precedent); the Effect `Clock`/`Locale` SERVICE ships with K3's first time-holding widget. | ratified 2026-08-17, item 5 |
 | DQ-067 | Keep the single version counter; finer granularity is MEASUREMENT-GATED (bench lane first, then split per-item disabled epoch vs order epoch), per the DQ-100/M8d precedent. | ratified 2026-08-17, item 6 |
@@ -484,7 +484,7 @@ this cannot be type-tested by a consumer today), findings §2.1.
 
 ---
 
-## DQ-063 — CSS-Tags: absorb as `@affe/css` or depend on it externally?
+## DQ-063 — CSS-Tags: absorb as `@doeixd/affe-css` or depend on it externally?
 
 - **Severity:** deferrable
 - **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` "Open questions" 8 (carried from rung zero)
@@ -496,7 +496,7 @@ this cannot be type-tested by a consumer today), findings §2.1.
 blocked on.
 
 **What is undecided.** Whether the foundation stylesheet is absorbed into the
-`@affe/*` workspace or consumed as an external dependency. The plan records the
+`@doeixd/affe-*` workspace or consumed as an external dependency. The plan records the
 crux as **token-namespace ownership**: whoever ships the foundation owns the
 token names the kit's recipes and Theme resolve against.
 
@@ -508,7 +508,7 @@ not own.
 
 **Options.**
 
-1. **Absorb as `@affe/css`.** Vendor and re-publish under our namespace.
+1. **Absorb as `@doeixd/affe-css`.** Vendor and re-publish under our namespace.
    *Cost:* we inherit maintenance and divergence from upstream. *Buys:* token
    namespace is ours; Theme, recipes, and the `@layer` order are one coherent
    surface we can version together.

@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { permissive } from "@affe/permissive";
+import { permissive } from "@doeixd/affe-permissive";
 import { BuildId } from "./shared/build.js";
 
 // The preset supplies the compiler plugins; this config only adds app wiring.

@@ -18,7 +18,7 @@ Start here when you are reading the repository docs directly.
 | `TESTING.md` | DOM-free tests, layer swapping, behavior drivers, stories/scenes, and diagnostics. |
 | `RELEASE_CHECKLIST.md` | Release gates and prerelease/stable criteria. |
 | `V1_SCOPE.md` | Ships/deferred authority for the current prerelease scope. |
-| `afui.md` | Long-form AF-UI narrative and architecture explanation. |
+| `afui.md` | Long-form Affe narrative and architecture explanation. |
 
 The broad `API.md` reference also covers the smaller exported modules:
 `A11y`, `Form`, `Devtools`, `Diagnostics`, `Serialization`, and `SafeHtml`.

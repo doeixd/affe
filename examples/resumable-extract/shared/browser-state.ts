@@ -1,4 +1,4 @@
-import type * as Resume from "effect-atom-jsx/Resume";
+import type * as Resume from "@doeixd/affe/Resume";
 
 export interface ResumableExtractBrowserState {
   /** Client-side imports of the transformed application module. */

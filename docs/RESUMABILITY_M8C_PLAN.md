@@ -422,8 +422,8 @@ exactly one attachment; two elements ⇒ two"* can never hold, because
 The corrected seam, keeping every property the original decision wanted:
 
 - The token is **namespace-qualified**: `_afExprDirectives.resumeExprDirective`,
-  from a generated `import * as _afExprDirectives from "effect-atom-jsx/dom"`
-  (module configurable, `directiveModule`, default `effect-atom-jsx/dom`).
+  from a generated `import * as _afExprDirectives from "@doeixd/affe/dom"`
+  (module configurable, `directiveModule`, default `@doeixd/affe/dom`).
 - The host element arrives through **`ref`** — the only channel that hands the
   plugin the element *before* the JSX transform — with any authored callback ref
   composed after:

@@ -10,7 +10,7 @@ import { createSignal, createEffect } from "./api.js";
 import { Owner, runWithOwner } from "./owner.js";
 import * as Atom from "./Atom.js";
 
-const TypeId = "~effect-atom-jsx/AtomRef" as const;
+const TypeId = "~affe/AtomRef" as const;
 
 /** A read-only reactive reference with subscribe and map capabilities. */
 export interface ReadonlyRef<A> {

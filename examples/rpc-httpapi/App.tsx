@@ -1,5 +1,5 @@
 import { Effect, Layer, Context } from "effect";
-import { AtomRpc, AtomHttpApi, MatchTag, createMount } from "effect-atom-jsx";
+import { AtomRpc, AtomHttpApi, MatchTag, createMount } from "@doeixd/affe";
 
 // ─── AtomRpc Example ──────────────────────────────────────────────────────────
 

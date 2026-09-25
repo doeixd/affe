@@ -1,7 +1,7 @@
 /**
  * S5 (`docs/PERMISSIVE_PACKAGE_PLAN.md`) — the Qwik-parity acceptance run.
  *
- * The page was built entirely through the `@affe/permissive` preset: the
+ * The page was built entirely through the `@doeixd/affe-permissive` preset: the
  * `extract.auto` one-liner handler (captures inferred, no schema at the call
  * site), the async seroval codec on both sides, and the client entry that
  * ships no compiler code. The proof is the Qwik property itself: nothing

@@ -129,13 +129,13 @@ export type {
 } from "./resume-handle.js";
 
 export const EventId = Schema.String.check(Schema.isPattern(/^e[0-9]+$/)).pipe(
-  Schema.brand("@effect-atom-jsx/Resume/EventId"),
+  Schema.brand("affe/Resume/EventId"),
 );
 export type EventId = typeof EventId.Type;
 
 export const EventType = Schema.String.check(
   Schema.isPattern(/^[a-z][a-z0-9-]*$/),
-).pipe(Schema.brand("@effect-atom-jsx/Resume/EventType"));
+).pipe(Schema.brand("affe/Resume/EventType"));
 export type EventType = typeof EventType.Type;
 
 export const PortableEventEntrySchema = Schema.Struct({
@@ -156,20 +156,20 @@ export const EventEntrySchema = Schema.Union([
 
 export const ComponentId = Schema.String.check(
   Schema.isPattern(/^c[0-9]+$/),
-).pipe(Schema.brand("@effect-atom-jsx/Resume/ComponentId"));
+).pipe(Schema.brand("affe/Resume/ComponentId"));
 export type ComponentId = typeof ComponentId.Type;
 
 export const ExpressionId = Schema.String.check(
   Schema.isPattern(/^x[0-9]+$/),
-).pipe(Schema.brand("@effect-atom-jsx/Resume/ExpressionId"));
+).pipe(Schema.brand("affe/Resume/ExpressionId"));
 export type ExpressionId = typeof ExpressionId.Type;
 
 export const ComponentActivationTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/ComponentActivation",
+  "affe/Resume/ComponentActivation",
 );
 
 export const BindingName = Schema.String.check(Schema.isNonEmpty()).pipe(
-  Schema.brand("@effect-atom-jsx/Resume/BindingName"),
+  Schema.brand("affe/Resume/BindingName"),
 );
 export type BindingName = typeof BindingName.Type;
 
@@ -266,7 +266,7 @@ export type ExpressionAttributeName = typeof ExpressionAttributeName.Type;
 const ExpressionCustomStylePropertyName = Schema.String.check(
   Schema.isPattern(ExpressionCustomStylePropertyPattern),
 ).pipe(
-  Schema.brand("@effect-atom-jsx/Resume/ExpressionCustomStylePropertyName"),
+  Schema.brand("affe/Resume/ExpressionCustomStylePropertyName"),
 );
 export const ExpressionStylePropertyName = Schema.Union([
   Schema.Literal("background-color"),
@@ -492,7 +492,7 @@ declare const ValidatedManifestTypeId: unique symbol;
  * demand this type rather than trusting caller-supplied object identity.
  */
 export type ValidatedManifest = Manifest & {
-  readonly [ValidatedManifestTypeId]: "@effect-atom-jsx/Resume/ValidatedManifest";
+  readonly [ValidatedManifestTypeId]: "affe/Resume/ValidatedManifest";
 };
 
 /**
@@ -612,7 +612,7 @@ export interface CollectionResult {
 }
 
 export class ResumeConfigurationError extends Schema.TaggedErrorClass<ResumeConfigurationError>(
-  "@effect-atom-jsx/ResumeConfigurationError",
+  "affe/ResumeConfigurationError",
 )("ResumeConfigurationError", {
   message: Schema.String,
 }) {}
@@ -624,7 +624,7 @@ export class ResumeConfigurationError extends Schema.TaggedErrorClass<ResumeConf
  * its nearest neighbour, since both gate in the same place.
  */
 export class ResumeSerializerMismatchError extends Schema.TaggedErrorClass<ResumeSerializerMismatchError>(
-  "@effect-atom-jsx/ResumeSerializerMismatchError",
+  "affe/ResumeSerializerMismatchError",
 )("ResumeSerializerMismatchError", {
   expected: Schema.String,
   actual: Schema.optional(Schema.String),
@@ -632,13 +632,13 @@ export class ResumeSerializerMismatchError extends Schema.TaggedErrorClass<Resum
 }) {}
 
 export class ResumeRenderError extends Schema.TaggedErrorClass<ResumeRenderError>(
-  "@effect-atom-jsx/ResumeRenderError",
+  "affe/ResumeRenderError",
 )("ResumeRenderError", {
   message: Schema.String,
 }) {}
 
 export class ResumeDescriptorError extends Schema.TaggedErrorClass<ResumeDescriptorError>(
-  "@effect-atom-jsx/ResumeDescriptorError",
+  "affe/ResumeDescriptorError",
 )("ResumeDescriptorError", {
   eventId: EventId,
   codeId: Portable.CodeId,
@@ -646,7 +646,7 @@ export class ResumeDescriptorError extends Schema.TaggedErrorClass<ResumeDescrip
 }) {}
 
 export class ResumeBuildMismatchError extends Schema.TaggedErrorClass<ResumeBuildMismatchError>(
-  "@effect-atom-jsx/ResumeBuildMismatchError",
+  "affe/ResumeBuildMismatchError",
 )("ResumeBuildMismatchError", {
   eventId: EventId,
   expected: Portable.BuildId,
@@ -655,7 +655,7 @@ export class ResumeBuildMismatchError extends Schema.TaggedErrorClass<ResumeBuil
 }) {}
 
 export class ResumeExpressionDescriptorError extends Schema.TaggedErrorClass<ResumeExpressionDescriptorError>(
-  "@effect-atom-jsx/ResumeExpressionDescriptorError",
+  "affe/ResumeExpressionDescriptorError",
 )("ResumeExpressionDescriptorError", {
   expressionId: ExpressionId,
   codeId: Portable.CodeId,
@@ -663,7 +663,7 @@ export class ResumeExpressionDescriptorError extends Schema.TaggedErrorClass<Res
 }) {}
 
 export class ResumeExpressionInputDecodeError extends Schema.TaggedErrorClass<ResumeExpressionInputDecodeError>(
-  "@effect-atom-jsx/ResumeExpressionInputDecodeError",
+  "affe/ResumeExpressionInputDecodeError",
 )("ResumeExpressionInputDecodeError", {
   expressionId: ExpressionId,
   codeId: Portable.CodeId,
@@ -671,7 +671,7 @@ export class ResumeExpressionInputDecodeError extends Schema.TaggedErrorClass<Re
 }) {}
 
 export class ResumeExpressionBuildMismatchError extends Schema.TaggedErrorClass<ResumeExpressionBuildMismatchError>(
-  "@effect-atom-jsx/ResumeExpressionBuildMismatchError",
+  "affe/ResumeExpressionBuildMismatchError",
 )("ResumeExpressionBuildMismatchError", {
   expressionId: ExpressionId,
   expected: Portable.BuildId,
@@ -680,7 +680,7 @@ export class ResumeExpressionBuildMismatchError extends Schema.TaggedErrorClass<
 }) {}
 
 export class ResumeComponentActivationDescriptorError extends Schema.TaggedErrorClass<ResumeComponentActivationDescriptorError>(
-  "@effect-atom-jsx/ResumeComponentActivationDescriptorError",
+  "affe/ResumeComponentActivationDescriptorError",
 )("ResumeComponentActivationDescriptorError", {
   componentId: ComponentId,
   codeId: Portable.CodeId,
@@ -688,7 +688,7 @@ export class ResumeComponentActivationDescriptorError extends Schema.TaggedError
 }) {}
 
 export class ResumeComponentActivationBuildMismatchError extends Schema.TaggedErrorClass<ResumeComponentActivationBuildMismatchError>(
-  "@effect-atom-jsx/ResumeComponentActivationBuildMismatchError",
+  "affe/ResumeComponentActivationBuildMismatchError",
 )("ResumeComponentActivationBuildMismatchError", {
   componentId: ComponentId,
   expected: Portable.BuildId,
@@ -697,61 +697,61 @@ export class ResumeComponentActivationBuildMismatchError extends Schema.TaggedEr
 }) {}
 
 export class ResumeComponentActivationNotFoundError extends Schema.TaggedErrorClass<ResumeComponentActivationNotFoundError>(
-  "@effect-atom-jsx/ResumeComponentActivationNotFoundError",
+  "affe/ResumeComponentActivationNotFoundError",
 )("ResumeComponentActivationNotFoundError", {
   componentId: Schema.String,
   message: Schema.String,
 }) {}
 
 export class ResumeComponentNotAddressableError extends Schema.TaggedErrorClass<ResumeComponentNotAddressableError>(
-  "@effect-atom-jsx/ResumeComponentNotAddressableError",
+  "affe/ResumeComponentNotAddressableError",
 )("ResumeComponentNotAddressableError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeComponentActivationDisposedError extends Schema.TaggedErrorClass<ResumeComponentActivationDisposedError>(
-  "@effect-atom-jsx/ResumeComponentActivationDisposedError",
+  "affe/ResumeComponentActivationDisposedError",
 )("ResumeComponentActivationDisposedError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeComponentActivationResolutionError extends Schema.TaggedErrorClass<ResumeComponentActivationResolutionError>(
-  "@effect-atom-jsx/ResumeComponentActivationResolutionError",
+  "affe/ResumeComponentActivationResolutionError",
 )("ResumeComponentActivationResolutionError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeComponentActivationExecutionError extends Schema.TaggedErrorClass<ResumeComponentActivationExecutionError>(
-  "@effect-atom-jsx/ResumeComponentActivationExecutionError",
+  "affe/ResumeComponentActivationExecutionError",
 )("ResumeComponentActivationExecutionError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeComponentActivationMountError extends Schema.TaggedErrorClass<ResumeComponentActivationMountError>(
-  "@effect-atom-jsx/ResumeComponentActivationMountError",
+  "affe/ResumeComponentActivationMountError",
 )("ResumeComponentActivationMountError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeManifestEncodeError extends Schema.TaggedErrorClass<ResumeManifestEncodeError>(
-  "@effect-atom-jsx/ResumeManifestEncodeError",
+  "affe/ResumeManifestEncodeError",
 )("ResumeManifestEncodeError", {
   message: Schema.String,
 }) {}
 
 export class ResumeManifestDecodeError extends Schema.TaggedErrorClass<ResumeManifestDecodeError>(
-  "@effect-atom-jsx/ResumeManifestDecodeError",
+  "affe/ResumeManifestDecodeError",
 )("ResumeManifestDecodeError", {
   message: Schema.String,
 }) {}
 
 export class ResumeClientBuildMismatchError extends Schema.TaggedErrorClass<ResumeClientBuildMismatchError>(
-  "@effect-atom-jsx/ResumeClientBuildMismatchError",
+  "affe/ResumeClientBuildMismatchError",
 )("ResumeClientBuildMismatchError", {
   expected: Portable.BuildId,
   actual: Portable.BuildId,
@@ -759,7 +759,7 @@ export class ResumeClientBuildMismatchError extends Schema.TaggedErrorClass<Resu
 }) {}
 
 export class ResumeUnknownEventMarkerError extends Schema.TaggedErrorClass<ResumeUnknownEventMarkerError>(
-  "@effect-atom-jsx/ResumeUnknownEventMarkerError",
+  "affe/ResumeUnknownEventMarkerError",
 )("ResumeUnknownEventMarkerError", {
   marker: Schema.String,
   eventType: EventType,
@@ -767,7 +767,7 @@ export class ResumeUnknownEventMarkerError extends Schema.TaggedErrorClass<Resum
 }) {}
 
 export class ResumeDuplicateEventMarkerError extends Schema.TaggedErrorClass<ResumeDuplicateEventMarkerError>(
-  "@effect-atom-jsx/ResumeDuplicateEventMarkerError",
+  "affe/ResumeDuplicateEventMarkerError",
 )("ResumeDuplicateEventMarkerError", {
   eventId: EventId,
   eventType: EventType,
@@ -776,7 +776,7 @@ export class ResumeDuplicateEventMarkerError extends Schema.TaggedErrorClass<Res
 }) {}
 
 export class ResumeMissingEventMarkerError extends Schema.TaggedErrorClass<ResumeMissingEventMarkerError>(
-  "@effect-atom-jsx/ResumeMissingEventMarkerError",
+  "affe/ResumeMissingEventMarkerError",
 )("ResumeMissingEventMarkerError", {
   eventId: EventId,
   eventType: EventType,
@@ -784,7 +784,7 @@ export class ResumeMissingEventMarkerError extends Schema.TaggedErrorClass<Resum
 }) {}
 
 export class ResumeEventTypeMismatchError extends Schema.TaggedErrorClass<ResumeEventTypeMismatchError>(
-  "@effect-atom-jsx/ResumeEventTypeMismatchError",
+  "affe/ResumeEventTypeMismatchError",
 )("ResumeEventTypeMismatchError", {
   eventId: EventId,
   expected: EventType,
@@ -793,7 +793,7 @@ export class ResumeEventTypeMismatchError extends Schema.TaggedErrorClass<Resume
 }) {}
 
 export class ResumeActivationEventOwnershipError extends Schema.TaggedErrorClass<ResumeActivationEventOwnershipError>(
-  "@effect-atom-jsx/ResumeActivationEventOwnershipError",
+  "affe/ResumeActivationEventOwnershipError",
 )("ResumeActivationEventOwnershipError", {
   eventId: EventId,
   eventType: EventType,
@@ -801,7 +801,7 @@ export class ResumeActivationEventOwnershipError extends Schema.TaggedErrorClass
 }) {}
 
 export class ResumeUnsupportedActivationEventTypeError extends Schema.TaggedErrorClass<ResumeUnsupportedActivationEventTypeError>(
-  "@effect-atom-jsx/ResumeUnsupportedActivationEventTypeError",
+  "affe/ResumeUnsupportedActivationEventTypeError",
 )("ResumeUnsupportedActivationEventTypeError", {
   eventId: EventId,
   eventType: EventType,
@@ -810,7 +810,7 @@ export class ResumeUnsupportedActivationEventTypeError extends Schema.TaggedErro
 }) {}
 
 export class ResumeExpressionOwnershipError extends Schema.TaggedErrorClass<ResumeExpressionOwnershipError>(
-  "@effect-atom-jsx/ResumeExpressionOwnershipError",
+  "affe/ResumeExpressionOwnershipError",
 )("ResumeExpressionOwnershipError", {
   expressionId: ExpressionId,
   componentId: Schema.optional(ComponentId),
@@ -818,14 +818,14 @@ export class ResumeExpressionOwnershipError extends Schema.TaggedErrorClass<Resu
 }) {}
 
 export class ResumeExpressionDependencyMetadataError extends Schema.TaggedErrorClass<ResumeExpressionDependencyMetadataError>(
-  "@effect-atom-jsx/ResumeExpressionDependencyMetadataError",
+  "affe/ResumeExpressionDependencyMetadataError",
 )("ResumeExpressionDependencyMetadataError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
 class ResumeEventHandoffError extends Schema.TaggedErrorClass<ResumeEventHandoffError>(
-  "@effect-atom-jsx/ResumeEventHandoffError",
+  "affe/ResumeEventHandoffError",
 )("ResumeEventHandoffError", {
   componentId: ComponentId,
   eventId: EventId,
@@ -834,33 +834,33 @@ class ResumeEventHandoffError extends Schema.TaggedErrorClass<ResumeEventHandoff
 }) {}
 
 export class ResumeListenerInstallError extends Schema.TaggedErrorClass<ResumeListenerInstallError>(
-  "@effect-atom-jsx/ResumeListenerInstallError",
+  "affe/ResumeListenerInstallError",
 )("ResumeListenerInstallError", {
   message: Schema.String,
 }) {}
 
 export class ResumeDuplicateClientInstallationError extends Schema.TaggedErrorClass<ResumeDuplicateClientInstallationError>(
-  "@effect-atom-jsx/ResumeDuplicateClientInstallationError",
+  "affe/ResumeDuplicateClientInstallationError",
 )("ResumeDuplicateClientInstallationError", {
   message: Schema.String,
 }) {}
 
 export class ResumeInvalidComponentBoundaryMarkerError extends Schema.TaggedErrorClass<ResumeInvalidComponentBoundaryMarkerError>(
-  "@effect-atom-jsx/ResumeInvalidComponentBoundaryMarkerError",
+  "affe/ResumeInvalidComponentBoundaryMarkerError",
 )("ResumeInvalidComponentBoundaryMarkerError", {
   marker: Schema.String,
   message: Schema.String,
 }) {}
 
 export class ResumeUnknownComponentBoundaryError extends Schema.TaggedErrorClass<ResumeUnknownComponentBoundaryError>(
-  "@effect-atom-jsx/ResumeUnknownComponentBoundaryError",
+  "affe/ResumeUnknownComponentBoundaryError",
 )("ResumeUnknownComponentBoundaryError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeDuplicateComponentBoundaryError extends Schema.TaggedErrorClass<ResumeDuplicateComponentBoundaryError>(
-  "@effect-atom-jsx/ResumeDuplicateComponentBoundaryError",
+  "affe/ResumeDuplicateComponentBoundaryError",
 )("ResumeDuplicateComponentBoundaryError", {
   componentId: ComponentId,
   edge: Schema.Union([Schema.Literal("start"), Schema.Literal("end")]),
@@ -868,7 +868,7 @@ export class ResumeDuplicateComponentBoundaryError extends Schema.TaggedErrorCla
 }) {}
 
 export class ResumeComponentBoundaryNestingError extends Schema.TaggedErrorClass<ResumeComponentBoundaryNestingError>(
-  "@effect-atom-jsx/ResumeComponentBoundaryNestingError",
+  "affe/ResumeComponentBoundaryNestingError",
 )("ResumeComponentBoundaryNestingError", {
   componentId: ComponentId,
   expectedComponentId: Schema.optional(ComponentId),
@@ -876,7 +876,7 @@ export class ResumeComponentBoundaryNestingError extends Schema.TaggedErrorClass
 }) {}
 
 export class ResumeMissingComponentBoundaryError extends Schema.TaggedErrorClass<ResumeMissingComponentBoundaryError>(
-  "@effect-atom-jsx/ResumeMissingComponentBoundaryError",
+  "affe/ResumeMissingComponentBoundaryError",
 )("ResumeMissingComponentBoundaryError", {
   componentId: ComponentId,
   edge: Schema.Union([
@@ -888,21 +888,21 @@ export class ResumeMissingComponentBoundaryError extends Schema.TaggedErrorClass
 }) {}
 
 export class ResumeInvalidExpressionBoundaryMarkerError extends Schema.TaggedErrorClass<ResumeInvalidExpressionBoundaryMarkerError>(
-  "@effect-atom-jsx/ResumeInvalidExpressionBoundaryMarkerError",
+  "affe/ResumeInvalidExpressionBoundaryMarkerError",
 )("ResumeInvalidExpressionBoundaryMarkerError", {
   marker: Schema.String,
   message: Schema.String,
 }) {}
 
 export class ResumeUnknownExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeUnknownExpressionBoundaryError>(
-  "@effect-atom-jsx/ResumeUnknownExpressionBoundaryError",
+  "affe/ResumeUnknownExpressionBoundaryError",
 )("ResumeUnknownExpressionBoundaryError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
 export class ResumeDuplicateExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeDuplicateExpressionBoundaryError>(
-  "@effect-atom-jsx/ResumeDuplicateExpressionBoundaryError",
+  "affe/ResumeDuplicateExpressionBoundaryError",
 )("ResumeDuplicateExpressionBoundaryError", {
   expressionId: ExpressionId,
   edge: Schema.Union([Schema.Literal("start"), Schema.Literal("end")]),
@@ -910,7 +910,7 @@ export class ResumeDuplicateExpressionBoundaryError extends Schema.TaggedErrorCl
 }) {}
 
 export class ResumeExpressionBoundaryNestingError extends Schema.TaggedErrorClass<ResumeExpressionBoundaryNestingError>(
-  "@effect-atom-jsx/ResumeExpressionBoundaryNestingError",
+  "affe/ResumeExpressionBoundaryNestingError",
 )("ResumeExpressionBoundaryNestingError", {
   expressionId: ExpressionId,
   expectedExpressionId: Schema.optional(ExpressionId),
@@ -918,7 +918,7 @@ export class ResumeExpressionBoundaryNestingError extends Schema.TaggedErrorClas
 }) {}
 
 export class ResumeMissingExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeMissingExpressionBoundaryError>(
-  "@effect-atom-jsx/ResumeMissingExpressionBoundaryError",
+  "affe/ResumeMissingExpressionBoundaryError",
 )("ResumeMissingExpressionBoundaryError", {
   expressionId: ExpressionId,
   edge: Schema.Union([
@@ -930,35 +930,35 @@ export class ResumeMissingExpressionBoundaryError extends Schema.TaggedErrorClas
 }) {}
 
 export class ResumeInvalidExpressionElementMarkerError extends Schema.TaggedErrorClass<ResumeInvalidExpressionElementMarkerError>(
-  "@effect-atom-jsx/ResumeInvalidExpressionElementMarkerError",
+  "affe/ResumeInvalidExpressionElementMarkerError",
 )("ResumeInvalidExpressionElementMarkerError", {
   marker: Schema.String,
   message: Schema.String,
 }) {}
 
 export class ResumeUnknownExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeUnknownExpressionElementTargetError>(
-  "@effect-atom-jsx/ResumeUnknownExpressionElementTargetError",
+  "affe/ResumeUnknownExpressionElementTargetError",
 )("ResumeUnknownExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
 export class ResumeDuplicateExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeDuplicateExpressionElementTargetError>(
-  "@effect-atom-jsx/ResumeDuplicateExpressionElementTargetError",
+  "affe/ResumeDuplicateExpressionElementTargetError",
 )("ResumeDuplicateExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
 export class ResumeMissingExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeMissingExpressionElementTargetError>(
-  "@effect-atom-jsx/ResumeMissingExpressionElementTargetError",
+  "affe/ResumeMissingExpressionElementTargetError",
 )("ResumeMissingExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
 export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedErrorClass<ResumeExpressionTargetKindMismatchError>(
-  "@effect-atom-jsx/ResumeExpressionTargetKindMismatchError",
+  "affe/ResumeExpressionTargetKindMismatchError",
 )("ResumeExpressionTargetKindMismatchError", {
   expressionId: ExpressionId,
   expected: Schema.Union([
@@ -975,13 +975,13 @@ export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedErrorC
 }) {}
 
 export class ResumeExpressionElementMarkerCleanupError extends Schema.TaggedErrorClass<ResumeExpressionElementMarkerCleanupError>(
-  "@effect-atom-jsx/ResumeExpressionElementMarkerCleanupError",
+  "affe/ResumeExpressionElementMarkerCleanupError",
 )("ResumeExpressionElementMarkerCleanupError", {
   message: Schema.String,
 }) {}
 
 export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedErrorClass<ResumeUnsupportedExpressionTargetError>(
-  "@effect-atom-jsx/ResumeUnsupportedExpressionTargetError",
+  "affe/ResumeUnsupportedExpressionTargetError",
 )("ResumeUnsupportedExpressionTargetError", {
   expressionId: ExpressionId,
   target: Schema.Union([
@@ -993,7 +993,7 @@ export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedErrorCl
 }) {}
 
 export class ResumePayloadTooLargeError extends Schema.TaggedErrorClass<ResumePayloadTooLargeError>(
-  "@effect-atom-jsx/ResumePayloadTooLargeError",
+  "affe/ResumePayloadTooLargeError",
 )("ResumePayloadTooLargeError", {
   maximumBytes: Schema.Finite,
   actualBytes: Schema.Finite,
@@ -1012,7 +1012,7 @@ export class ResumePayloadTooLargeError extends Schema.TaggedErrorClass<ResumePa
 }) {}
 
 export class ResumeStateSnapshotEncodeError extends Schema.TaggedErrorClass<ResumeStateSnapshotEncodeError>(
-  "@effect-atom-jsx/ResumeStateSnapshotEncodeError",
+  "affe/ResumeStateSnapshotEncodeError",
 )("ResumeStateSnapshotEncodeError", {
   componentId: ComponentId,
   binding: Schema.String,
@@ -1020,14 +1020,14 @@ export class ResumeStateSnapshotEncodeError extends Schema.TaggedErrorClass<Resu
 }) {}
 
 export class ResumeComponentSnapshotNotFoundError extends Schema.TaggedErrorClass<ResumeComponentSnapshotNotFoundError>(
-  "@effect-atom-jsx/ResumeComponentSnapshotNotFoundError",
+  "affe/ResumeComponentSnapshotNotFoundError",
 )("ResumeComponentSnapshotNotFoundError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeComponentPlanUnsupportedError extends Schema.TaggedErrorClass<ResumeComponentPlanUnsupportedError>(
-  "@effect-atom-jsx/ResumeComponentPlanUnsupportedError",
+  "affe/ResumeComponentPlanUnsupportedError",
 )("ResumeComponentPlanUnsupportedError", {
   componentId: ComponentId,
   message: Schema.String,
@@ -1039,7 +1039,7 @@ export class ResumeComponentPlanUnsupportedError extends Schema.TaggedErrorClass
  * boundary's hydration keys and DOM region, so the duplicate fails closed.
  */
 export class ResumeDuplicateComponentRestorationError extends Schema.TaggedErrorClass<ResumeDuplicateComponentRestorationError>(
-  "@effect-atom-jsx/ResumeDuplicateComponentRestorationError",
+  "affe/ResumeDuplicateComponentRestorationError",
 )("ResumeDuplicateComponentRestorationError", {
   componentId: ComponentId,
   message: Schema.String,
@@ -1051,14 +1051,14 @@ export class ResumeDuplicateComponentRestorationError extends Schema.TaggedError
  * content and the boundary is handed to one normal activation.
  */
 export class ResumeRestoredRenderError extends Schema.TaggedErrorClass<ResumeRestoredRenderError>(
-  "@effect-atom-jsx/ResumeRestoredRenderError",
+  "affe/ResumeRestoredRenderError",
 )("ResumeRestoredRenderError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeStateBindingMissingError extends Schema.TaggedErrorClass<ResumeStateBindingMissingError>(
-  "@effect-atom-jsx/ResumeStateBindingMissingError",
+  "affe/ResumeStateBindingMissingError",
 )("ResumeStateBindingMissingError", {
   componentId: ComponentId,
   binding: BindingName,
@@ -1066,7 +1066,7 @@ export class ResumeStateBindingMissingError extends Schema.TaggedErrorClass<Resu
 }) {}
 
 export class ResumeStateBindingUnexpectedError extends Schema.TaggedErrorClass<ResumeStateBindingUnexpectedError>(
-  "@effect-atom-jsx/ResumeStateBindingUnexpectedError",
+  "affe/ResumeStateBindingUnexpectedError",
 )("ResumeStateBindingUnexpectedError", {
   componentId: ComponentId,
   binding: BindingName,
@@ -1074,7 +1074,7 @@ export class ResumeStateBindingUnexpectedError extends Schema.TaggedErrorClass<R
 }) {}
 
 export class ResumeStateSnapshotDecodeError extends Schema.TaggedErrorClass<ResumeStateSnapshotDecodeError>(
-  "@effect-atom-jsx/ResumeStateSnapshotDecodeError",
+  "affe/ResumeStateSnapshotDecodeError",
 )("ResumeStateSnapshotDecodeError", {
   componentId: ComponentId,
   binding: BindingName,
@@ -1082,7 +1082,7 @@ export class ResumeStateSnapshotDecodeError extends Schema.TaggedErrorClass<Resu
 }) {}
 
 export class ResumeQueryExecutorDescriptorError extends Schema.TaggedErrorClass<ResumeQueryExecutorDescriptorError>(
-  "@effect-atom-jsx/ResumeQueryExecutorDescriptorError",
+  "affe/ResumeQueryExecutorDescriptorError",
 )("ResumeQueryExecutorDescriptorError", {
   componentId: ComponentId,
   binding: Schema.String,
@@ -1091,7 +1091,7 @@ export class ResumeQueryExecutorDescriptorError extends Schema.TaggedErrorClass<
 }) {}
 
 export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedErrorClass<ResumeQueryExecutorBuildMismatchError>(
-  "@effect-atom-jsx/ResumeQueryExecutorBuildMismatchError",
+  "affe/ResumeQueryExecutorBuildMismatchError",
 )("ResumeQueryExecutorBuildMismatchError", {
   componentId: ComponentId,
   binding: Schema.String,
@@ -1101,7 +1101,7 @@ export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedErrorCla
 }) {}
 
 export class ResumeRestoredQueryDisposedError extends Schema.TaggedErrorClass<ResumeRestoredQueryDisposedError>(
-  "@effect-atom-jsx/ResumeRestoredQueryDisposedError",
+  "affe/ResumeRestoredQueryDisposedError",
 )("ResumeRestoredQueryDisposedError", {
   componentId: ComponentId,
   binding: BindingName,
@@ -1109,14 +1109,14 @@ export class ResumeRestoredQueryDisposedError extends Schema.TaggedErrorClass<Re
 }) {}
 
 export class ResumePortableBehaviorAttachmentError extends Schema.TaggedErrorClass<ResumePortableBehaviorAttachmentError>(
-  "@effect-atom-jsx/ResumePortableBehaviorAttachmentError",
+  "affe/ResumePortableBehaviorAttachmentError",
 )("ResumePortableBehaviorAttachmentError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
 export class ResumeBindingSnapshotNotFoundError extends Schema.TaggedErrorClass<ResumeBindingSnapshotNotFoundError>(
-  "@effect-atom-jsx/ResumeBindingSnapshotNotFoundError",
+  "affe/ResumeBindingSnapshotNotFoundError",
 )("ResumeBindingSnapshotNotFoundError", {
   componentId: Schema.String,
   binding: Schema.String,
@@ -1124,7 +1124,7 @@ export class ResumeBindingSnapshotNotFoundError extends Schema.TaggedErrorClass<
 }) {}
 
 export class ResumeBindingSnapshotNotWritableError extends Schema.TaggedErrorClass<ResumeBindingSnapshotNotWritableError>(
-  "@effect-atom-jsx/ResumeBindingSnapshotNotWritableError",
+  "affe/ResumeBindingSnapshotNotWritableError",
 )("ResumeBindingSnapshotNotWritableError", {
   componentId: ComponentId,
   binding: BindingName,
@@ -1132,7 +1132,7 @@ export class ResumeBindingSnapshotNotWritableError extends Schema.TaggedErrorCla
 }) {}
 
 export class ResumeBindingSnapshotWriteDisposedError extends Schema.TaggedErrorClass<ResumeBindingSnapshotWriteDisposedError>(
-  "@effect-atom-jsx/ResumeBindingSnapshotWriteDisposedError",
+  "affe/ResumeBindingSnapshotWriteDisposedError",
 )("ResumeBindingSnapshotWriteDisposedError", {
   componentId: Schema.String,
   binding: Schema.String,
@@ -1140,7 +1140,7 @@ export class ResumeBindingSnapshotWriteDisposedError extends Schema.TaggedErrorC
 }) {}
 
 export class ResumeBindingSnapshotWriteEncodeError extends Schema.TaggedErrorClass<ResumeBindingSnapshotWriteEncodeError>(
-  "@effect-atom-jsx/ResumeBindingSnapshotWriteEncodeError",
+  "affe/ResumeBindingSnapshotWriteEncodeError",
 )("ResumeBindingSnapshotWriteEncodeError", {
   componentId: Schema.String,
   binding: Schema.String,
@@ -1855,7 +1855,7 @@ export function collectAsync<E = never, R = never>(
 }
 
 const asyncSetupTimedOut = Symbol.for(
-  "@effect-atom-jsx/Resume/asyncSetupTimedOut",
+  "affe/Resume/asyncSetupTimedOut",
 );
 
 /**
@@ -2861,7 +2861,7 @@ function restoreStateBindingsInScope<Props, Req, E, Bindings, Slots>(
           value: atom,
         });
         dehydrated.push({
-          "~@effect-atom-jsx/DehydratedAtom": true,
+          "~affe/DehydratedAtom": true,
           key: entry.snapshot.key,
           value: entry.value,
           dehydratedAt: entry.snapshot.dehydratedAt,
@@ -6206,7 +6206,7 @@ function installClientClaimed<R, ER>(
  */
 /** A record stream ended without its terminal completeness record (M11.5). */
 export class ResumeStreamTruncatedError extends Schema.TaggedErrorClass<ResumeStreamTruncatedError>(
-  "@effect-atom-jsx/ResumeStreamTruncatedError",
+  "affe/ResumeStreamTruncatedError",
 )("ResumeStreamTruncatedError", {
   message: Schema.String,
 }) {}

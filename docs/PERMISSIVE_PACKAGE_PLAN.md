@@ -1,13 +1,13 @@
-# The permissive package (`@affe/permissive`) — milestone plan
+# The permissive package (`@doeixd/affe-permissive`) — milestone plan
 
 Status: planned 2026-08-12. S0 done (binding-level oversized-payload
 attribution: `largestBindingName`). S1 done (`Resume.spiVersion`, the
-`effect-atom-jsx/adapter-spi` subpath with a pinned member list;
+`@doeixd/affe/adapter-spi` subpath with a pinned member list;
 `adapter-spi.spec.ts` went 6/6 and was promoted to
 `src/__tests__/adapter-spi.test.ts`, emptying `future/resumability/`).
 S2 done (npm workspaces; `packages/permissive` with its own
 tsconfig/vitest wired into root scripts — root `npm test` runs both suites;
-the core resolves via `"effect-atom-jsx": "file:../.."` because a bare `*`
+the core resolves via `"@doeixd/affe": "file:../.."` because a bare `*`
 made npm fetch the published registry copy instead of linking the repo
 root; `spi-consumer.test.ts` enforces public-subpath-only imports against
 the core's live `exports` map and pins the fail-closed
@@ -19,7 +19,7 @@ Promise captures are the point of permissive mode; `assertSpiCompatible()`
 runs at construction; reference codec ids/layers re-exported).
 S4 done (`Serialization.SerovalOptions.stateHandles?: StateHandleResolver`
 with `keyOf`/`resolve` and fall-back-to-reference-registry semantics —
-unknown keys still fail closed; `@affe/permissive` ships
+unknown keys still fail closed; `@doeixd/affe-permissive` ships
 `createHandleRegistry()` and `permissive({stateHandles})`; keys are
 deliberately opaque to the codec because handles carry no intrinsic
 cross-process identity — the app registering the same stable keys on both
@@ -28,14 +28,14 @@ Chromium 11th test: zero setup/view/loader on load, first click lazy-loads
 the handler and the inferred Map capture arrives live, serializer stamp is
 `af.seroval-async-json.v1`, dispose clean. The build surfaced the package's
 missing client boundary — importing `permissive()` from client code pulled
-babel into a 1.3 MB chunk — fixed by the new `@affe/permissive/client`
+babel into a 1.3 MB chunk — fixed by the new `@doeixd/affe-permissive/client`
 entry (`permissiveClient()`), with chunk-size pins in the spec).
 S6 done — **milestone complete 2026-08-12**: strict-mode byte proof landed
 as `browser-tests/strict-mode-bytes.spec.ts` (the precise claim: rollup
 emits a seroval chunk on disk for every build because the lazy import sits
 in the public `Serialization` module, but a strict page never FETCHES the
 library — the framework's id constants in the entry are the only trace,
-and they serve the `DQ-012` gate); API.md gained the `@affe/permissive`
+and they serve the `DQ-012` gate); API.md gained the `@doeixd/affe-permissive`
 section; `RESUMABILITY_IMPLEMENTATION_PLAN.md` M10 status and
 `CURRENT_STATUS_IN_REDESIGN_PLAN.md` updated. Open per P1: the publishable
 scope/name, revisited at first publish. Deferred per P4: store-proxy layer.
@@ -53,7 +53,7 @@ no `src/agent-mcp.ts`). Owning upstream sections:
 Qwik-parity as a **configuration, not a fork**: auto-capture + the universal
 codec + the reference plugins bundled so an app opts into inferred captures
 and rich values with one preset — while doubling as the external-style SPI
-consumer M9 requires. It must build against **public `@affe/*` API only**;
+consumer M9 requires. It must build against **public `@doeixd/affe-*` API only**;
 that constraint IS the SPI test.
 
 ## Premise inventory (verified against code, 2026-08-12)
@@ -89,10 +89,10 @@ Missing / red (verified by running `adapter-spi.spec.ts`):
 ## Provisional decisions (declare-then-build; none are DQ-blocking)
 
 - **P1 — workspace layout:** npm workspaces; the package lives at
-  `packages/permissive`, package name `@affe/permissive` as the working name.
-  The publishable scope is NOT settled (core is `effect-atom-jsx`, unscoped);
+  `packages/permissive`, package name `@doeixd/affe-permissive` as the working name.
+  The publishable scope is NOT settled (core is `@doeixd/affe`, unscoped);
   recorded as a naming question to revisit at first publish, not before.
-- **P2 — SPI surface shape:** a dedicated `effect-atom-jsx/adapter-spi`
+- **P2 — SPI surface shape:** a dedicated `@doeixd/affe/adapter-spi`
   subpath module re-exporting the frozen member list, plus
   `Resume.spiVersion` (the spec's premise names `Resume.{spiVersion}`).
   The member list starts from what `adapter-spi.spec.ts` already exercises:
@@ -141,6 +141,6 @@ Chromium where the slice touches served output) and sabotage-verified tests.
 ## Non-goals (v1)
 
 Store-proxy dependency graphs; publishing to a registry; the MCP adapter
-itself (that is the `@affe/agent` package, AN-3 — this milestone only
+itself (that is the `@doeixd/affe-agent` package, AN-3 — this milestone only
 establishes the workspace pattern it will reuse); any `future/agent/*`
 implementation.

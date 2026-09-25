@@ -10,16 +10,16 @@ import {
 } from "./resume-handle.js";
 
 export const ExpressionTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/Expression",
+  "affe/Resume/Expression",
 );
 export const ExpressionRenderTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/ExpressionRender",
+  "affe/Resume/ExpressionRender",
 );
 export const ExpressionDependenciesSchemaTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/ExpressionDependenciesSchema",
+  "affe/Resume/ExpressionDependenciesSchema",
 );
 export const ExpressionStructuralModeTypeId: unique symbol = Symbol.for(
-  "effect-atom-jsx/Resume/ExpressionStructuralMode",
+  "affe/Resume/ExpressionStructuralMode",
 );
 
 /**
@@ -204,7 +204,7 @@ export interface ExpressionContext {
 }
 
 export class ExpressionDependencyDecodeError extends Schema.TaggedErrorClass<ExpressionDependencyDecodeError>(
-  "@effect-atom-jsx/ExpressionDependencyDecodeError",
+  "affe/ExpressionDependencyDecodeError",
 )("ExpressionDependencyDecodeError", {
   codeId: Portable.CodeId,
   message: Schema.String,
@@ -400,7 +400,7 @@ export function bindExpression<
       const inspection = dep[HandleInspectionTypeId]();
       if (inspection.kind !== "state") {
         throw new TypeError(
-          `[effect-atom-jsx] Expression dependencies currently support value-bearing Component.state handles only; received a ${inspection.kind} handle.`,
+          `[affe] Expression dependencies currently support value-bearing Component.state handles only; received a ${inspection.kind} handle.`,
         );
       }
       orderedDeps.push(dep);
@@ -410,7 +410,7 @@ export function bindExpression<
       readDependencies.push(() => undefined);
     } else {
       throw new TypeError(
-        "[effect-atom-jsx] Expression dependencies must be reactivity keys or Component.state handles.",
+        "[affe] Expression dependencies must be reactivity keys or Component.state handles.",
       );
     }
   }

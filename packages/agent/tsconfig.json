@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     // The package consumes the published core surface (public subpaths),
-    // never src/ — the same external-consumer constraint @affe/permissive
+    // never src/ — the same external-consumer constraint @doeixd/affe-permissive
     // pins with its spi-consumer test.
     "plugins": []
   },

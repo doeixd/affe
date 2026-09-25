@@ -130,13 +130,13 @@ The parent agent remains responsible for recording the durable outcome.
 
 # Agent Notes
 
-This repository is `effect-atom-jsx`, a runtime JSX and Effect-based reactive UI library. Current work is converging it toward the AF-UI vision: an inside-out UI framework where components expose typed structural slots, and styles, behaviors, routing, reactivity, hydration, and server routes compose around those slots.
+This repository is `@doeixd/affe`, a runtime JSX and Effect-based reactive UI library. Current work is converging it toward the Affe vision: an inside-out UI framework where components expose typed structural slots, and styles, behaviors, routing, reactivity, hydration, and server routes compose around those slots.
 
 ## Source Of Truth
 
 Use these documents first:
 
-- [`docs/AF_UI_CONTRACT.md`](docs/archive/AF_UI_CONTRACT.md) — canonical AF-UI architecture contract.
+- [`docs/AF_UI_CONTRACT.md`](docs/archive/AF_UI_CONTRACT.md) — canonical Affe architecture contract.
 - [`docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`](docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md) — current implementation status and backlog.
 - [`future/README.md`](future/README.md) — the finished design as executable specs; `npm run test:future` is the remaining-work list.
 - [`docs/ARCHITECTURE_REFERENCE.md`](docs/ARCHITECTURE_REFERENCE.md) — cross-cutting reference for typed views/slots, templates, components, actions/queries.
@@ -181,7 +181,7 @@ Important boundaries:
 
 ## Current Implementation State
 
-Current AF-UI implementation state:
+Current Affe implementation state:
 
 - `Component.Component` has an explicit fifth `SlotContract` type axis.
 - `Component.SlotContractOf<T>` extracts authored slot contract metadata.
@@ -397,6 +397,6 @@ When adding diagnostics:
 
 There may be unrelated or pre-existing changes in the worktree. Do not reset or revert them unless explicitly asked.
 
-Known recent untracked path observed during AF-UI work:
+Known recent untracked path observed during Affe work:
 
 - `docs/af-ui-json-render/`

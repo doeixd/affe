@@ -33,7 +33,7 @@ interface RecorderService {
 }
 
 const Recorder = Context.Service<RecorderService>(
-  "effect-atom-jsx/test/LiveStreamRecorder",
+  "affe/test/LiveStreamRecorder",
 );
 
 /** A sink whose layer records every label a dispatched code runs with. */

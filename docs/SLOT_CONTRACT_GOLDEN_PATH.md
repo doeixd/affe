@@ -1,6 +1,6 @@
 # Slot Contract Golden Path
 
-This is the preferred authored shape for structural UI in AF-UI.
+This is the preferred authored shape for structural UI in Affe.
 
 The component author defines slot identity once with `View.Slots.define`.
 `Component.makeWithSlots(...)` builds the component, wraps the authored JSX in
@@ -10,7 +10,7 @@ markup surface.
 
 ```tsx
 import { Effect } from "effect";
-import { Behavior, Component, Element, Style, View } from "effect-atom-jsx";
+import { Behavior, Component, Element, Style, View } from "@doeixd/affe";
 
 // 1. The contract: names from keys, default handles from capabilities.
 const FieldSlots = View.Slots.define({

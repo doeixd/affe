@@ -1,4 +1,4 @@
-/** @jsxImportSource effect-atom-jsx */
+/** @jsxImportSource @doeixd/affe */
 
 import type { JSX } from "../jsx-runtime.js";
 

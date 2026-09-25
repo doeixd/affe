@@ -1,20 +1,20 @@
-# AF-UI
+# Affe
 
-## The Main Value Add: Why AF-UI?
+## The Main Value Add: Why Affe?
 
-If you are frustrated by maintaining forks of `shadcn/ui`, debugging typos in massive `Tailwind` strings, or paying the runtime performance cost of `CSS-in-JS`, AF-UI offers a fundamentally different approach.
+If you are frustrated by maintaining forks of `shadcn/ui`, debugging typos in massive `Tailwind` strings, or paying the runtime performance cost of `CSS-in-JS`, Affe offers a fundamentally different approach.
 
-AF-UI is built on an **"Inside-Out" Component Model** powered by Effect-TS. Instead of hardcoding behavior and styles into a single file, AF-UI separates UI into purely structural **Views** described by first-class **Slot Contracts**, and allows you to attach **Behaviors** and **Styles** from the outside, with 100% compile-time type safety.
+Affe is built on an **"Inside-Out" Component Model** powered by Effect-TS. Instead of hardcoding behavior and styles into a single file, Affe separates UI into purely structural **Views** described by first-class **Slot Contracts**, and allows you to attach **Behaviors** and **Styles** from the outside, with 100% compile-time type safety.
 
 This solves three major ecosystem pain points:
 
-1. **The Tailwind Problem:** Styles in AF-UI are composable data structures backed by a typed token system. Invalid CSS properties or invalid theme tokens fail at compile time. No more typos or runtime layout bugs.
+1. **The Tailwind Problem:** Styles in Affe are composable data structures backed by a typed token system. Invalid CSS properties or invalid theme tokens fail at compile time. No more typos or runtime layout bugs.
 2. **The shadcn/ui Problem:** You no longer need to copy/paste and fork underlying components just to change a border radius or add an aria-attribute. Components publish their slot contract, and you override styles and behaviors against that contract — completely avoiding fork rot.
 3. **The Platform Lock-in Problem:** Because Styles and Behaviors are data, they are completely decoupled from the Web DOM. Slot contracts declare exactly which capabilities, events, and attributes they need, so the same component can be validated and rendered against Web (CSS/HTML), Terminal (TUI), or native platforms just by swapping the platform layer.
 
 ## Architecture: From Slot Contract to Platform
 
-AF-UI maintains type safety from the lowest-level element up to the platform rendering boundary:
+Affe maintains type safety from the lowest-level element up to the platform rendering boundary:
 
 ```text
 Slot Contracts ➔ Views ➔ Components ➔ Renderer ➔ Platform
@@ -35,7 +35,7 @@ Traditional Model:
   ├── Hardcoded Interaction Hooks
   └── Structure (JSX)
 
-AF-UI Inside-Out Model:
+Affe Inside-Out Model:
 [Slot Contract]
        ↓
 [Component: Setup (Bindings) + View<Slots>]
@@ -55,9 +55,9 @@ In this model:
 
 ## The Effect Influence
 
-AF-UI's design is fundamentally influenced by **Effect-TS**, inheriting its core patterns and guarantees:
+Affe's design is fundamentally influenced by **Effect-TS**, inheriting its core patterns and guarantees:
 
-1. **Services as Context:** Like Effect uses the environment (`R`) for dependency injection, AF-UI components declare services via `Component.require`. Providing a Theme or a Router is identical to `Effect.provide(layer)`.
+1. **Services as Context:** Like Effect uses the environment (`R`) for dependency injection, Affe components declare services via `Component.require`. Providing a Theme or a Router is identical to `Effect.provide(layer)`.
 2. **Pipeable Composition:** Components, behaviors, and styles are transformed and composed using `.pipe()`, matching Effect's standard composition model.
 3. **Requirement Bubbling:** Setup steps are Effects. When a component's setup uses a service or its query can fail, that requirement and error automatically accumulate into the component's `Req` and `E` types — surfaced via the `Component.Requirements<C>` and `Component.Errors<C>` type helpers.
 4. **Data as Values:** Slot contracts, styles, and behaviors are plain data structures interpreted at runtime, not side-effecting function calls. This makes them easily testable — and statically analyzable — as pure data.
@@ -159,11 +159,11 @@ Because these are branded witnesses rather than magic strings, an attachment tha
 
 ## The Styling System
 
-AF-UI's styling system reimagines CSS as a type-safe, composable, platform-agnostic service.
+Affe's styling system reimagines CSS as a type-safe, composable, platform-agnostic service.
 
 ### Composable Style Pieces
 
-AF-UI provides atomic utilities that mirror Tailwind's granularity with full type safety. A style piece is just data, so you build your own vocabulary from `Style.slot` and `Style.compose`:
+Affe provides atomic utilities that mirror Tailwind's granularity with full type safety. A style piece is just data, so you build your own vocabulary from `Style.slot` and `Style.compose`:
 
 ```ts
 const padded = (amount: StyleSpacing) => Style.slot({ padding: amount });
@@ -247,7 +247,7 @@ Component.pipe(Style.attachBySlots(style, { root: "root", title: "title" }))
 
 ## The Behavior System
 
-Behaviors in AF-UI are **active slot-consumers** that directly attach interaction logic to elements.
+Behaviors in Affe are **active slot-consumers** that directly attach interaction logic to elements.
 
 ### Core Concepts
 
@@ -407,11 +407,11 @@ const SelectableList = List.pipe(
 
 ## Runtime, Routing, and Reactivity: The "Brain" of the Inside-Out Model
 
-Slot contracts, styles, and behaviors describe the *body* of an application. AF-UI's runtime services — Reactivity, Routing, SingleFlight, and Hydration — provide the logical "brain" that powers them. Built entirely on Effect-TS, these systems move away from traditional identity-based updates toward semantic, key-based logic that works across any platform.
+Slot contracts, styles, and behaviors describe the *body* of an application. Affe's runtime services — Reactivity, Routing, SingleFlight, and Hydration — provide the logical "brain" that powers them. Built entirely on Effect-TS, these systems move away from traditional identity-based updates toward semantic, key-based logic that works across any platform.
 
 ### The Reactivity Service (Semantic Invalidation)
 
-Most UI frameworks track reactivity via object identity or dependency graphs. AF-UI adds a dedicated `Reactivity` service that provides **semantic, key-based invalidation**. Instead of saying "refresh this specific atom," you invalidate a semantic concept. This allows decoupled services to drive UI updates without direct references.
+Most UI frameworks track reactivity via object identity or dependency graphs. Affe adds a dedicated `Reactivity` service that provides **semantic, key-based invalidation**. Instead of saying "refresh this specific atom," you invalidate a semantic concept. This allows decoupled services to drive UI updates without direct references.
 
 ```ts
 // 1. A key witness: one shared value for the read side and the write side.
@@ -443,7 +443,7 @@ Key properties:
 
 #### How Auto-Tracking Works
 
-AF-UI bridges the gap between high-level semantic keys and low-level fine-grained signals through an automatic tracking system bound to the active Effect layer:
+Affe bridges the gap between high-level semantic keys and low-level fine-grained signals through an automatic tracking system bound to the active Effect layer:
 
 1. **The Tracking Scope**: When a reactive computation (a component render, a memo, an Effect) runs, the active `Reactivity` service establishes a tracking scope.
 2. **Automatic Dependency Collection**: Reading an atom or calling a service method wrapped in `Reactivity.tracked` registers its semantic keys with the current scope. You never manage subscriptions manually.
@@ -453,7 +453,7 @@ Because tracking is bound to the layer, swapping `Reactivity.live` for `Reactivi
 
 ### The Routing System (Schema-First & Unified)
 
-AF-UI features a unified, route-first model where components and routing metadata are fused through type-safe pipes. Routes are first-class values that accumulate metadata (params, loaders, head metadata, children) using `.pipe()`. This metadata flows through the type system — path patterns like `"/users/:userId"` even infer their param names at the type level.
+Affe features a unified, route-first model where components and routing metadata are fused through type-safe pipes. Routes are first-class values that accumulate metadata (params, loaders, head metadata, children) using `.pipe()`. This metadata flows through the type system — path patterns like `"/users/:userId"` even infer their param names at the type level.
 
 ```ts
 const UserRoute = UserPage.pipe(
@@ -480,9 +480,9 @@ const UserRoute = UserPage.pipe(
 
 ### SingleFlight & Loader Infrastructure
 
-AF-UI solves the "waterfall problem" and SSR/hydration mismatch through its **SingleFlight** infrastructure.
+Affe solves the "waterfall problem" and SSR/hydration mismatch through its **SingleFlight** infrastructure.
 
-- **Bundled Data Fetching**: On navigation, AF-UI calculates all matching routes and their loaders and executes them in a single flight — parallelized on the server, or bundled into one request from the client (`Route.runMatchedLoaders`, with `Route.runStreamingNavigation` splitting critical from deferred loaders for streaming).
+- **Bundled Data Fetching**: On navigation, Affe calculates all matching routes and their loaders and executes them in a single flight — parallelized on the server, or bundled into one request from the client (`Route.runMatchedLoaders`, with `Route.runStreamingNavigation` splitting critical from deferred loaders for streaming).
 - **SingleFlight Mutations**: Actions opt into single flight declaratively. A mutation triggers the server-side action *and* returns the updated data for all affected loaders in a single round-trip:
 
   ```ts
@@ -495,7 +495,7 @@ AF-UI solves the "waterfall problem" and SSR/hydration mismatch through its **Si
 
 ### Optimistic Updates
 
-AF-UI enables immediate UI feedback through **Optimistic Atoms**, letting the UI reflect state changes before a server-side action completes.
+Affe enables immediate UI feedback through **Optimistic Atoms**, letting the UI reflect state changes before a server-side action completes.
 
 ```ts
 const countAtom = Atom.make(0).pipe(Atom.withOptimistic());
@@ -532,7 +532,7 @@ The resulting handle exposes `value` (optimistic-or-committed), `committed`, `ha
 
 ### The Result Type: Bridging Async and UI
 
-AF-UI uses a standardized `Result<A, E>` union to handle asynchronous states consistently across the framework. It is deliberately shaped for stale-while-revalidate rendering:
+Affe uses a standardized `Result<A, E>` union to handle asynchronous states consistently across the framework. It is deliberately shaped for stale-while-revalidate rendering:
 
 - `Loading` — no data yet; the first load is in flight.
 - `Refreshing<A, E>` — a refresh is in flight and a previous settled result is still available.
@@ -560,7 +560,7 @@ Result.match(users, {
 
 ### Hydration: Explicit State Transfer
 
-AF-UI manages server-to-client state transfer through an explicit hydration API, ensuring a seamless transition from static HTML to an interactive application.
+Affe manages server-to-client state transfer through an explicit hydration API, ensuring a seamless transition from static HTML to an interactive application.
 
 1. **Dehydration (server)**: During SSR, `dehydrate(registry, entries)` snapshots the chosen atoms into a JSON-serializable payload (each entry carries its key, value, and timestamp), which is injected into the HTML document.
 2. **Rehydration (client)**: On load, `hydrate(registry, payload, resolvers)` restores the atom values directly into the registry **before** the component tree mounts, so components read the seeded state synchronously on first render.
@@ -591,7 +591,7 @@ const SaveApi = ServerRoute.json().pipe(
 
 ### Effect Layers as the Context System
 
-AF-UI replaces traditional React-style Context with **Effect Layers**. Components declare their dependencies via `Component.require`; providing them is done with layers:
+Affe replaces traditional React-style Context with **Effect Layers**. Components declare their dependencies via `Component.require`; providing them is done with layers:
 
 ```ts
 // Component says: "I need an Api service"
@@ -621,7 +621,7 @@ Why this is superior to Context:
 
 ### Pipeability: The Algebra of UI
 
-Every major entity in AF-UI — Component, Route, ServerRoute, Style, Behavior — is pipeable. Complex applications are built by composing small, reusable functions:
+Every major entity in Affe — Component, Route, ServerRoute, Style, Behavior — is pipeable. Complex applications are built by composing small, reusable functions:
 
 ```ts
 const EnhancedComponent = BaseComponent.pipe(
@@ -632,11 +632,11 @@ const EnhancedComponent = BaseComponent.pipe(
 );
 ```
 
-This functional approach ensures that inference flows correctly and logic stays decoupled from the component implementation. Whether it is the semantic invalidation of the Reactivity service, the bundled loaders of SingleFlight, or requirement bubbling through routes and views, AF-UI is one unified algebra: portable, type-safe, and performant by default.
+This functional approach ensures that inference flows correctly and logic stays decoupled from the component implementation. Whether it is the semantic invalidation of the Reactivity service, the bundled loaders of SingleFlight, or requirement bubbling through routes and views, Affe is one unified algebra: portable, type-safe, and performant by default.
 
 ## Comparison to Other Systems
 
-| Aspect | Tailwind | shadcn/ui | CSS-in-JS | AF-UI |
+| Aspect | Tailwind | shadcn/ui | CSS-in-JS | Affe |
 |--------|----------|-----------|-----------|-------|
 | **Granularity** | Utility classes | Copy-paste | Template literals | Composable typed style pieces |
 | **Type Safety** | None (magic strings) | Limited (props only) | Limited | Full compile-time validation |
@@ -656,12 +656,12 @@ Yes. This architecture targets teams already investing in robust, type-safe appl
 The platform agnosticism is a structural reality enforced by the compiler *and* by data. Slot contracts declare capabilities, events, attributes, and platform requirements as typed witnesses, and platforms declare what they support; `View.validatePlatform` and the `View.IsPlatformCompatible` type check them against each other. The framework mathematically prevents DOM-coupling in component logic. While writing a production-ready native or TUI renderer takes framework-level effort, the *component code* you write today is verified against the target platform's declared vocabulary.
 
 **4. Runtime Cost: How does runtime styling compare to zero-runtime solutions like Panda CSS or Vanilla Extract?**
-Unlike traditional CSS-in-JS that parses massive template literals at runtime, AF-UI styles are lightweight, pre-structured objects that map closely to platform primitives. More importantly, AF-UI's reactivity is granular — when a reactive style updates, it directly mutates the specific host node's style without triggering a full Virtual DOM diff. And because styles are pure data structures keyed by slot contracts, a build step can statically extract non-reactive styles exactly like Vanilla Extract.
+Unlike traditional CSS-in-JS that parses massive template literals at runtime, Affe styles are lightweight, pre-structured objects that map closely to platform primitives. More importantly, Affe's reactivity is granular — when a reactive style updates, it directly mutates the specific host node's style without triggering a full Virtual DOM diff. And because styles are pure data structures keyed by slot contracts, a build step can statically extract non-reactive styles exactly like Vanilla Extract.
 
 **5. Ecosystem Interop: Can I use this in an existing React app?**
-Yes, incrementally. Because AF-UI separates its lifecycle and rendering from React's VDOM, an AF-UI component tree can be mounted inside a standard React component using a `useEffect` hook (much like mounting a complex D3 chart or WebGL canvas). You can adopt AF-UI to build your core design system or complex state-heavy forms without rewriting your existing React application.
+Yes, incrementally. Because Affe separates its lifecycle and rendering from React's VDOM, an Affe component tree can be mounted inside a standard React component using a `useEffect` hook (much like mounting a complex D3 chart or WebGL canvas). You can adopt Affe to build your core design system or complex state-heavy forms without rewriting your existing React application.
 
-## When Not to Use AF-UI
+## When Not to Use Affe
 
 Honest scoping, because the rest of this document argues the other side:
 
@@ -675,9 +675,9 @@ Honest scoping, because the rest of this document argues the other side:
   landing page.
 
 Unlike most alternatives in this space, you do *not* give up incremental
-adoption (AF-UI mounts inside an existing React app) or SSR (hydration,
+adoption (Affe mounts inside an existing React app) or SSR (hydration,
 streaming loaders, and single-flight mutations are first-class).
 
 ## Conclusion
 
-AF-UI's Slot Contract / Style / Behavior system represents a paradigm shift in UI architecture. By applying Effect's service/layer model to UI development — and making the slot contract the single, typed source of truth shared by views, styles, behaviors, and platforms — it achieves true type safety, effortless composability, and genuine platform independence, finally solving the long-standing problems of Tailwind and `shadcn/ui`.
+Affe's Slot Contract / Style / Behavior system represents a paradigm shift in UI architecture. By applying Effect's service/layer model to UI development — and making the slot contract the single, typed source of truth shared by views, styles, behaviors, and platforms — it achieves true type safety, effortless composability, and genuine platform independence, finally solving the long-standing problems of Tailwind and `shadcn/ui`.

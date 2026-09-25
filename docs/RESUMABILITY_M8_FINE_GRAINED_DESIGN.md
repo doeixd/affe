@@ -98,7 +98,7 @@ Two new principles specific to M8:
 A resumable expression is an explicit marker, mirroring `extract`:
 
 ```ts
-import { expr } from "effect-atom-jsx/portable-extract"
+import { expr } from "@doeixd/affe/portable-extract"
 
 // In a view:
 <span>

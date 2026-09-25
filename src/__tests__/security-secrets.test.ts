@@ -155,7 +155,7 @@ describe("[SEC/M7] Portable captures are published, and behave like it", () => {
     };
 
     const secretSource = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const login = extract((captures) => Effect.succeed(captures.apiToken), {
   captures: Schema.Struct({ apiToken: Schema.String }),

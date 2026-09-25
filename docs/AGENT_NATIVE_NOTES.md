@@ -36,7 +36,7 @@ agent-facing behavior difference is a `Layer` swap, not a code fork.
 | Live sync (mutation → query refresh) | `source:"action"` change events | Reactivity keys. `Component.action({reactivityKeys})` already invalidates `Component.query` atoms; single-flight already merges mutation + revalidated loaders in one round trip | Server-push Reactivity layer so *agent-initiated* invalidations reach connected clients (already contemplated: Reactivity is a service with swappable layers) |
 | Chat rendering of results (`chatUI.renderer`) | named renderer registry + widget schemas | `Resume.addressable` components + (M11b) `Resume.mountFragment` server fragments; json-render catalog proposal | Associate a component/portable id with an action's success schema |
 | Generative UI (agent-written HTML in sandboxed iframe, Alpine+Tailwind) | runtime HTML + bridge allowlist | Strictly dominated by our model: json-render spec validated against a **typed catalog**, rendered dormant (zero JS) with typed activation; `SafeHtml` branding; no iframe needed for the common case | json-render Phase 1 (catalog + tree) + a validator |
-| MCP server (`/mcp`, actions as tools, OAuth) | auto-mounted | Catalog → MCP tools is a pure projection: Effect Schema emits JSON Schema; descriptions live on catalog entries | Small `@affe/agent` adapter package |
+| MCP server (`/mcp`, actions as tools, OAuth) | auto-mounted | Catalog → MCP tools is a pure projection: Effect Schema emits JSON Schema; descriptions live on catalog entries | Small `@doeixd/affe-agent` adapter package |
 | `ask-agent` meta-tool | delegates to agent loop | Out of scope for the UI library; an app-level action like any other | None (app concern) |
 | SQL as shared state | built-in SQLite/Postgres | Deliberately out of scope; loaders/queries are the data boundary and are already typed + revalidated | None (app concern) |
 
@@ -162,7 +162,7 @@ grammar the kit uses for behaviors.
 ## 6. What NOT to build
 
 - No SQL layer, no auth provider, no chat UI, no agent loop — app/adapter
-  territory (`@affe/agent` adapter package, or userland). The library boundary
+  territory (`@doeixd/affe-agent` adapter package, or userland). The library boundary
   is: catalog, dispatch, governance services, reactivity push, render mapping.
 - No directory auto-discovery magic. Explicit catalog values are the point —
   they are inspectable, tree-shakeable, and type-checked. (The M7 Vite plugin's
@@ -179,7 +179,7 @@ grammar the kit uses for behaviors.
    layers. Depends on: Router R2 (landed) and R5 wire hygiene (natural pairing).
 2. **AN-2 Server-push Reactivity layer** — SSE broadcast + client subscription;
    closes the live-sync loop for agent-initiated mutations. Independent of AN-1.
-3. **AN-3 MCP projection** — `@affe/agent` mounts the catalog as an MCP server
+3. **AN-3 MCP projection** — `@doeixd/affe-agent` mounts the catalog as an MCP server
    (tools from schemas; auth pluggable). Pure adapter over AN-1.
 4. **AN-4 Result rendering** — `render:` on catalog entries; client mount path
    first (props descriptors exist), `mountFragment` path after M11b.
@@ -225,7 +225,7 @@ grammar the kit uses for behaviors.
 5. ~~A2A/`ask-agent`: library scope or adapter?~~ **Decided (`DQ-098`,
    2026-08-17):** §1's answer stands — out of library scope, an app-level
    action like any other. If an A2A bridge is ever built, it lives in
-   `@affe/agent`, never in `src/`.
+   `@doeixd/affe-agent`, never in `src/`.
 
 ## 9. Specification feedback (2026-07-30)
 

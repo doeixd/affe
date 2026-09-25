@@ -3,7 +3,7 @@
 How an app exposes its actions to AI agents — and why the agent is **just
 another caller**, not a second system. This guide covers `src/Agent.ts`,
 `src/reactivity-push.ts`, `src/ViewSpec.ts` + `src/view-spec-json-render.ts`,
-and the `@affe/agent` adapter package. Design rationale lives in
+and the `@doeixd/affe-agent` adapter package. Design rationale lives in
 [`AGENT_NATIVE_NOTES.md`](./AGENT_NATIVE_NOTES.md); ratified decisions are
 cited by their `DQ-xxx` ids.
 
@@ -20,8 +20,8 @@ invalidation ids ARE reactivity keys, render targets ARE addressable
 activation ids.
 
 ```ts
-import * as Agent from "effect-atom-jsx/Agent";
-import * as Portable from "effect-atom-jsx/Portable";
+import * as Agent from "@doeixd/affe/Agent";
+import * as Portable from "@doeixd/affe/Portable";
 
 const AddTodo = Portable.code({
   id: "todo.add",
@@ -61,7 +61,7 @@ const catalog = Agent.catalog({
 ## 2. Dispatch: one pipeline, every surface
 
 `Agent.dispatch(catalog)` is THE implementation — HTTP
-(`singleFlightHandler`), MCP (`@affe/agent`), and any future surface run the
+(`singleFlightHandler`), MCP (`@doeixd/affe-agent`), and any future surface run the
 same pipeline, in this ratified order (`DQ-086`):
 
 > **authorize → tool lookup → drift → args decode → approve → audit
@@ -179,7 +179,7 @@ construction (and at compile time via `RenderTarget<A>`).
   one, the process-local registry of `addressable(...)` declarations
   answers, failing closed on unknown ids.
 
-## 6. MCP (`@affe/agent`)
+## 6. MCP (`@doeixd/affe-agent`)
 
 The MCP server is a pure projection over the catalog — no parallel registry
 (`packages/agent`; per `DQ-096` the adapter is a package, never a `src/`
@@ -199,7 +199,7 @@ yourself; no MCP SDK dependency.
 - Tool errors are typed discriminated values in `structuredContent`, never
   stringified messages.
 - A2A / `ask-agent` is **userland** (`DQ-098`); if a bridge is ever built it
-  lives in `@affe/agent`, never in core.
+  lives in `@doeixd/affe-agent`, never in core.
 
 ## 7. Generative UI (`src/ViewSpec.ts`)
 

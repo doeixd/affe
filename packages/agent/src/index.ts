@@ -1,9 +1,9 @@
 /**
- * `@affe/agent` — agent-surface adapters over the effect-atom-jsx Agent
+ * `@doeixd/affe-agent` — agent-surface adapters over the Affe Agent
  * catalog (`DQ-096`: adapters live here, never as core `src/` modules).
  *
- * This package builds against **public `effect-atom-jsx` subpaths only** —
- * the same external-consumer constraint `@affe/permissive` pins.
+ * This package builds against **public `@doeixd/affe` subpaths only** —
+ * the same external-consumer constraint `@doeixd/affe-permissive` pins.
  */
 export {
   McpAuth,

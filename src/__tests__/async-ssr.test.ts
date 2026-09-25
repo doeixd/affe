@@ -104,7 +104,7 @@ describe("async setup during SSR (M11.2)", () => {
       readonly record: (label: string) => Effect.Effect<void>;
     }
     const Recorder = Context.Service<RecorderService>(
-      "effect-atom-jsx/test/AsyncSsrRecorder",
+      "affe/test/AsyncSsrRecorder",
     );
     const code = Portable.code<
       { readonly label: string },

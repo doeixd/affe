@@ -22,10 +22,10 @@ import * as StyleModule from "../Style.js";
 import * as ThemeModule from "../Theme.js";
 import * as ViewModule from "../View.js";
 import * as domModule from "../dom.js";
-import * as affeCss from "@affe/css";
+import * as affeCss from "@doeixd/affe-css";
 
 describe("dynamic attachment validation", () => {
-  it("[AF-UI] a dynamic attachment onto an unknown or hidden slot is diagnosed", async () => {
+  it("[Affe] a dynamic attachment onto an unknown or hidden slot is diagnosed", async () => {
     const Behavior = BehaviorModule as Record<string, any>;
     const { make, validateAttachmentBySlots } = ((Behavior) as any);
     const View = ViewModule as Record<string, any>;
@@ -72,7 +72,7 @@ describe("dynamic attachment validation", () => {
     ).toEqual([]);
   });
 
-  it("[AF-UI] a dynamic attachment demanding an event the slot does not allow is diagnosed", async () => {
+  it("[Affe] a dynamic attachment demanding an event the slot does not allow is diagnosed", async () => {
     const Behavior = BehaviorModule as Record<string, any>;
     const { make, events, validateAttachmentBySlots } = ((Behavior) as any);
     const View = ViewModule as Record<string, any>;
@@ -92,7 +92,7 @@ describe("dynamic attachment validation", () => {
     expect(diagnostics.map((d: any) => d.code)).toContain("view:unsupported-slot-event");
   });
 
-  it("[AF-UI] a dynamic attachment onto a slot with too weak a capability is diagnosed", async () => {
+  it("[Affe] a dynamic attachment onto a slot with too weak a capability is diagnosed", async () => {
     const Behavior = BehaviorModule as Record<string, any>;
     const { forSlots, validateAttachmentBySlots } = ((Behavior) as any);
     const View = ViewModule as Record<string, any>;
@@ -161,7 +161,7 @@ describe("dynamic attachment validation", () => {
     expect(diagnostics.length).toBe(1);
   });
 
-  it("[AF-UI] declared-vs-rendered slot drift on an assembled widget is reported, not silently tolerated", async () => {
+  it("[Affe] declared-vs-rendered slot drift on an assembled widget is reported, not silently tolerated", async () => {
     const Component = ComponentModule as Record<string, any>;
     const {
       make,
@@ -219,7 +219,7 @@ describe("dynamic attachment validation", () => {
 });
 
 describe("slot target drift (DQ-051 backstop, lands FIRST)", () => {
-  it("[AF-UI] a setup-declared slot that the rendered view does not carry is reported as component:slot-target-drift", async () => {
+  it("[Affe] a setup-declared slot that the rendered view does not carry is reported as component:slot-target-drift", async () => {
     // This is the net that makes the DQ-050 migration safe, and the plan is
     // explicit that it lands BEFORE per-instance handles. Today `Style`
     // resolves through the rendered view and `Behavior` resolves through
@@ -279,7 +279,7 @@ describe("slot target drift (DQ-051 backstop, lands FIRST)", () => {
 });
 
 describe("slot identity", () => {
-  it("[AF-UI] two instances of the same widget do not share slot element handles", async () => {
+  it("[Affe] two instances of the same widget do not share slot element handles", async () => {
     const Component = ComponentModule as Record<string, any>;
     const { make, props, require, setup, setupEffect, withSlots } = ((Component) as any);
     const View = ViewModule as Record<string, any>;
@@ -322,7 +322,7 @@ describe("slot identity", () => {
     Effect.runSync(Scope.close(scope, Exit.void));
   });
 
-  it("[AF-UI] bindings.slots is a projection of the rendered view, not an independent record", async () => {
+  it("[Affe] bindings.slots is a projection of the rendered view, not an independent record", async () => {
     // The DQ-050 decision in one assertion. `Style` already resolves through
     // the rendered view; `Behavior` resolves through `bindings.slots`. Those
     // are only allowed to be two names for one thing.
@@ -365,7 +365,7 @@ describe("slot identity", () => {
 });
 
 describe("behavior attachment resolves through the rendered view", () => {
-  it("[AF-UI] a behavior attached to a slot listens on the handle the view rendered", async () => {
+  it("[Affe] a behavior attached to a slot listens on the handle the view rendered", async () => {
     // The other half of DQ-050: `Behavior.attachToSlots` switches to view
     // resolution, matching `Style`. Today it reads `bindings.slots`, and the
     // two agree ONLY because handles are shared module-wide. Once they are

@@ -42,7 +42,7 @@ export type NodeKind = (typeof NodeKinds)[number];
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
 export class ViewSpecDecodeError extends Schema.TaggedErrorClass<ViewSpecDecodeError>(
-  "@effect-atom-jsx/ViewSpecDecodeError",
+  "affe/ViewSpecDecodeError",
 )("ViewSpecDecodeError", {
   /** Structural description only — never echoes field contents. */
   message: Schema.String,
@@ -50,7 +50,7 @@ export class ViewSpecDecodeError extends Schema.TaggedErrorClass<ViewSpecDecodeE
 }) {}
 
 export class ViewSpecInvalidError extends Schema.TaggedErrorClass<ViewSpecInvalidError>(
-  "@effect-atom-jsx/ViewSpecInvalidError",
+  "affe/ViewSpecInvalidError",
 )("ViewSpecInvalidError", {
   message: Schema.String,
   codes: Schema.Array(Schema.String),

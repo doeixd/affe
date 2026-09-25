@@ -178,7 +178,7 @@ function verifyNetwork(fixture, sample) {
 export function verifyBenchmarkResult(result) {
   invariant(result?.schemaVersion === 2, "unsupported result schema version");
   invariant(
-    result?.benchmark === "effect-atom-jsx/resumability-m8c1",
+    result?.benchmark === "affe/resumability-m8c1",
     "unexpected benchmark identity",
   );
   invariant(

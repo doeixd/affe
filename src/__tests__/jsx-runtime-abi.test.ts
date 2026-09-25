@@ -35,7 +35,7 @@ function compileExecutable<Module>(
 ): Module {
   const imports: Array<{ readonly imported: string; readonly local: string }> = [];
   const withoutImports = compile(source).replace(
-    /import\s*\{\s*([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)\s*\}\s*from\s*"effect-atom-jsx\/runtime";?/g,
+    /import\s*\{\s*([A-Za-z_$][\w$]*)\s+as\s+([A-Za-z_$][\w$]*)\s*\}\s*from\s*"@doeixd\/affe\/runtime";?/g,
     (_statement, imported: string, local: string) => {
       imports.push({ imported, local });
       return "";
@@ -136,11 +136,11 @@ describe("JSX compiler/runtime ABI", () => {
     // instead, so a helper the compiler stops emitting is visible.
     const imported = [
       ...output.matchAll(
-        /import\s*\{\s*([A-Za-z_$][\w$]*)\s+as\s+[A-Za-z_$][\w$]*\s*\}\s*from\s*"effect-atom-jsx\/runtime"/g,
+        /import\s*\{\s*([A-Za-z_$][\w$]*)\s+as\s+[A-Za-z_$][\w$]*\s*\}\s*from\s*"@doeixd\/affe\/runtime"/g,
       ),
     ].map((match) => match[1]!);
 
-    expect(output).toContain('from "effect-atom-jsx/runtime"');
+    expect(output).toContain('from "@doeixd/affe/runtime"');
     expect([...imported].sort()).toEqual([
       "addEventListener",
       "createComponent",

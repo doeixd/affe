@@ -350,7 +350,7 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
  * stack, carrying which route and against which budget.
  */
 export class RouteLoaderTimeoutError extends Schema.TaggedErrorClass<RouteLoaderTimeoutError>(
-  "@effect-atom-jsx/RouteLoaderTimeoutError",
+  "affe/RouteLoaderTimeoutError",
 )("RouteLoaderTimeoutError", {
   routeId: Schema.String,
   timeoutMs: Schema.Number,

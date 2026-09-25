@@ -8,7 +8,7 @@ interface MathService {
 }
 
 const MathService = Context.Service<MathService>(
-  "effect-atom-jsx/test/PortableMath",
+  "affe/test/PortableMath",
 );
 
 const Captures = Schema.Struct({

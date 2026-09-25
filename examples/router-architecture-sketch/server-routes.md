@@ -2,7 +2,7 @@
 
 ```ts
 import { Effect, Schema } from "effect";
-import { ServerRoute } from "effect-atom-jsx/server";
+import { ServerRoute } from "@doeixd/affe/server";
 import { SaveUserInput, UsersService } from "./domain-services.js";
 import { appRoutes } from "./app-routes.js";
 

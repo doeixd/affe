@@ -1,8 +1,8 @@
 # API Reference
 
-`effect-atom-jsx` is a reactive UI library built on two complementary foundations: a signal-based reactive graph (Solid.js-compatible) and Effect's typed async/error model. The central thesis is that reactive state and typed effects are better together — atoms give you fine-grained reactivity with zero boilerplate, and Effect gives you a principled, composable way to handle everything async.
+`@doeixd/affe` is a reactive UI library built on two complementary foundations: a signal-based reactive graph (Solid.js-compatible) and Effect's typed async/error model. The central thesis is that reactive state and typed effects are better together — atoms give you fine-grained reactivity with zero boilerplate, and Effect gives you a principled, composable way to handle everything async.
 
-AF-UI convergence work is tracked against the canonical contract in [`AF_UI_CONTRACT.md`](./archive/AF_UI_CONTRACT.md). Use that document for the target architecture when implementation details and older exploratory docs differ.
+Affe convergence work is tracked against the canonical contract in [`AF_UI_CONTRACT.md`](./archive/AF_UI_CONTRACT.md). Use that document for the target architecture when implementation details and older exploratory docs differ.
 
 For authored slot-based components, use the slot-contract path in
 [`SLOT_CONTRACT_GOLDEN_PATH.md`](./SLOT_CONTRACT_GOLDEN_PATH.md).
@@ -1588,7 +1588,7 @@ const snap = Effect.runSync(
 
 ## Registry (`src/Registry.ts`)
 
-> **Import:** `effect-atom-jsx/Registry`
+> **Import:** `@doeixd/affe/Registry`
 
 A centralized read/write/subscribe context for atoms. Useful when you need to manage atom state outside of a reactive computation — in tests, in server environments, or when mounting multiple isolated trees.
 
@@ -1694,7 +1694,7 @@ Hydration.hydrate(registry, state, { count: countAtom });
 
 <br />
 
-## Resumability (`Resume`, `effect-atom-jsx/Resume`)
+## Resumability (`Resume`, `@doeixd/affe/Resume`)
 
 Advanced protocols for restoring supported executable relationships and
 component state without replaying component setup. Ordinary components and
@@ -1883,7 +1883,7 @@ HTTP API client factory for grouped endpoints. Same ergonomics as `AtomRpc` but 
 
 For practical usage patterns and edge cases, see [`docs/ACTION_EFFECT_USE_RESOURCE.md`](archive/ACTION_EFFECT_USE_RESOURCE.md).
 
-> `Result` and scoped constructors are also available from `effect-atom-jsx/advanced`.
+> `Result` and scoped constructors are also available from `@doeixd/affe/advanced`.
 
 ### Async Data
 
@@ -1897,7 +1897,7 @@ For practical usage patterns and edge cases, see [`docs/ACTION_EFFECT_USE_RESOUR
     polling-style refresh; schedule requirements are preserved
   - `options.observe` — emits metrics events `{ kind, phase, name?, startedAt, finishedAt?, durationMs? }`
 - **`scopedQueryEffect(scope, fn, options?)`** — Effect constructor variant for scope-bound query accessors
-  > **Import from:** `effect-atom-jsx/advanced`
+  > **Import from:** `@doeixd/affe/advanced`
 - **`createQueryKey<A>(name?)`** — create typed invalidation keys for queries
 - **`invalidate(key)`** — invalidate one or many query keys
 - **`isPending(result)`** — `Accessor<boolean>`; `true` only during `Refreshing` (not initial `Loading`). Useful for showing a subtle "revalidating" spinner without hiding existing data.
@@ -1947,10 +1947,10 @@ const data = defineQuery(() => fetch("/data"), {
 - **`mount(fn, container, layer)`** — bootstrap a `ManagedRuntime` from a `Layer` and render. All `useService` calls inside the tree resolve from this runtime.
 - **`createMount(layer)`** — create a mount function pre-bound to a layer
 - **`layerContext(layer, fn, runtime?)`** — run a function with a Layer-provided context
-  > **Import from:** `effect-atom-jsx/advanced`
+  > **Import from:** `@doeixd/affe/advanced`
 - Component and mount lifetimes are scope-backed: disposing a parent root interrupts descendant Effect fibers transitively
 - **`scopedRootEffect(scope, fn)`** — Effect constructor variant for creating a reactive root tied to an Effect Scope
-  > **Import from:** `effect-atom-jsx/advanced`
+  > **Import from:** `@doeixd/affe/advanced`
 
 ### Mutations
 
@@ -1963,7 +1963,7 @@ const data = defineQuery(() => fetch("/data"), {
   - `options.onTransition` emits `{ phase: start|success|failure|defect }`
   - `options.observe` emits metrics events
 - **`scopedMutationEffect(scope, fn, options?)`** — Effect constructor variant for scope-bound mutation handles
-  > **Import from:** `effect-atom-jsx/advanced`
+  > **Import from:** `@doeixd/affe/advanced`
 
 ---
 
@@ -2064,7 +2064,7 @@ These components pattern-match `Result` or conditional values and render the app
 
 ## Reactive Core (`src/api.ts`)
 
-> **Import from:** `effect-atom-jsx/internals`
+> **Import from:** `@doeixd/affe/internals`
 
 Solid.js-compatible reactive primitives. These are the foundation that `Atom` is built on. You rarely need these directly — the `Atom` API is the intended surface. Use these only for advanced scenarios requiring direct signal graph access, or for interop with code written in Solid.js style.
 
@@ -2114,11 +2114,11 @@ Functions called by `babel-plugin-jsx-dom-expressions` compiled JSX output. You 
 - **`getNextHydrateNode()`** — advance hydration walker (for custom component hydration)
 - **`getRequestEvent()` / `setRequestEvent(event)`** — SSR request context
 
-For JSX runtime transforms, use the package entry: `effect-atom-jsx/runtime`.
+For JSX runtime transforms, use the package entry: `@doeixd/affe/runtime`.
 
 <br />
 
-## A11y (`A11y`, `effect-atom-jsx/A11y`)
+## A11y (`A11y`, `@doeixd/affe/A11y`)
 
 Renderer-neutral accessibility pattern contracts. These validate structure,
 slot capabilities, and declared slot events. They do not claim full WCAG or
@@ -2141,7 +2141,7 @@ const diagnostics = A11y.validate(A11y.Dialog, view);
 
 <br />
 
-## Form (`Form`, `effect-atom-jsx/Form`)
+## Form (`Form`, `@doeixd/affe/Form`)
 
 Schema-driven form fields backed by signals. A form keeps raw field state,
 touched/dirty flags, typed validation errors, and a submit handle that can use
@@ -2178,7 +2178,7 @@ form.submit.run();
 
 <br />
 
-## Devtools (`Devtools`, `effect-atom-jsx/Devtools`)
+## Devtools (`Devtools`, `@doeixd/affe/Devtools`)
 
 Small in-process devtools primitives for timeline events, atom snapshots,
 slot-contract inspection, and MCP-style agent reads.
@@ -2205,7 +2205,7 @@ session.mcp.readTimeline();
 
 <br />
 
-## Serialization (`Serialization`, `effect-atom-jsx/Serialization`)
+## Serialization (`Serialization`, `@doeixd/affe/Serialization`)
 
 Schema-backed wire codec service used by route loader payloads and result wire
 projection.
@@ -2250,23 +2250,23 @@ JSON-safe.
 
 <br />
 
-## @affe/permissive (`packages/permissive`)
+## @doeixd/affe-permissive (`packages/permissive`)
 
 Qwik-parity as a configuration, not a fork: auto-capture plus the universal
 seroval codec bundled as one preset. Lives in the workspace as a separate
-package that builds against **public `effect-atom-jsx` subpaths only** — it
+package that builds against **public `@doeixd/affe` subpaths only** — it
 doubles as the external-style consumer of the published adapter SPI
-(`effect-atom-jsx/adapter-spi`, gated by `Resume.spiVersion`).
+(`@doeixd/affe/adapter-spi`, gated by `Resume.spiVersion`).
 
 Two entries, split on purpose:
 
-- **`@affe/permissive`** (build/server): `permissive({ buildId, vite?,
+- **`@doeixd/affe-permissive`** (build/server): `permissive({ buildId, vite?,
   stateHandles? })` returns `{ vitePlugins, serverLayer, clientLayer,
   spiVersion }` — the `extract.auto`-capable compiler plugin and the async
   seroval codec. Both layer fields are the same layer: the `DQ-012`
   serializer stamp makes mismatched codecs fail closed, so split codecs
   would be a footgun. Import this from vite configs and server code only.
-- **`@affe/permissive/client`** (browser-safe): `permissiveClient({
+- **`@doeixd/affe-permissive/client`** (browser-safe): `permissiveClient({
   stateHandles? })` returns the codec layer the client runtime must include,
   plus `createHandleRegistry()` and the fail-closed SPI gate. Importing the
   main entry from client code drags the compiler (babel) into the bundle —
@@ -2283,7 +2283,7 @@ End-to-end usage: `examples/permissive-demo`.
 
 <br />
 
-## SafeHtml (`SafeHtml`, `effect-atom-jsx/SafeHtml`)
+## SafeHtml (`SafeHtml`, `@doeixd/affe/SafeHtml`)
 
 Small brand for already-sanitized HTML payloads.
 
@@ -2295,7 +2295,7 @@ Only call `SafeHtml.make(...)` after sanitization at the application boundary.
 
 <br />
 
-## Diagnostics (`Diagnostics`, `effect-atom-jsx/Diagnostics`)
+## Diagnostics (`Diagnostics`, `@doeixd/affe/Diagnostics`)
 
 Unified diagnostic helpers that normalize View/Component/Style/Behavior/Route/ServerRoute validators into one shape.
 
@@ -2338,7 +2338,7 @@ errors, and `--fail-on-warnings` promotes warnings to a failing CI result.
 
 <br />
 
-## Testing (`effect-atom-jsx/testing`)
+## Testing (`@doeixd/affe/testing`)
 
 Testing utilities for reactive code without requiring DOM or jsdom.
 
@@ -2350,12 +2350,12 @@ Testing utilities for reactive code without requiring DOM or jsdom.
   - `tick(ms?)` — wait for async work
   - `dispose()` — dispose runtime and reactive scope
 - **`renderWithLayer(layer, ui)`** — create a harness and run a setup callback immediately
-- **`render(component, { props, layer? })`** — AF-UI component test driver; returns `{ view, slots, driver }`
+- **`render(component, { props, layer? })`** — Affe component test driver; returns `{ view, slots, driver }`
 - **`behaviorDriver(slots)`** — DOM-free event driver over Element handles: `press`, `input`, `emit`, `attr`, `style`
 - **`styleOf` / `attrOf` / `expectStyle` / `expectAttr`** — direct handle assertions
 
 ```ts
-import { render } from "effect-atom-jsx/testing";
+import { render } from "@doeixd/affe/testing";
 
 const { slots, driver } = await render(ButtonCard, { props: {} });
 
@@ -2367,7 +2367,7 @@ For full testing patterns, see `docs/TESTING.md`.
 
 <br />
 
-## JSX Runtime (`effect-atom-jsx/runtime`)
+## JSX Runtime (`@doeixd/affe/runtime`)
 
 Babel JSX plugin integration. This module is imported by `babel-plugin-jsx-dom-expressions` during compilation. You configure it once and never import it directly.
 
@@ -2379,7 +2379,7 @@ Babel JSX plugin integration. This module is imported by `babel-plugin-jsx-dom-e
     [
       "babel-plugin-jsx-dom-expressions",
       {
-        "moduleName": "effect-atom-jsx/runtime",
+        "moduleName": "@doeixd/affe/runtime",
         "generate": "dom"
       }
     ]
@@ -2393,9 +2393,9 @@ Babel JSX plugin integration. This module is imported by `babel-plugin-jsx-dom-e
 
 <br />
 
-## Internal Reactive Primitives (`effect-atom-jsx/internals`)
+## Internal Reactive Primitives (`@doeixd/affe/internals`)
 
-Low-level Solid.js-compatible reactive primitives. Also re-exported from `effect-atom-jsx/advanced`.
+Low-level Solid.js-compatible reactive primitives. Also re-exported from `@doeixd/affe/advanced`.
 
 **When to use:** Only in advanced scenarios where you need direct access to the reactive graph — custom integrations, Solid.js interop, or building your own abstractions on top of the signal system.
 
@@ -2407,7 +2407,7 @@ These are 100% compatible with Solid.js signal/effect patterns.
 
 <br />
 
-## Event Channels (`Event`, `effect-atom-jsx/Event`)
+## Event Channels (`Event`, `@doeixd/affe/Event`)
 
 Named typed logical fact channels backed directly by Effect `PubSub`.
 

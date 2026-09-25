@@ -6,7 +6,7 @@
     [
       "babel-plugin-jsx-dom-expressions",
       {
-        "moduleName": "effect-atom-jsx/runtime",
+        "moduleName": "@doeixd/affe/runtime",
         "generate": "dom",
         "hydratable": false,
         "delegateEvents": true,

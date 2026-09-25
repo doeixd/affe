@@ -2,7 +2,7 @@
 
 Date: 2026-07-30
 Source: writing and then auditing `future/components/*.spec.ts` (54 specs,
-19 green / 35 red) against `docs/COMPONENT_KIT_PLAN.md`, the AF-UI contract,
+19 green / 35 red) against `docs/COMPONENT_KIT_PLAN.md`, the Affe contract,
 `docs/kit-research/`, and the real source.
 
 Status: findings record. Decisions ratified from this live in
@@ -238,7 +238,7 @@ Ranked:
 
 The specs were reviewed against this file's own standards and corrected:
 
-- **Retagged** four generic Scope specs `[K0b]` → `[AF-UI]` — they exercise
+- **Retagged** four generic Scope specs `[K0b]` → `[Affe]` — they exercise
   `src/Behavior.ts` primitives, not the catalog convention, so as tagged they
   falsely implied K0b was incomplete.
 - **Removed over-reach**: `mergeRecipes`'s signature is an explicit open

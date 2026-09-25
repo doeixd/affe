@@ -59,7 +59,7 @@ export class Owner {
       try {
         this._cleanups[i]();
       } catch (e) {
-        console.error("[effect-atom-jsx] Error in cleanup:", e);
+        console.error("[affe] Error in cleanup:", e);
       }
     }
     this._cleanups = [];

@@ -40,7 +40,7 @@ per-instance child `Scope`s, `data-af-key` fenced at compile time, and one
 `structural` manifest member at v5.** See §Milestone 8d.
 
 **Current (2026-08-12):** M10 items 1-4 and 6 done (universal codec, async
-captures, the `@affe/permissive` package with its Chromium Qwik-parity
+captures, the `@doeixd/affe-permissive` package with its Chromium Qwik-parity
 proof); **Milestone 9 is complete** (SPI freeze + `adapter-spi` subpath,
 diagnostics matrix, manifest compat fixtures, enforced-CSP proof + pre-ship
 audit checklist, server-side no-instrumentation/collection benchmarks, doc
@@ -113,13 +113,13 @@ hardening/SPI review remains pending.
 This plan turns the exploration in `archive/resummeability.txt` (archived
 2026-08-12, M9 item 7 — its decisions are represented canonically in this plan
 and `RESUMABILITY_GUIDE.md`) into an implementation
-sequence for AF-UI. The source document correctly identifies the library's
+sequence for Affe. The source document correctly identifies the library's
 setup-to-bindings-to-view boundary as a strong foundation, but the target is not
 to copy Qwik or to declare the existing hydration path resumable.
 
 The first target is narrower and testable:
 
-> Make `effect-atom-jsx` a supported host for an independently implemented
+> Make `@doeixd/affe` a supported host for an independently implemented
 > resumability adapter, and prove that support with one resumable event/action
 > vertical slice.
 
@@ -130,7 +130,7 @@ component authoring.
 
 ## Goal
 
-- Preserve the current AF-UI component model:
+- Preserve the current Affe component model:
   `Component<Props, Req, E, Bindings, SlotContract> -> View<Slots>`.
 - Add a small advanced protocol for portable code identities, serializable
   captures, component/setup inspection, handle inspection, and render
@@ -564,7 +564,7 @@ Acceptance:
 - The red test fails because the resume SPI is absent, not because the ordinary
   SSR/event runtime is already broken.
 - The plan's vocabulary and fallback behavior are reflected in an ADR or the
-  canonical AF-UI contract before public APIs land.
+  canonical Affe contract before public APIs land.
 
 ### Milestone 1 — Metadata-only component and setup foundation
 
@@ -1051,7 +1051,7 @@ Progress:
   `app/note-button.ts#$0`, the generated chunk stays unloaded until first
   interaction, loads once for concurrent clicks, executes with the client
   service while setup/view counters stay zero, and disposal stops dispatch.
-  `effect-atom-jsx/portable-extract` and the `compiler/*` modules are now
+  `@doeixd/affe/portable-extract` and the `compiler/*` modules are now
   published package subpaths. Milestone 7's manual-authoring escape hatch and
   compiled path are both browser-proven.
 - `docs/RESUMABILITY_GUIDE.md` (DoD item 10) now documents hydration vs
@@ -1161,7 +1161,7 @@ Acceptance:
   dependency.
 - Cleanup removes restored subscribers and client resources exactly once.
 
-This is the point at which AF-UI can accurately claim fine-grained
+This is the point at which Affe can accurately claim fine-grained
 resumability, rather than only portable event handlers or partial activation.
 
 ### Milestone 8d — Structural expression targets (keyed lists, branch replacement)
@@ -1347,7 +1347,7 @@ Work:
    external-style consumer exercise it.
    (landed 2026-08-12, `PERMISSIVE_PACKAGE_PLAN.md` S1: `Resume.spiVersion`
    is the runtime-readable fail-closed gate (`DQ-011`), and the
-   `effect-atom-jsx/adapter-spi` subpath publishes the frozen member list
+   `@doeixd/affe/adapter-spi` subpath publishes the frozen member list
    pinned by `src/__tests__/adapter-spi.test.ts` — frozen around exactly
    what the external-style consumer spec exercised.)
 3. Add diagnostics for capture size, unsupported policy, missing codec,
@@ -1401,7 +1401,7 @@ Work:
    event (~0.10 ms for 1 event, ~0.41 ms for 24, same page).
    Characterization via `npm run bench`; the client dormant-vs-eager
    protocol stays gated by `benchmarks/resumability/`.)
-7. Update the AF-UI contract and current-status document as each capability
+7. Update the Affe contract and current-status document as each capability
    lands; archive the exploratory source document once its decisions are
    represented canonically.
    (closed 2026-08-12: `docs/archive/AF_UI_CONTRACT.md` audited — its
@@ -1434,7 +1434,7 @@ Original acceptance list:
 ### Milestone 10 — Ergonomic and power extensions (auto-capture, universal serialization, Qwik-parity layer)
 
 > **Item 4 committed (2026-08-12, TRIAGE-2026-08-12.md item 6):** building
-> `@affe/permissive` is the next major milestone after the ratified DQ
+> `@doeixd/affe-permissive` is the next major milestone after the ratified DQ
 > backlog clears — all three ingredients (auto-capture, universal codec,
 > reference plugins) exist in core, and ratified `DQ-011` makes the package
 > the prerequisite for the M9 SPI freeze. It is also the home for the MCP
@@ -1445,7 +1445,7 @@ Original acceptance list:
 
 Status: **items 1-4 and 6 implemented** (item 4 landed 2026-08-12 via
 `PERMISSIVE_PACKAGE_PLAN.md` S0-S6: `packages/permissive` with `permissive()`
-and the browser-safe `@affe/permissive/client` entry, the pluggable
+and the browser-safe `@doeixd/affe-permissive/client` entry, the pluggable
 state-handle resolver, the Chromium Qwik-parity demo, and the strict-mode
 byte proof in `browser-tests/strict-mode-bytes.spec.ts`; the store-proxy
 layer is deferred per the ratified v1 scope. Item 6's promise captures
@@ -1557,7 +1557,7 @@ Work:
    service access continues to cross the boundary as typed `R` requirements
    resolved from the client Layer — the one capability this model has that
    Qwik's capture model cannot express.
-4. **Qwik-parity adapter package** (working name `@affe/permissive`):
+4. **Qwik-parity adapter package** (working name `@doeixd/affe-permissive`):
    auto-capture + universal codec + reference plugins bundled as one
    configuration, with an optional store-proxy layer that records
    proxy-to-consumer edges for adapter-level dependency graphs (the core
@@ -1599,7 +1599,7 @@ Acceptance:
   configuration fails closed before any value decodes.
 - Framework values captured automatically arrive as live references
   (restored handle, resolvable descriptor), never as detached copies.
-- The permissive package builds against public `@affe/*` APIs only, and a
+- The permissive package builds against public `@doeixd/affe-*` APIs only, and a
   Qwik-style demo (one-liner event handler with inferred captures) resumes
   in Chromium with component counters at zero.
 - Strict-mode projects are byte-for-byte unaffected: no seroval in their

@@ -65,10 +65,10 @@ async function evaluateTransformed(
   const moduleExports: Record<string, unknown> = {};
   const requireModule = (id: string): unknown => {
     if (id === "effect") return effect;
-    if (id === "effect-atom-jsx/Portable") return Portable;
+    if (id === "@doeixd/affe/Portable") return Portable;
     // The marker import survives the transform but is never called in
-    // generated code; the generated calls go to `effect-atom-jsx/Portable`.
-    if (id === "effect-atom-jsx/portable-extract") return {};
+    // generated code; the generated calls go to `@doeixd/affe/Portable`.
+    if (id === "@doeixd/affe/portable-extract") return {};
     throw new Error(`Unexpected import of "${id}" in generated module.`);
   };
   new Function("require", "exports", "module", cjs)(
@@ -80,7 +80,7 @@ async function evaluateTransformed(
 }
 
 const fixture = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 const label = "Save";
 export const save = extract((captures) => Effect.succeed(captures.label), {
@@ -102,7 +102,7 @@ describe("resume-extract compiler transform", () => {
     expect(output).toMatch(/export const _afCode\$save = _afPortableCode\(/);
     expect(output).toMatch(/const save = _afPortableBind\(_afCode\$save, \{\s*label\s*\}\)/);
     expect(output).toContain(
-      'import { code as _afPortableCode, bind as _afPortableBind } from "effect-atom-jsx/Portable"',
+      'import { code as _afPortableCode, bind as _afPortableBind } from "@doeixd/affe/Portable"',
     );
   });
 
@@ -115,7 +115,7 @@ describe("resume-extract compiler transform", () => {
     // earlier one appeared, silently moving a stable identity for code that
     // did not change. The identity now tracks the extracted content.
     const module = (prefix: string) => `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 ${prefix}
 registry.push(extract(() => Effect.succeed(1), {
@@ -159,7 +159,7 @@ registry.push(extract(() => Effect.succeed(1), {
     // Module-scope reference inside the extracted function is fine.
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 const suffix = "!";
 export const shout = extract((captures) => Effect.succeed(captures.label + suffix), {
@@ -172,7 +172,7 @@ export const shout = extract((captures) => Effect.succeed(captures.label + suffi
     // Function-local outer capture must fail closed with the identifier named.
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function makeSave(prefix) {
   return extract((captures) => Effect.succeed(prefix + captures.label), {
@@ -186,7 +186,7 @@ export function makeSave(prefix) {
 
   it("keeps bind expressions at the call site so they may close over local scope", () => {
     const output = transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function makeSave(prefix) {
   return extract((captures) => Effect.succeed(captures.label), {
@@ -200,7 +200,7 @@ export function makeSave(prefix) {
 
   it("supports namespace marker imports", () => {
     const output = transform(`
-import * as PortableExtract from "effect-atom-jsx/portable-extract";
+import * as PortableExtract from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const ping = PortableExtract.extract(() => Effect.succeed("pong"), {
   captures: Schema.Struct({}),
@@ -212,7 +212,7 @@ export const ping = PortableExtract.extract(() => Effect.succeed("pong"), {
 
   it("does not transform a shadowed namespace import", () => {
     const output = transform(`
-import * as PortableExtract from "effect-atom-jsx/portable-extract";
+import * as PortableExtract from "@doeixd/affe/portable-extract";
 export function run(PortableExtract) {
   return PortableExtract.expr(() => "local", {
     captures: null,
@@ -229,7 +229,7 @@ export function run(PortableExtract) {
   it("requires inline function and options literals", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 const run = () => 1;
 export const bad = extract(run, { captures: null, bind: {} });
 `)
@@ -237,7 +237,7 @@ export const bad = extract(run, { captures: null, bind: {} });
 
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 const options = {};
 export const bad = extract(() => 1, options);
 `)
@@ -288,7 +288,7 @@ export const bad = extract(() => 1, options);
 
 describe("resume-extract expression transform", () => {
   const expressionFixture = `
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 const label = "Count: 1";
 const key = "count:1";
@@ -310,16 +310,16 @@ export const countText = expr((captures) => captures.label, {
       /const countText = _afBindExpression\(_afExpr\$countText, \{\s*label\s*\}, \[key\]\)/,
     );
     expect(output).toContain(
-      'import { expressionCode as _afExpressionCode, bindExpression as _afBindExpression } from "effect-atom-jsx/portable-extract"',
+      'import { expressionCode as _afExpressionCode, bindExpression as _afBindExpression } from "@doeixd/affe/portable-extract"',
     );
     expect(output).not.toContain(
-      'from "effect-atom-jsx/Portable"',
+      'from "@doeixd/affe/Portable"',
     );
   });
 
   it("keeps expression identities in their own namespace, independent of actions", () => {
     const output = transform(`
-import { extract, expr } from "effect-atom-jsx/portable-extract";
+import { extract, expr } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 registry.push(extract(() => Effect.void, {
   captures: Schema.Struct({}),
@@ -340,7 +340,7 @@ registry.push(expr(() => "text", {
   it("requires declared deps and applies module-closure checks", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export const text = expr(() => "text", {
   captures: Schema.Struct({}),
@@ -351,7 +351,7 @@ export const text = expr(() => "text", {
 
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function makeText(local) {
   return expr(() => local, {
@@ -382,7 +382,7 @@ export function makeText(local) {
 
 describe("resume-extract auto-capture mode", () => {
   const autoFixture = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export function Todo(label, count) {
   const save = extract.auto(() => Effect.succeed(label + count));
@@ -430,7 +430,7 @@ export function Todo(label, count) {
 
   it("leaves module-scope and global references uncaptured", () => {
     const output = transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 const PREFIX = "p";
 export function Todo(label) {
@@ -444,7 +444,7 @@ export function Todo(label) {
 
   it("synthesizes an empty captures struct and skips destructuring when nothing is captured", () => {
     const output = transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export const ping = extract.auto(() => Effect.succeed(1));
 `);
@@ -454,7 +454,7 @@ export const ping = extract.auto(() => Effect.succeed(1));
 
   it("disambiguates structurally identical auto calls not assigned to a const", () => {
     const output = transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export function Todo(label) {
   registry.push(extract.auto(() => Effect.succeed(label)));
@@ -471,7 +471,7 @@ export function Todo(label) {
   it("shares the duplicate-identity guard with explicit extract", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function A(label) {
   const save = extract.auto(() => Effect.succeed(label));
@@ -491,7 +491,7 @@ export function B() {
   it("still fails closed on a credential-looking inferred capture", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export function Todo(sessionId) {
   return extract.auto(() => Effect.succeed(sessionId));
@@ -503,7 +503,7 @@ export function Todo(sessionId) {
   it("still rejects `this` inside an auto-extracted function", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export function Todo() {
   return extract.auto(() => Effect.succeed(this.label));
@@ -515,7 +515,7 @@ export function Todo() {
   it("still rejects `arguments` inside an auto-extracted function", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export function Todo() {
   return extract.auto(() => Effect.succeed(arguments.length));
@@ -527,7 +527,7 @@ export function Todo() {
   it("rejects an options argument on extract.auto", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const save = extract.auto(() => Effect.succeed(1), {
   captures: Schema.Struct({}),
@@ -539,7 +539,7 @@ export const save = extract.auto(() => Effect.succeed(1), {
 
   it("resolves auto through a namespace import", () => {
     const output = transform(`
-import * as PortableExtract from "effect-atom-jsx/portable-extract";
+import * as PortableExtract from "@doeixd/affe/portable-extract";
 import { Effect } from "effect";
 export function Todo(label) {
   const save = PortableExtract.extract.auto(() => Effect.succeed(label));
@@ -609,7 +609,7 @@ export function Todo(label) {
 
 describe("resume-extract expr.auto auto-capture mode", () => {
   const exprAutoFixture = `
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter(label, count) {
   const key = "count:1";
@@ -634,10 +634,10 @@ export function Counter(label, count) {
     );
     expect(output).toContain('import { Schema as _afSchema } from "effect"');
     expect(output).toContain(
-      'import { expressionCode as _afExpressionCode, bindExpression as _afBindExpression } from "effect-atom-jsx/portable-extract"',
+      'import { expressionCode as _afExpressionCode, bindExpression as _afBindExpression } from "@doeixd/affe/portable-extract"',
     );
     // Auto expressions are expression definitions, not portable actions.
-    expect(output).not.toContain('from "effect-atom-jsx/Portable"');
+    expect(output).not.toContain('from "@doeixd/affe/Portable"');
   });
 
   it("produces identical output across repeated builds", () => {
@@ -659,7 +659,7 @@ export function Counter(label, count) {
   it("still requires declared dependencies and deps", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 export function Counter(label) {
   return expr.auto(() => label);
 }
@@ -670,7 +670,7 @@ export function Counter(label) {
 
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter(label) {
   return expr.auto(() => label, {
@@ -684,7 +684,7 @@ export function Counter(label) {
   it("rejects declared captures or bind on expr.auto", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter(label) {
   return expr.auto(() => label, {
@@ -701,7 +701,7 @@ export function Counter(label) {
   it("still applies the module-closed check to the dependencies schema", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 export function Counter(label, LocalSchema) {
   return expr.auto(() => label, {
     dependencies: LocalSchema,
@@ -717,7 +717,7 @@ export function Counter(label, LocalSchema) {
   it("still fails closed on a credential-looking inferred capture", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter(apiKey) {
   return expr.auto(() => apiKey, {
@@ -732,7 +732,7 @@ export function Counter(apiKey) {
   it("still rejects `this` and `arguments` inside an auto-extracted expression", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter() {
   return expr.auto(() => this.label, {
@@ -745,7 +745,7 @@ export function Counter() {
 
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter() {
   return expr.auto(() => arguments.length, {
@@ -759,7 +759,7 @@ export function Counter() {
 
   it("keeps auto expression identities in their own namespace", () => {
     const output = transform(`
-import { extract, expr } from "effect-atom-jsx/portable-extract";
+import { extract, expr } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function Counter(label) {
   registry.push(extract.auto(() => Effect.succeed(label)));
@@ -776,7 +776,7 @@ export function Counter(label) {
 
   it("resolves expr.auto through a namespace import", () => {
     const output = transform(`
-import * as PortableExtract from "effect-atom-jsx/portable-extract";
+import * as PortableExtract from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function Counter(label) {
   const text = PortableExtract.expr.auto(() => label, {
@@ -834,7 +834,7 @@ export function Counter(label) {
 
   it("leaves explicit expr output free of synthesized captures", () => {
     const output = transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 const label = "Save";
 export const countText = expr((captures) => captures.label, {
@@ -891,7 +891,7 @@ describe("portable-extract runtime marker", () => {
 describe("resume-extract evaluation-order and context safety", () => {
   it("places top-level definitions before their own statement, preserving declaration order", () => {
     const output = transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 const LabelSchema = Schema.Struct({ label: Schema.String });
 export const save = extract((captures) => Effect.succeed(captures.label), {
@@ -909,7 +909,7 @@ export const save = extract((captures) => Effect.succeed(captures.label), {
 
   it("preserves earlier declarator initialization before a generated definition", async () => {
     const source = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const LabelSchema = Schema.Struct({ label: Schema.String }),
   save = extract((captures) => Effect.succeed(captures.label), {
@@ -944,7 +944,7 @@ export const LabelSchema = Schema.Struct({ label: Schema.String }),
 
   it("places definitions for deferred calls at the end of the module so later consts are initialized", async () => {
     const source = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function makeSave() {
   return extract((captures) => Effect.succeed(captures.label), {
@@ -978,7 +978,7 @@ const LabelSchema = Schema.Struct({ label: Schema.String });
 
   it("places a deferred definition right after its last dependency, so a factory invoked at module scope still works", async () => {
     const source = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function makeSave() {
   return extract((captures) => Effect.succeed(captures.label), {
@@ -1020,7 +1020,7 @@ export const first = makeSave();
     // throws -- we must not paper over it by capturing an uninitialized
     // binding.
     const source = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function makeSave() {
   return extract((captures) => Effect.succeed(captures.label), {
@@ -1043,7 +1043,7 @@ const LabelSchema = Schema.Struct({ label: Schema.String });
   it("rejects `this` in extracted arrows that inherit enclosing context", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export class Widget {
   save() {
@@ -1060,7 +1060,7 @@ export class Widget {
   it("allows `this` inside nested functions that bind their own context", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const probe = extract(() => Effect.sync(function probeThis() { return this === undefined; }), {
   captures: Schema.Struct({}),
@@ -1073,7 +1073,7 @@ export const probe = extract(() => Effect.sync(function probeThis() { return thi
   it("rejects `arguments` in extracted arrows", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export function makeSave() {
   return extract(() => Effect.succeed(arguments.length), {
@@ -1088,7 +1088,7 @@ export function makeSave() {
 
 describe("resume-extract capture diagnostics", () => {
   const secretFixture = `
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const login = extract((captures) => Effect.succeed(captures.apiToken), {
   captures: Schema.Struct({ apiToken: Schema.String }),
@@ -1118,7 +1118,7 @@ export const login = extract((captures) => Effect.succeed(captures.apiToken), {
   it("handles stateful custom secret patterns deterministically", () => {
     const diagnostics: Array<{ readonly code: string }> = [];
     transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const save = extract((captures) => Effect.succeed(captures), {
   captures: Schema.Struct({
@@ -1148,7 +1148,7 @@ export const save = extract((captures) => Effect.succeed(captures), {
     const bigLiteral = `"${"x".repeat(300)}"`;
     const diagnostics: Array<{ code: string }> = [];
     transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const big = extract((captures) => Effect.succeed(captures.blob), {
   captures: Schema.Struct({ blob: Schema.String }),
@@ -1177,7 +1177,7 @@ describe("M8 audit pins (2026-07-29)", () => {
   it("rejects duplicate intra-module expression identities in the transform", () => {
     expect(() =>
       transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function A(count) {
   const label = expr((_c, [v]) => "A: " + v, {
@@ -1204,7 +1204,7 @@ export function B(count) {
   it("rejects a const-derived extract identity reused across scopes", () => {
     expect(() =>
       transform(`
-import { extract } from "effect-atom-jsx/portable-extract";
+import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
 export const save = extract(() => Effect.void, {
   captures: Schema.Struct({}),
@@ -1223,7 +1223,7 @@ export function again() {
 
   it("keeps distinct const names in different functions working", () => {
     const output = transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function A(count) {
   const labelA = expr((_c, [v]) => "A: " + v, {
@@ -1250,7 +1250,7 @@ export function B(count) {
 
   it("leaves content-hashed identities unaffected by the collision check", () => {
     const output = transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export function A(count) {
   return expr((_c, [v]) => "A: " + v, {
@@ -1288,7 +1288,7 @@ function transformJsx(
   options: Partial<ResumeExtractOptions> = {},
 ): string {
   const result = babel.transformSync(
-    `import { expr } from "effect-atom-jsx/portable-extract";
+    `import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 
 const label = "hi";
@@ -1343,7 +1343,7 @@ describe("resume-extract JSX directive seam", () => {
     expect(dense(output)).not.toContain("title={_afBindExpression");
     // The directive is namespace-imported so no bare binding enters author
     // scope and the ABI name is spelled exactly once per host element.
-    expect(output).toContain('import * as _afExprDirectives from "effect-atom-jsx/dom"');
+    expect(output).toContain('import * as _afExprDirectives from "@doeixd/affe/dom"');
   });
 
   it("emits one attachment per element, not per render", () => {
@@ -1384,7 +1384,7 @@ describe("resume-extract JSX directive seam", () => {
 
   it("leaves ordinary non-JSX expr calls unchanged", () => {
     const output = transform(`
-import { expr } from "effect-atom-jsx/portable-extract";
+import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 export const bound = expr(() => "text", {
   captures: Schema.Struct({}),
@@ -1448,7 +1448,7 @@ export const bound = expr(() => "text", {
   it("refuses to compose with the variable-assignment ref form", () => {
     expect(() =>
       babel.transformSync(
-        `import { expr } from "effect-atom-jsx/portable-extract";
+        `import { expr } from "@doeixd/affe/portable-extract";
 import { Schema } from "effect";
 const label = "hi";
 export const view = () => {

@@ -1,12 +1,12 @@
-# effect-atom-jsx
+# Affe
 
 > Effect-native fine-grained reactive JSX runtime: callable atoms, typed async
-> `Result` state, semantic key-based reactivity, and the inside-out AF-UI
+> `Result` state, semantic key-based reactivity, and the inside-out Affe
 > component model (slot contracts + external style/behavior attachment), plus a
 > schema-first router, single-flight mutations, and SSR/hydration. Built on
 > Effect v4.
 
-This file orients LLMs generating or reviewing effect-atom-jsx code. The API is
+This file orients LLMs generating or reviewing Affe code. The API is
 unusual; do **not** assume React/Tailwind/Zustand patterns. The compiler is
 strict — invalid slots, tokens, capabilities, and unprovided services are
 compile errors, which is the point: generated code that guesses wrong fails to
@@ -14,12 +14,12 @@ compile rather than misbehaving at runtime.
 
 ## Type-checked generation is a feature (F4)
 
-AF-UI is designed so LLMs generate well **because** mistakes fail at compile
+Affe is designed so LLMs generate well **because** mistakes fail at compile
 time: wrong slot names, capability mismatches, missing layers, and bad token
 paths are rejected by TypeScript. Prefer emitting the golden path from this
 file; do not invent React hooks, Tailwind class strings, or Registry-first
 setup. Runtime companion: `Devtools` session/MCP read-rewind-dispatch for
-agents inspecting atoms/timeline (`effect-atom-jsx` `Devtools` module).
+agents inspecting atoms/timeline (`@doeixd/affe` `Devtools` module).
 Always set `name` on actions/queries so timelines stay legible.
 
 ## Core mental model
@@ -35,7 +35,7 @@ Always set `name` on actions/queries so timelines stay legible.
 - **Reactivity** is semantic: invalidate a *key*, not an atom reference. Keys
   are witnesses (`Reactivity.Key.make("users")`), shared by the tracked read
   and the invalidating write.
-- **AF-UI components** publish a **slot contract**; styles and behaviors attach
+- **Affe components** publish a **slot contract**; styles and behaviors attach
   from *outside* against that contract, checked at compile time. JSX is the
   authored markup; `View.fromSlots(slots, <jsx/>)`.
 
@@ -52,7 +52,7 @@ const runtime = Atom.runtime(Layer.mergeAll(ApiLive, Reactivity.live));
 const users = runtime.atom(() => api.listUsers());          // ReadonlyAtom<Result<User[], E>>
 const addUser = runtime.action((n: string) => api.addUser(n), { reactivityKeys: [Users] });
 
-// AF-UI component (slot contract + JSX)
+// Affe component (slot contract + JSX)
 const FieldSlots = View.Slots.define({
   root:  { capability: Element.Capability.Container },
   input: { capability: Element.Capability.TextInput, allowedEvents: [View.Event.Input] },
@@ -85,7 +85,7 @@ Component.mount(App, { props: {}, target: el, runtime });   // or { ..., layer: 
 | `Style.attach` / `Style.attachByView` / `Behavior.attach` | `attachToSlots` (authored) / `attachBySlotContract` (typed remap) / `attachBySlots` (dynamic) |
 | `View.Slot.make` x N + `Slot.bind` map (verbose) | `View.Slots.define({ name: { capability } })` |
 | hand-written `View.element(...)` trees as authored surface | JSX via `View.fromSlots(slots, <jsx/>)` |
-| top-level `Registry` import | `effect-atom-jsx/Registry` (advanced) |
+| top-level `Registry` import | `@doeixd/affe/Registry` (advanced) |
 | reactivity string keys as the authored path | `Reactivity.Key.make/family(...)` witnesses (strings still work as escape hatch) |
 
 ## When NOT to use this

@@ -1,0 +1,214 @@
+{
+  "name": "effect-atom-jsx",
+  "version": "0.6.0",
+  "description": "Deprecated: effect-atom-jsx is now Affe. Install @doeixd/affe instead; this package only re-exports it.",
+  "author": "Patrick G",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js"
+    },
+    "./jsx-runtime": {
+      "types": "./lib/jsx-runtime.d.ts",
+      "import": "./lib/jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./lib/jsx-dev-runtime.d.ts",
+      "import": "./lib/jsx-dev-runtime.js"
+    },
+    "./runtime": {
+      "types": "./lib/runtime.d.ts",
+      "import": "./lib/runtime.js"
+    },
+    "./testing": {
+      "types": "./lib/testing.d.ts",
+      "import": "./lib/testing.js"
+    },
+    "./advanced": {
+      "types": "./lib/advanced.d.ts",
+      "import": "./lib/advanced.js"
+    },
+    "./internals": {
+      "types": "./lib/internals.d.ts",
+      "import": "./lib/internals.js"
+    },
+    "./Atom": {
+      "types": "./lib/Atom.d.ts",
+      "import": "./lib/Atom.js"
+    },
+    "./AtomHttpApi": {
+      "types": "./lib/AtomHttpApi.d.ts",
+      "import": "./lib/AtomHttpApi.js"
+    },
+    "./AtomRef": {
+      "types": "./lib/AtomRef.d.ts",
+      "import": "./lib/AtomRef.js"
+    },
+    "./AtomRpc": {
+      "types": "./lib/AtomRpc.d.ts",
+      "import": "./lib/AtomRpc.js"
+    },
+    "./AtomLogger": {
+      "types": "./lib/AtomLogger.d.ts",
+      "import": "./lib/AtomLogger.js"
+    },
+    "./AtomSchema": {
+      "types": "./lib/AtomSchema.d.ts",
+      "import": "./lib/AtomSchema.js"
+    },
+    "./Hydration": {
+      "types": "./lib/Hydration.d.ts",
+      "import": "./lib/Hydration.js"
+    },
+    "./SafeHtml": {
+      "types": "./lib/SafeHtml.d.ts",
+      "import": "./lib/SafeHtml.js"
+    },
+    "./View": {
+      "types": "./lib/View.d.ts",
+      "import": "./lib/View.js"
+    },
+    "./Component": {
+      "types": "./lib/Component.d.ts",
+      "import": "./lib/Component.js"
+    },
+    "./Behavior": {
+      "types": "./lib/Behavior.d.ts",
+      "import": "./lib/Behavior.js"
+    },
+    "./Machine": {
+      "types": "./lib/Machine.d.ts",
+      "import": "./lib/Machine.js"
+    },
+    "./Mixin": {
+      "types": "./lib/Mixin.d.ts",
+      "import": "./lib/Mixin.js"
+    },
+    "./Agent": {
+      "types": "./lib/Agent.d.ts",
+      "import": "./lib/Agent.js"
+    },
+    "./ViewSpec": {
+      "types": "./lib/ViewSpec.d.ts",
+      "import": "./lib/ViewSpec.js"
+    },
+    "./view-spec-json-render": {
+      "types": "./lib/view-spec-json-render.d.ts",
+      "import": "./lib/view-spec-json-render.js"
+    },
+    "./Element": {
+      "types": "./lib/Element.d.ts",
+      "import": "./lib/Element.js"
+    },
+    "./behaviors": {
+      "types": "./lib/behaviors.d.ts",
+      "import": "./lib/behaviors.js"
+    },
+    "./composables": {
+      "types": "./lib/composables.d.ts",
+      "import": "./lib/composables.js"
+    },
+    "./Style": {
+      "types": "./lib/Style.d.ts",
+      "import": "./lib/Style.js"
+    },
+    "./Theme": {
+      "types": "./lib/Theme.d.ts",
+      "import": "./lib/Theme.js"
+    },
+    "./Reactivity": {
+      "types": "./lib/Reactivity.d.ts",
+      "import": "./lib/Reactivity.js"
+    },
+    "./style-utils": {
+      "types": "./lib/style-utils.d.ts",
+      "import": "./lib/style-utils.js"
+    },
+    "./styled-composables": {
+      "types": "./lib/styled-composables.d.ts",
+      "import": "./lib/styled-composables.js"
+    },
+    "./Route": {
+      "types": "./lib/Route.d.ts",
+      "import": "./lib/Route.js"
+    },
+    "./ServerRoute": {
+      "types": "./lib/ServerRoute.d.ts",
+      "import": "./lib/ServerRoute.js"
+    },
+    "./RouterRuntime": {
+      "types": "./lib/RouterRuntime.d.ts",
+      "import": "./lib/RouterRuntime.js"
+    },
+    "./Serialization": {
+      "types": "./lib/Serialization.d.ts",
+      "import": "./lib/Serialization.js"
+    },
+    "./Portable": {
+      "types": "./lib/Portable.d.ts",
+      "import": "./lib/Portable.js"
+    },
+    "./Resume": {
+      "types": "./lib/Resume.d.ts",
+      "import": "./lib/Resume.js"
+    },
+    "./adapter-spi": {
+      "types": "./lib/adapter-spi.d.ts",
+      "import": "./lib/adapter-spi.js"
+    },
+    "./Diagnostics": {
+      "types": "./lib/Diagnostics.d.ts",
+      "import": "./lib/Diagnostics.js"
+    },
+    "./A11y": {
+      "types": "./lib/A11y.d.ts",
+      "import": "./lib/A11y.js"
+    },
+    "./Form": {
+      "types": "./lib/Form.d.ts",
+      "import": "./lib/Form.js"
+    },
+    "./Devtools": {
+      "types": "./lib/Devtools.d.ts",
+      "import": "./lib/Devtools.js"
+    },
+    "./Event": {
+      "types": "./lib/Event.d.ts",
+      "import": "./lib/Event.js"
+    },
+    "./Registry": {
+      "types": "./lib/Registry.d.ts",
+      "import": "./lib/Registry.js"
+    },
+    "./portable-extract": {
+      "types": "./lib/portable-extract.d.ts",
+      "import": "./lib/portable-extract.js"
+    },
+    "./compiler/resume-extract-plugin": {
+      "types": "./lib/compiler/resume-extract-plugin.d.ts",
+      "import": "./lib/compiler/resume-extract-plugin.js"
+    },
+    "./compiler/resume-extract-vite": {
+      "types": "./lib/compiler/resume-extract-vite.d.ts",
+      "import": "./lib/compiler/resume-extract-vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "README.md"
+  ],
+  "dependencies": {
+    "@doeixd/affe": "0.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doeixd/effect-atom-jsx.git"
+  },
+  "homepage": "https://github.com/doeixd/effect-atom-jsx#readme"
+}

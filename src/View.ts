@@ -3,7 +3,7 @@ import * as Element from "./Element.js";
 import * as MetadataToken from "./MetadataToken.js";
 import * as SafeHtml from "./SafeHtml.js";
 
-export const ViewTypeId: unique symbol = Symbol.for("effect-atom-jsx/View");
+export const ViewTypeId: unique symbol = Symbol.for("affe/View");
 
 /**
  * Runtime value stored for a view slot.
@@ -195,8 +195,8 @@ export interface ViewMetadata {
 /** Extract the runtime slot handle map from a `View<Slots>`. */
 export type SlotsOf<T> = T extends View<infer Slots> ? Slots : never;
 
-export const SlotTypeId: unique symbol = Symbol.for("effect-atom-jsx/View/Slot");
-export const SlotsTypeId: unique symbol = Symbol.for("effect-atom-jsx/View/Slots");
+export const SlotTypeId: unique symbol = Symbol.for("affe/View/Slot");
+export const SlotsTypeId: unique symbol = Symbol.for("affe/View/Slots");
 
 type SlotHandle = Element.Handle | Element.Collection<Element.Handle>;
 
@@ -481,7 +481,7 @@ export namespace Slot {
   // typed named mount target for fragments (`Slot.mountTarget`).
 
   export const ProjectionTypeId: unique symbol = Symbol.for(
-    "effect-atom-jsx/View/SlotProjection",
+    "affe/View/SlotProjection",
   );
 
   /** A slot placed into a tree as its own region. */

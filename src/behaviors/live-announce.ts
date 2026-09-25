@@ -64,7 +64,7 @@ export function makeLiveAnnouncer(
 }
 
 const LiveAnnouncerTag = Context.Service<LiveAnnouncerService>(
-  "effect-atom-jsx/behaviors/LiveAnnouncer",
+  "affe/behaviors/LiveAnnouncer",
 );
 
 /**

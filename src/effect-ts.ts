@@ -669,7 +669,7 @@ export function useService<I, S>(tag: Context.Key<I, S>): S {
   const runtime = getAmbientManagedRuntime();
   if (runtime === null) {
     throw new Error(
-      `[effect-atom-jsx] useService(${tag.key}) called outside of an ambient runtime. ` +
+      `[affe] useService(${tag.key}) called outside of an ambient runtime. ` +
       "Wrap your app with createMount(layer) or mount(fn, container, layer).",
     );
   }
@@ -685,7 +685,7 @@ export function useService<I, S>(tag: Context.Key<I, S>): S {
       .filter((key) => key.length > 0 && !key.startsWith("effect/"))
       .join(", ");
     throw new Error(
-      `[effect-atom-jsx] useService(${tag.key}): service not found in ambient runtime. ` +
+      `[affe] useService(${tag.key}): service not found in ambient runtime. ` +
       (available && available.length > 0
         ? `Available services: [${available}]. `
         : "Available services: unavailable (runtime cache not initialized). ") +
@@ -801,7 +801,7 @@ export function setResultForTest<A, E>(
   const controller = resultControllers.get(result as Accessor<Result<any, any>>);
   if (controller === undefined) {
     throw new Error(
-      "[effect-atom-jsx] setResultForTest: result is not a controllable query/action accessor.",
+      "[affe] setResultForTest: result is not a controllable query/action accessor.",
     );
   }
   controller.interrupt();
@@ -1055,7 +1055,7 @@ function queryEffect<
   if (ambient === null) {
     const [result] = createSignal<Result<A, E | RetryError>>(
       Result.defect(
-        "[effect-atom-jsx] queryEffect(fn) requires an ambient ManagedRuntime. Use mount(..., layer) or pass { runtime }.",
+        "[affe] queryEffect(fn) requires an ambient ManagedRuntime. Use mount(..., layer) or pass { runtime }.",
       ),
     );
     return result;
@@ -1712,7 +1712,7 @@ export function layerContext<A, E, RIn>(
         if (Option.isSome(typed)) {
           setError(typed.value);
         } else {
-          console.error("[effect-atom-jsx] layerContext: layer build failed:", Cause.pretty(cause));
+          console.error("[affe] layerContext: layer build failed:", Cause.pretty(cause));
         }
       },
     }),
@@ -1793,7 +1793,7 @@ export function mountWithManagedRuntime(
     if (!ownsRuntime) return;
     void managed.dispose().catch((error) => {
       console.error(
-        "[effect-atom-jsx] mount: failed to dispose ManagedRuntime:",
+        "[affe] mount: failed to dispose ManagedRuntime:",
         error,
       );
     });
@@ -1990,7 +1990,7 @@ export function TypedBoundary<E>(props: {
 
 // ─── Switch / Match ───────────────────────────────────────────────────────────
 
-const MatchTypeId = Symbol.for("effect-atom-jsx/Match");
+const MatchTypeId = Symbol.for("affe/Match");
 
 type MatchCase<T> = {
   readonly [MatchTypeId]: true;

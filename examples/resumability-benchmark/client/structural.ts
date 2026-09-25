@@ -6,8 +6,8 @@
  * module does not know it.
  */
 import { Effect, Layer, ManagedRuntime, Schema } from "effect";
-import * as Resume from "effect-atom-jsx/Resume";
-import * as Serialization from "effect-atom-jsx/Serialization";
+import * as Resume from "@doeixd/affe/Resume";
+import * as Serialization from "@doeixd/affe/Serialization";
 import { resolverEntries } from "virtual:af-resume-entries";
 import { StructuralRowsExpression } from "../app/benchmark.js";
 import { browserState } from "../shared/browser-state.js";

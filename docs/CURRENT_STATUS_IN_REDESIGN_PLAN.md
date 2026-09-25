@@ -9,7 +9,7 @@ standing `typecheck:all` red — is closed)
 - **The agent-native lane (AN-1–AN-5) is complete.** `src/Agent.ts`
   (catalog/dispatch/governance/audit/ApprovalStore/suggestions),
   `src/reactivity-push.ts` (server-push live sync), result rendering +
-  `Resume.installFragment` (dormant chat widgets), the `@affe/agent` MCP
+  `Resume.installFragment` (dormant chat widgets), the `@doeixd/affe-agent` MCP
   adapter package, and `src/ViewSpec.ts` + `src/view-spec-json-render.ts`
   (the typed generative-UI IR, validator, and json-render **v0.20**
   lowering). Every agent-lane design question (`DQ-080`–`DQ-098`) is
@@ -34,7 +34,7 @@ standing `typecheck:all` red — is closed)
   `Theme.lightDark` (zero-JS light/dark tokens).
 - **The kit-widget milestone is complete** (`ee268d9`, `b09427e`,
   `aa98735`). `src/kit/` widgets + the pattern-contract registry, six-layer
-  kit exports, the injected Clock/Locale seam, and `@affe/css`. All three
+  kit exports, the injected Clock/Locale seam, and `@doeixd/affe-css`. All three
   parked components-lane questions are executed: `DQ-063` (CSS-Tags
   ownership), `DQ-064` (static style extraction — per-module, with the
   **slot** as the fail-open unit: any slot touched by a runtime condition
@@ -72,7 +72,7 @@ Plan reference: `docs/DESIGN_OVERHAUL_V1_PLAN.md`, `docs/V1_API_CONTRACT_DRAFT.m
 
 V1 scope authority (**ratified 2026-07-06**): `docs/V1_SCOPE.md`
 
-Current AF-UI source of truth: `docs/AF_UI_CONTRACT.md`
+Current Affe source of truth: `docs/AF_UI_CONTRACT.md`
 
 Current slot-design plan: `docs/SLOT_CONTRACT_UNIFICATION_PLAN.md`
 
@@ -275,11 +275,11 @@ High-level state of what has landed:
   manifests, `installClientStreaming`, out-of-band fragments
   (`Resume.mountFragment`, `ServerRoute.fragment`), async component setup,
   parallel loader streaming — all Chromium-proven.
-- The `@affe/permissive` package (M10 item 4, `PERMISSIVE_PACKAGE_PLAN.md`
+- The `@doeixd/affe-permissive` package (M10 item 4, `PERMISSIVE_PACKAGE_PLAN.md`
   S0–S6 complete 2026-08-12): the published adapter SPI
-  (`effect-atom-jsx/adapter-spi` + `Resume.spiVersion`), npm workspace with
+  (`@doeixd/affe/adapter-spi` + `Resume.spiVersion`), npm workspace with
   `packages/permissive`, the `permissive()` preset (extract.auto + async
-  seroval codec), the browser-safe `@affe/permissive/client` entry, a
+  seroval codec), the browser-safe `@doeixd/affe-permissive/client` entry, a
   pluggable cross-process state-handle resolver, a Chromium Qwik-parity
   demo, and the strict-mode zero-seroval-bytes proof.
 - Docs modernization passes aligning README/API/plan docs to current names.
@@ -288,7 +288,7 @@ For any "when/how did X land" question, consult the archive log.
 
 ## Design Review Findings (2026-07-06)
 
-An external-perspective design review of the current AF-UI model (slot
+An external-perspective design review of the current Affe model (slot
 contracts, setup ownership, attachment APIs, runtime subsystems) confirmed the
 architecture direction but identified concentrated risk in authoring
 ergonomics and unfinished consolidation. These findings define the next
@@ -504,7 +504,7 @@ Direction:
 
 ### P7 — Decide the package boundary question
 
-One package contains the atom core, AF-UI (view/style/behavior), the router,
+One package contains the atom core, Affe (view/style/behavior), the router,
 and the server runtime. The incremental-adoption story argues for a split:
 someone who wants atoms + reactivity keys should not take a UI framework.
 
@@ -653,7 +653,7 @@ drivers.
 
 Foldkit has an `/ai/overview` section and leads with "explicit and
 predictable, so LLMs generate it well and humans review it easily." The
-claim is more true of AF-UI — the compiler rejects hallucinated
+claim is more true of Affe — the compiler rejects hallucinated
 slots/tokens/requirements, so wrong generation fails at compile time — but
 they say it and we don't. D2 grows from "ship llms.txt" to: llms.txt +
 agent skill + a docs section arguing type-checked generation as a feature,
@@ -884,7 +884,7 @@ compile-time teeth when P2 key witnesses land.)
 - [x] Promote one route-node golden path and update router examples around it.
 - [x] Add SSR hydration example proving seeded loader data is available on first client render.
 - [x] Final export-tier cleanup: verify top-level stays app-first and move any remaining advanced overlap behind `advanced`/subpaths.
-- [x] Deep-import guidance sweep: ensure docs consistently show `effect-atom-jsx/Registry` for manual registry usage.
+- [x] Deep-import guidance sweep: ensure docs consistently show `@doeixd/affe/Registry` for manual registry usage.
 - [x] Historical-doc hygiene pass: label remaining pre-redesign analysis blocks as historical where they can be mistaken for current API guidance.
 - [x] Action-first docs polish: keep linear `Atom.runtime(...).action(...)` as primary mutation narrative across all guides.
 - [x] Finish API examples pass: ensure callable `Atom`/`AtomRef` style is used consistently in docs/snippets.

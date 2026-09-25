@@ -1,4 +1,4 @@
-import type * as Resume from "effect-atom-jsx/Resume";
+import type * as Resume from "@doeixd/affe/Resume";
 
 export type BrowserBoundaryState =
   | { readonly status: "dormant" }

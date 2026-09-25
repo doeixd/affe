@@ -1,4 +1,4 @@
-import { createMount, withViteHMR, type ViteHotContext } from "effect-atom-jsx";
+import { createMount, withViteHMR, type ViteHotContext } from "@doeixd/affe";
 import { TodoMvcApp } from "./App.js";
 import { TodoApiLive } from "./todo-service.js";
 
