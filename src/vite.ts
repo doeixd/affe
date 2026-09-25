@@ -61,6 +61,15 @@ export function affe(options: AffeViteOptions = {}): Vite.Plugin {
   return {
     name: "affe",
     enforce: "pre",
+    config() {
+      // Vite's dependency scanner reads JSX itself (plugins do not run
+      // there) and would otherwise assume React's runtime.
+      return {
+        optimizeDeps: {
+          rolldownOptions: { transform: { jsx: { runtime: "automatic", importSource: "@doeixd/affe" } } },
+        },
+      } as Vite.UserConfig;
+    },
     async transform(code, id) {
       const [filename] = id.split("?", 1);
       if (filename === undefined || filename.startsWith("\0")) return null;

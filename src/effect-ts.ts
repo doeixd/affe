@@ -1879,6 +1879,32 @@ export function mountWithManagedRuntime(
   };
 }
 
+/**
+ * The shape every control-flow component shares: `select` reads the props
+ * (tracked, so a prop getter compiled from `when={x()}` re-runs when `x`
+ * changes), and `render` builds the chosen branch UNTRACKED under its own
+ * owner. The branch is rebuilt only when the selection changes (per
+ * `equals`), and the previous one is disposed.
+ *
+ * Returning an accessor is what makes these components reactive in JSX:
+ * `createComponent` calls a component once, untracked, so a component that
+ * read its props eagerly would render its first state forever.
+ */
+function branch<K>(
+  select: () => K,
+  render: (selected: K) => unknown,
+  equals?: (previous: K, next: K) => boolean,
+): Accessor<unknown> {
+  const selected = createMemo(select, equals === undefined ? undefined : { equals });
+  return createMemo(() => {
+    const current = selected();
+    return untrack(() => render(current));
+  });
+}
+
+const readProp = <T>(value: T | Accessor<T>): T =>
+  (typeof value === "function" ? (value as Accessor<T>)() : value);
+
 // ─── Async ────────────────────────────────────────────────────────────────────
 
 /**
@@ -1894,27 +1920,28 @@ export function mountWithManagedRuntime(
  * />
  */
 export function Async<A, E>(props: {
-  result: Result<A, E>;
+  result: Result<A, E> | Accessor<Result<A, E>>;
   loading?: () => unknown;
   refreshing?: (previous: Success<A> | Failure<E> | Defect) => unknown;
   stale?: (error: E, data: A) => unknown;
   error?: (err: E) => unknown;
   defect?: (cause: string) => unknown;
   success: (value: A) => unknown;
-}): unknown {
+}): Accessor<unknown> {
   const renderSettled = (r: Success<A> | Failure<E> | Defect): unknown => {
     if (r._tag === "Failure") return props.error?.(r.error) ?? null;
     if (r._tag === "Defect") return props.defect?.(r.cause) ?? null;
     return props.success(r.value);
   };
 
-  const r = props.result;
-  // DQ-092: an Idle-unaware renderer treats Idle as not-ready.
-  if (r._tag === "Idle") return props.loading?.() ?? null;
-  if (r._tag === "Loading") return props.loading?.() ?? null;
-  if (r._tag === "Refreshing") return props.refreshing?.(r.previous) ?? renderSettled(r.previous);
-  if (r._tag === "Stale") return props.stale?.(r.error, r.data) ?? props.error?.(r.error) ?? props.success(r.data);
-  return renderSettled(r);
+  return branch(() => readProp(props.result), (r) => {
+    // DQ-092: an Idle-unaware renderer treats Idle as not-ready.
+    if (r._tag === "Idle") return props.loading?.() ?? null;
+    if (r._tag === "Loading") return props.loading?.() ?? null;
+    if (r._tag === "Refreshing") return props.refreshing?.(r.previous) ?? renderSettled(r.previous);
+    if (r._tag === "Stale") return props.stale?.(r.error, r.data) ?? props.error?.(r.error) ?? props.success(r.data);
+    return renderSettled(r);
+  });
 }
 
 
@@ -1954,13 +1981,13 @@ export function Loading(props: {
   when: Result<unknown, unknown> | boolean | Accessor<Result<unknown, unknown> | boolean>;
   fallback: () => unknown;
   children: unknown;
-}): unknown {
-  const whenValue = isAccessor<Result<unknown, unknown> | boolean>(props.when)
-    ? props.when()
-    : props.when;
-
-  if (isLoadingInput(whenValue)) return props.fallback();
-  return renderNode(props.children);
+}): Accessor<unknown> {
+  // Only the loading/not-loading flip rebuilds: children stay mounted while
+  // a result refreshes or its value changes.
+  return branch(
+    () => isLoadingInput(readProp(props.when)),
+    (loading) => (loading ? props.fallback() : renderNode(props.children)),
+  );
 }
 
 /**
@@ -1979,15 +2006,13 @@ export function Errored<A, E>(props: {
   result: Result<A, E> | Accessor<Result<A, E>>;
   fallback?: () => unknown;
   children: (error: E | ResultDefectError) => unknown;
-}): unknown {
-  const result = isAccessor<Result<A, E>>(props.result)
-    ? props.result()
-    : props.result;
-
-  if (result._tag === "Failure") return props.children(result.error);
-  if (result._tag === "Stale") return props.children(result.error);
-  if (result._tag === "Defect") return props.children({ _tag: "ResultDefectError", defect: result.cause });
-  return props.fallback?.() ?? null;
+}): Accessor<unknown> {
+  return branch(() => readProp(props.result), (result) => {
+    if (result._tag === "Failure") return props.children(result.error);
+    if (result._tag === "Stale") return props.children(result.error);
+    if (result._tag === "Defect") return props.children({ _tag: "ResultDefectError", defect: result.cause });
+    return props.fallback?.() ?? null;
+  });
 }
 
 /**
@@ -2001,24 +2026,22 @@ export function TypedBoundary<E>(props: {
   catch: TypedCatch<E>;
   children: (error: E) => unknown;
   fallback?: () => unknown;
-}): unknown {
-  const state = isAccessor<Result<unknown, unknown>>(props.result)
-    ? props.result()
-    : props.result;
-
-  const candidate: unknown =
-    state._tag === "Failure"
-      ? state.error
-      : state._tag === "Stale"
+}): Accessor<unknown> {
+  return branch(() => readProp(props.result), (state) => {
+    const candidate: unknown =
+      state._tag === "Failure"
         ? state.error
-      : state._tag === "Defect"
-        ? { defect: state.cause }
-        : undefined;
+        : state._tag === "Stale"
+          ? state.error
+        : state._tag === "Defect"
+          ? { defect: state.cause }
+          : undefined;
 
-  if (candidate !== undefined && matchesTypedCatch(props.catch, candidate)) {
-    return props.children(candidate);
-  }
-  return props.fallback?.() ?? null;
+    if (candidate !== undefined && matchesTypedCatch(props.catch, candidate)) {
+      return props.children(candidate);
+    }
+    return props.fallback?.() ?? null;
+  });
 }
 
 // ─── Switch / Match ───────────────────────────────────────────────────────────
@@ -2048,10 +2071,16 @@ export function Match<T>(props: {
   when: T | false | null | undefined | 0 | "";
   children: ((value: NonNullable<T>) => unknown) | unknown;
 }): MatchCase<T> {
+  // Getters, not copies: `Switch` reads `when` inside its own tracked scope,
+  // so `<Match when={x()}>` follows `x`.
   return {
     [MatchTypeId]: true,
-    when: props.when,
-    children: props.children,
+    get when() {
+      return props.when;
+    },
+    get children() {
+      return props.children;
+    },
   };
 }
 
@@ -2075,23 +2104,30 @@ export function createMount<R, E>(
 export function Switch(props: {
   fallback?: () => unknown;
   children: unknown;
-}): unknown {
-  const children = Array.isArray(props.children)
-    ? props.children
-    : [props.children];
-
-  for (const child of children) {
-    if (typeof child === "object" && child !== null && MatchTypeId in child) {
-      const match = child as MatchCase<unknown>;
-      if (!match.when) continue;
-      if (typeof match.children === "function") {
-        return (match.children as (value: unknown) => unknown)(match.when);
+}): Accessor<unknown> {
+  const cases = (): ReadonlyArray<MatchCase<unknown>> => {
+    const children = Array.isArray(props.children) ? props.children : [props.children];
+    return children.filter((child): child is MatchCase<unknown> =>
+      typeof child === "object" && child !== null && MatchTypeId in child);
+  };
+  return branch(
+    () => {
+      const all = cases();
+      for (let index = 0; index < all.length; index += 1) {
+        const when = all[index]!.when;
+        if (when) return { index, when };
       }
-      return match.children;
-    }
-  }
-
-  return props.fallback?.() ?? null;
+      return { index: -1, when: undefined as unknown };
+    },
+    ({ index, when }) => {
+      if (index < 0) return props.fallback?.() ?? null;
+      const match = cases()[index]!;
+      return typeof match.children === "function"
+        ? (match.children as (value: unknown) => unknown)(when)
+        : match.children;
+    },
+    (previous, next) => previous.index === next.index && previous.when === next.when,
+  );
 }
 
 // ─── Optional / Option matching ───────────────────────────────────────────────
@@ -2106,13 +2142,14 @@ export function Optional<T>(props: {
   when: T | null | undefined | Accessor<T | null | undefined>;
   fallback?: () => unknown;
   children: ((value: NonNullable<T>) => unknown) | unknown;
-}): unknown {
-  const value = isAccessor<T | null | undefined>(props.when) ? props.when() : props.when;
-  if (value === null || value === undefined) return props.fallback?.() ?? null;
-  if (typeof props.children === "function") {
-    return (props.children as (v: NonNullable<T>) => unknown)(value as NonNullable<T>);
-  }
-  return props.children;
+}): Accessor<unknown> {
+  return branch(() => readProp(props.when), (value) => {
+    if (value === null || value === undefined) return props.fallback?.() ?? null;
+    if (typeof props.children === "function") {
+      return (props.children as (v: NonNullable<T>) => unknown)(value as NonNullable<T>);
+    }
+    return props.children;
+  });
 }
 
 /**
@@ -2122,12 +2159,15 @@ export function MatchOption<A>(props: {
   value: Option.Option<A> | Accessor<Option.Option<A>>;
   some: (value: A) => unknown;
   none?: () => unknown;
-}): unknown {
-  const value = isAccessor<Option.Option<A>>(props.value) ? props.value() : props.value;
-  return Option.match(value, {
-    onNone: () => props.none?.() ?? null,
-    onSome: props.some,
-  });
+}): Accessor<unknown> {
+  return branch(
+    () => readProp(props.value),
+    (value) => Option.match(value, {
+      onNone: () => props.none?.() ?? null,
+      onSome: props.some,
+    }),
+    (previous, next) => (Option.isNone(previous) && Option.isNone(next)) || previous === next,
+  );
 }
 
 // ─── Dynamic / lazy-like helpers ──────────────────────────────────────────────
@@ -2229,11 +2269,12 @@ export function MatchTag<T extends Tagged, R>(props: {
   value: T | Accessor<T>;
   cases: MatchTagCases<T, R>;
   fallback?: (value: T) => R;
-}): R | null {
-  const value = isAccessor<T>(props.value) ? props.value() : props.value;
-  const handler = props.cases[value._tag as T["_tag"]] as ((v: T) => R) | undefined;
-  if (handler) return handler(value);
-  return props.fallback ? props.fallback(value) : null;
+}): Accessor<R | null> {
+  return branch(() => readProp(props.value), (value) => {
+    const handler = props.cases[value._tag as T["_tag"]] as ((v: T) => R) | undefined;
+    if (handler) return handler(value);
+    return props.fallback ? props.fallback(value) : null;
+  }) as Accessor<R | null>;
 }
 
 // ─── For ──────────────────────────────────────────────────────────────────────
@@ -2286,10 +2327,12 @@ export function Show<T>(props: {
   when: T | false | null | undefined | 0 | "";
   fallback?: () => unknown;
   children: ((value: NonNullable<T>) => unknown) | unknown;
-}): unknown {
-  if (!props.when) return props.fallback?.() ?? null;
-  if (typeof props.children === "function") {
-    return (props.children as (v: NonNullable<T>) => unknown)(props.when as NonNullable<T>);
-  }
-  return props.children;
+}): Accessor<unknown> {
+  return branch(() => props.when, (when) => {
+    if (!when) return props.fallback?.() ?? null;
+    if (typeof props.children === "function") {
+      return (props.children as (v: NonNullable<T>) => unknown)(when as NonNullable<T>);
+    }
+    return props.children;
+  });
 }

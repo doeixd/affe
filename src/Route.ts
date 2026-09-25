@@ -1,8 +1,8 @@
 import { Cause, Context, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import * as Atom from "./Atom.js";
 import { createComponent } from "./dom.js";
-import { getRequestEvent, renderToString, setRequestEvent } from "./dom.js";
-import { createMemo, createSignal, untrack, useContext, type Accessor } from "./api.js";
+import { getRequestEvent, insert, renderToString, setRequestEvent } from "./dom.js";
+import { createEffect, createMemo, createSignal, untrack, useContext, type Accessor } from "./api.js";
 import {
   ManagedRuntimeContext,
   defineMutation,
@@ -37,7 +37,7 @@ import {
   substitutePattern,
 } from "./route-pattern.js";
 import type { Component as ComponentType } from "./Component.js";
-import { invocationSourceOf } from "./component-scope.js";
+import { currentComponentServices, invocationSourceOf } from "./component-scope.js";
 
 export interface NavigateOptions {
   readonly replace?: boolean;
@@ -49,6 +49,12 @@ export interface RouterService {
   readonly back: () => Effect.Effect<void>;
   readonly forward: () => Effect.Effect<void>;
   readonly preload?: (to: string) => Effect.Effect<void>;
+  /**
+   * The `href` an anchor should carry for the app path `to`: the base path
+   * prepended (`Router.browser({ base })`), or `#` for the hash router.
+   * Absent means `to` itself. `Route.Link` uses it.
+   */
+  readonly href?: (to: string) => string;
   /**
    * Optional navigation error channel (DQ-031(b)): an optimistic write that
    * fails its forked navigation reports here after rolling back — never
@@ -2805,7 +2811,17 @@ export function link<T extends ComponentType<any, any, any, any, any> | AppRoute
       : RouteLink<Record<string, string>, Record<string, string>>;
 }
 
-/** JSX-friendly anchor helper backed by a typed route link. */
+/**
+ * JSX-friendly anchor backed by a typed route link.
+ *
+ * Renders a real `<a href>`, so the link works before JavaScript, can be
+ * opened in a new tab, and is crawlable. A plain left click navigates through
+ * the router service (the one a mount runtime or `WithLayer` provides);
+ * modified clicks (ctrl/⌘/shift/alt), non-primary buttons and `target` other
+ * than `_self` are left to the browser. A function `class` receives whether
+ * the link's pattern matches the router's current URL and stays in sync with
+ * navigation.
+ */
 export function Link<P, Q>(props: {
   readonly to: RouteLink<P, Q> | (((paramsValue: P, options?: { readonly query?: Partial<Q>; readonly hash?: string }) => string) & { readonly pattern?: string });
   readonly params: P;
@@ -2813,59 +2829,74 @@ export function Link<P, Q>(props: {
   readonly hash?: string;
   readonly class?: string | ((active: boolean) => string);
   readonly preload?: "hover";
+  readonly target?: string;
   readonly children: unknown;
 }) {
-  const runtime = useContext(ManagedRuntimeContext);
-  const href = props.to(props.params, { query: props.query, hash: props.hash });
-  // DQ-031: active state reads the ROUTER SERVICE's URL — `window.location`
-  // is simply wrong under the Hash, Memory, and Server layers, so there is no
-  // browser fallback of any kind here.
-  const serviceOption = runtime === null
-    ? undefined
-    : runtime.runSync(Effect.serviceOption(RouterTag));
-  const routerService = serviceOption !== undefined && serviceOption._tag === "Some"
-    ? serviceOption.value
-    : undefined;
-  const active = props.to.pattern !== undefined && routerService !== undefined
-    ? matchPattern(props.to.pattern, routerService.url().pathname)
-    : false;
-  const onClick = (event: MouseEvent) => {
-    event.preventDefault();
-    if (runtime !== null) {
-      runtime.runFork(Effect.gen(function* () {
-        const router = yield* RouterTag;
-        yield* router.navigate(href);
-      }) as Effect.Effect<void, never, never>);
-    }
-    // No `pushState` + synthetic `PopStateEvent` fallback: a Link outside a
-    // router runtime is inert rather than a second navigation stack.
-  };
-  const onMouseEnter = () => {
-    if (props.preload !== "hover" || runtime === null) return;
-    runtime.runFork(Effect.gen(function* () {
-      const router = yield* RouterTag;
-      if (router.preload) {
-        yield* router.preload(href);
-      }
-      const source = yield* resolveRouteSource();
-      if (source !== undefined) {
-        yield* prefetch(source, props.to as RouteLink<P, Q>, props.params, { query: props.query, hash: props.hash, scope: "full" });
-      }
-    }) as Effect.Effect<void, never, never>);
-  };
-  const className = typeof props.class === "function" ? props.class(active) : props.class;
   // No document, no anchor: outside any DOM (browser or installed server
   // document) the Link is inert rather than reaching for browser globals.
-  if ((globalThis as { readonly document?: unknown }).document === undefined) {
-    return null;
+  const doc = (globalThis as { readonly document?: Document }).document;
+  if (doc === undefined) return null;
+
+  const run = captureAmbientRunner();
+  // DQ-031: active state reads the ROUTER SERVICE's URL — `window.location`
+  // is wrong under the Hash, Memory, and Server layers, so there is no
+  // browser fallback of any kind here.
+  const router = currentRouterService();
+  const href = props.to(props.params, { query: props.query, hash: props.hash });
+  const pattern = props.to.pattern;
+  const active = (): boolean =>
+    pattern !== undefined && router !== undefined && matchPattern(pattern, router.url().pathname);
+
+  const anchor = doc.createElement("a");
+  anchor.setAttribute("href", router?.href === undefined ? href : router.href(href));
+  if (props.target !== undefined) anchor.setAttribute("target", props.target);
+  if (typeof props.class === "string") {
+    anchor.setAttribute("class", props.class);
+  } else if (typeof props.class === "function") {
+    const toClass = props.class;
+    createEffect(() => {
+      anchor.setAttribute("class", toClass(active()));
+    });
   }
-  return createComponent("a" as any, {
-    href,
-    class: className,
-    onClick,
-    onMouseEnter,
-    children: props.children,
+
+  anchor.addEventListener("click", (event: Event) => {
+    const click = event as MouseEvent;
+    if (router === undefined || click.defaultPrevented || click.button !== 0) return;
+    if (click.metaKey || click.ctrlKey || click.shiftKey || click.altKey) return;
+    if (props.target !== undefined && props.target !== "_self") return;
+    click.preventDefault();
+    run(router.navigate(href));
   });
+  if (props.preload === "hover") {
+    anchor.addEventListener("mouseenter", () => {
+      run(Effect.gen(function* () {
+        if (router?.preload) yield* router.preload(href);
+        const source = yield* resolveRouteSource();
+        if (source !== undefined) {
+          yield* prefetch(source, props.to as RouteLink<P, Q>, props.params, { query: props.query, hash: props.hash, scope: "full" });
+        }
+      }));
+    });
+  }
+  insert(anchor, () => props.children);
+  return anchor;
+}
+
+/**
+ * A fire-and-forget runner for effects started from event handlers, carrying
+ * the services visible where it was created (a `WithLayer` boundary's and the
+ * mount runtime's). Failures are logged, never thrown into the handler.
+ */
+function captureAmbientRunner(): (effect: Effect.Effect<unknown, unknown, any>) => void {
+  const runtime = useContext(ManagedRuntimeContext);
+  const services = currentComponentServices();
+  return (effect) => {
+    const provided = (services === null ? effect : Effect.provideContext(effect, services)).pipe(
+      Effect.catchCause((cause) => Effect.logError("[affe] Route.Link", cause)),
+    ) as Effect.Effect<void>;
+    if (runtime !== null) runtime.runFork(provided);
+    else Effect.runFork(provided);
+  };
 }
 
 export function queryAtom<A>(
@@ -4142,32 +4173,65 @@ function preloadUrl(to: string, base: URL | string): Effect.Effect<void> {
   );
 }
 
-export const Browser: Layer.Layer<RouterService> = Layer.effect(
-  RouterTag,
-  Effect.gen(function* () {
-    const url = makeWritableUrlAtom(browserUrl());
-    const onPop = () => {
-      url.set(browserUrl());
-    };
-    window.addEventListener("popstate", onPop);
-    yield* Effect.addFinalizer(() => Effect.sync(() => window.removeEventListener("popstate", onPop)));
+export interface BrowserRouterOptions {
+  /**
+   * The path the app is served under, such as `"/docs"` for an app at
+   * `https://example.com/docs/`. Route patterns, `url()` and `navigate(...)`
+   * work in app paths (`/users`), and the base is added to and removed from
+   * the browser URL. Default: the site root.
+   */
+  readonly base?: string;
+}
 
-    return {
-      url,
-      navigate: (to, options) => Effect.sync(() => {
-        if (options?.replace) {
-          window.history.replaceState(null, "", to);
-        } else {
-          window.history.pushState(null, "", to);
-        }
-        url.set(new URL(to, window.location.origin));
-      }),
-      back: () => Effect.sync(() => window.history.back()),
-      forward: () => Effect.sync(() => window.history.forward()),
-      preload: (to) => preloadUrl(to, window.location.origin),
-    } as RouterService;
-  }),
-);
+function normalizeBase(base: string | undefined): string {
+  if (base === undefined) return "";
+  const trimmed = base.replace(/\/+$/, "");
+  if (trimmed === "") return "";
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+/** The browser (History API) router, optionally mounted under a base path. */
+export function browser(options: BrowserRouterOptions = {}): Layer.Layer<RouterService> {
+  const base = normalizeBase(options.base);
+  const read = (): URL => {
+    const current = browserUrl();
+    if (base !== "" && (current.pathname === base || current.pathname.startsWith(`${base}/`))) {
+      current.pathname = current.pathname.slice(base.length) || "/";
+    }
+    return current;
+  };
+  const href = (to: string): string => (base !== "" && to.startsWith("/") && !to.startsWith("//") ? `${base}${to}` : to);
+  return Layer.effect(
+    RouterTag,
+    Effect.gen(function* () {
+      const url = makeWritableUrlAtom(read());
+      const onPop = () => {
+        url.set(read());
+      };
+      window.addEventListener("popstate", onPop);
+      yield* Effect.addFinalizer(() => Effect.sync(() => window.removeEventListener("popstate", onPop)));
+
+      return {
+        url,
+        href,
+        navigate: (to, navigateOptions) => Effect.sync(() => {
+          if (navigateOptions?.replace) {
+            window.history.replaceState(null, "", href(to));
+          } else {
+            window.history.pushState(null, "", href(to));
+          }
+          url.set(read());
+        }),
+        back: () => Effect.sync(() => window.history.back()),
+        forward: () => Effect.sync(() => window.history.forward()),
+        preload: (to) => preloadUrl(to, window.location.origin),
+      } as RouterService;
+    }),
+  );
+}
+
+/** The browser router at the site root. Same as `browser()`. */
+export const Browser: Layer.Layer<RouterService> = browser();
 
 export const Hash: Layer.Layer<RouterService> = Layer.effect(
   RouterTag,
@@ -4182,6 +4246,7 @@ export const Hash: Layer.Layer<RouterService> = Layer.effect(
 
     return {
       url,
+      href: (to: string) => `#${to}`,
       navigate: (to) => Effect.sync(() => {
         window.location.hash = to;
       }),
@@ -4234,6 +4299,7 @@ export function Memory(initial = "/"): Layer.Layer<RouterService> {
 export const Router = {
   Tag: RouterTag,
   Browser,
+  browser,
   Hash,
   Server,
   Memory,

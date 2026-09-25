@@ -266,6 +266,7 @@
     "preview:permissive-example": "vite preview --config examples/permissive-demo/vite.config.ts",
     "build:router-example": "vite build --config examples/router-basic/vite.config.ts",
     "preview:router-example": "vite preview --config examples/router-basic/vite.config.ts",
+    "examples": "node examples/serve.mjs",
     "build:resumability-benchmark": "node examples/resumability-benchmark/build.mjs",
     "preview:resumability-benchmark": "vite preview --config examples/resumability-benchmark/vite.config.ts",
     "bench:resumability": "npm run build && npm run build:resumability-benchmark && node benchmarks/resumability/run.mjs",

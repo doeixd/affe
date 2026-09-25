@@ -56,6 +56,10 @@ import { currentComponentScope, withComponentScope } from "../component-scope.js
 import { createComponent } from "../dom.js";
 import { withTestLayer } from "../testing.js";
 
+/** Control-flow components return an accessor; read its current branch. */
+const resolveBranch = (value: unknown): any =>
+  typeof value === "function" ? (value as () => unknown)() : value;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Wait for the microtask / promise queue to drain. */
@@ -1220,21 +1224,21 @@ describe("For", () => {
 
 describe("Show", () => {
   it("renders children when `when` is truthy", () => {
-    const result = Show({ when: "hello", children: (v: string) => v.toUpperCase() });
+    const result = resolveBranch(Show({ when: "hello", children: (v: string) => v.toUpperCase() }));
     expect(result).toBe("HELLO");
   });
 
   it("renders fallback when `when` is falsy", () => {
-    const result = Show({ when: false, fallback: () => "fallback", children: () => "children" });
+    const result = resolveBranch(Show({ when: false, fallback: () => "fallback", children: () => "children" }));
     expect(result).toBe("fallback");
   });
 
   it("returns null when `when` is falsy and no fallback", () => {
-    expect(Show({ when: 0, children: () => "x" })).toBeNull();
+    expect(resolveBranch(Show({ when: 0, children: () => "x" }))).toBeNull();
   });
 
   it("renders static children (non-function) when truthy", () => {
-    const result = Show({ when: true, children: "static" });
+    const result = resolveBranch(Show({ when: true, children: "static" }));
     expect(result).toBe("static");
   });
 });
@@ -1243,113 +1247,113 @@ describe("Show", () => {
 
 describe("Async", () => {
   it("renders loading slot", () => {
-    const r = Async({
+    const r = resolveBranch(Async({
       result: AsyncResult.loading,
       loading: () => "loading...",
       success: () => "done",
-    });
+    }));
     expect(r).toBe("loading...");
   });
 
   it("renders success slot with the value", () => {
-    const r = Async({
+    const r = resolveBranch(Async({
       result: AsyncResult.success(42),
       success: (v) => `value:${v}`,
-    });
+    }));
     expect(r).toBe("value:42");
   });
 
   it("renders error slot with the typed error", () => {
-    const r = Async({
+    const r = resolveBranch(Async({
       result: AsyncResult.failure({ code: 500 }),
       success: () => "ok",
       error: (e) => `error:${e.code}`,
-    });
+    }));
     expect(r).toBe("error:500");
   });
 
   it("renders defect slot when a defect is present", () => {
-    const r = Async({
+    const r = resolveBranch(Async({
       result: AsyncResult.defect("internal error"),
       success: () => "ok",
       defect: (msg) => `defect:${msg}`,
-    });
+    }));
     expect(r).toBe("defect:internal error");
   });
 
   it("returns null for unhandled failure/defect slots", () => {
-    expect(Async({ result: AsyncResult.failure("e"), success: () => "ok" })).toBeNull();
-    expect(Async({ result: AsyncResult.defect("d"), success: () => "ok" })).toBeNull();
+    expect(resolveBranch(Async({ result: AsyncResult.failure("e"), success: () => "ok" }))).toBeNull();
+    expect(resolveBranch(Async({ result: AsyncResult.defect("d"), success: () => "ok" }))).toBeNull();
   });
 });
 
 describe("Loading", () => {
   it("renders fallback during initial loading", () => {
-    const r = Loading({ when: AsyncResult.loading, fallback: () => "spin", children: "ready" });
+    const r = resolveBranch(Loading({ when: AsyncResult.loading, fallback: () => "spin", children: "ready" }));
     expect(r).toBe("spin");
   });
 
   it("renders children for non-loading async states", () => {
-    const r = Loading({ when: AsyncResult.success(1), fallback: () => "spin", children: () => "ok" });
+    const r = resolveBranch(Loading({ when: AsyncResult.success(1), fallback: () => "spin", children: () => "ok" }));
     expect(r).toBe("ok");
   });
 
   it("accepts accessor boolean input", () => {
     const [pending, setPending] = createSignal(true);
-    expect(Loading({ when: pending, fallback: () => "wait", children: "done" })).toBe("wait");
+    expect(resolveBranch(Loading({ when: pending, fallback: () => "wait", children: "done" }))).toBe("wait");
     setPending(false);
-    expect(Loading({ when: pending, fallback: () => "wait", children: "done" })).toBe("done");
+    expect(resolveBranch(Loading({ when: pending, fallback: () => "wait", children: "done" }))).toBe("done");
   });
 });
 
 describe("Errored", () => {
   it("renders typed failure", () => {
-    const r = Errored({
+    const r = resolveBranch(Errored({
       result: AsyncResult.failure({ code: 401 }),
       children: (e: any) => "code" in e ? `error:${e.code}` : "defect",
-    });
+    }));
     expect(r).toBe("error:401");
   });
 
   it("renders defect as structured error", () => {
-    const r = Errored({
+    const r = resolveBranch(Errored({
       result: AsyncResult.defect("boom"),
       children: (e: any) => "defect" in e ? `defect:${e.defect}` : "typed",
-    });
+    }));
     expect(r).toBe("defect:boom");
   });
 
   it("renders fallback when not in error state", () => {
-    const r = Errored({
+    const r = resolveBranch(Errored({
       result: AsyncResult.success(1),
       fallback: () => "ok",
       children: () => "bad",
-    });
+    }));
     expect(r).toBe("ok");
   });
 });
 
 describe("Switch/Match", () => {
   it("renders first matching branch", () => {
-    const r = Switch({
+    const r = resolveBranch(Switch({
       children: [
         Match({ when: false, children: "no" }),
         Match({ when: "yes", children: (v: string) => `got:${v}` }),
         Match({ when: true, children: "later" }),
       ],
       fallback: () => "fallback",
-    });
+    }));
     expect(r).toBe("got:yes");
   });
 
   it("renders fallback when nothing matches", () => {
-    const r = Switch({
+    const r = resolveBranch(Switch({
       children: [
         Match({ when: 0, children: "no" }),
         Match({ when: "", children: "no" }),
       ],
       fallback: () => "fallback",
-    });
+    }));
     expect(r).toBe("fallback");
   });
 });
@@ -1365,52 +1369,52 @@ describe("MatchTag", () => {
       },
       fallback: () => "other",
     });
-    expect(r).toBe("ok:42");
+    expect(resolveBranch(r)).toBe("ok:42");
   });
 
   it("supports accessor input and fallback", () => {
     const [state, setState] = createSignal<AsyncResultType<number, string>>(AsyncResult.loading);
-    const first = MatchTag({
+    const first = resolveBranch(MatchTag({
       value: state,
       cases: {
         Success: (v) => v.value,
       },
       fallback: () => -1,
-    });
+    }));
     expect(first).toBe(-1);
 
     setState(AsyncResult.success(9));
-    const second = MatchTag({
+    const second = resolveBranch(MatchTag({
       value: state,
       cases: {
         Success: (v) => v.value,
       },
       fallback: () => -1,
-    });
+    }));
     expect(second).toBe(9);
   });
 });
 
 describe("Optional", () => {
   it("treats nullish as absent but keeps falsey values", () => {
-    expect(Optional({ when: null, fallback: () => "none", children: "some" })).toBe("none");
-    expect(Optional({ when: 0, fallback: () => "none", children: (v: number) => `v:${v}` })).toBe("v:0");
-    expect(Optional({ when: "", fallback: () => "none", children: (v: string) => `v:${v}` })).toBe("v:");
+    expect(resolveBranch(Optional({ when: null, fallback: () => "none", children: "some" }))).toBe("none");
+    expect(resolveBranch(Optional({ when: 0, fallback: () => "none", children: (v: number) => `v:${v}` }))).toBe("v:0");
+    expect(resolveBranch(Optional({ when: "", fallback: () => "none", children: (v: string) => `v:${v}` }))).toBe("v:");
   });
 });
 
 describe("MatchOption", () => {
   it("matches Option.Some and Option.None", () => {
-    const some = MatchOption({
+    const some = resolveBranch(MatchOption({
       value: Option.some(5),
       some: (v) => `some:${v}`,
       none: () => "none",
-    });
-    const none = MatchOption({
+    }));
+    const none = resolveBranch(MatchOption({
       value: Option.none<number>(),
       some: (v) => `some:${v}`,
       none: () => "none",
-    });
+    }));
     expect(some).toBe("some:5");
     expect(none).toBe("none");
   });
@@ -1613,35 +1617,35 @@ describe("layerContext", () => {
 
 describe("TypedBoundary", () => {
   it("matches typed failures via type guard", () => {
-    const result = TypedBoundary({
+    const result = resolveBranch(TypedBoundary({
       result: AsyncResult.failure({ _tag: "ApiError", message: "nope" } as const),
       catch: (e: unknown): e is { readonly _tag: "ApiError"; readonly message: string } =>
         typeof e === "object" && e !== null && (e as any)._tag === "ApiError",
       children: (e) => `api:${e.message}`,
       fallback: () => "fallback",
-    });
+    }));
     expect(result).toBe("api:nope");
   });
 
   it("matches failures via Schema", () => {
     const ApiError = Schema.Struct({ _tag: Schema.Literal("ApiError"), message: Schema.String });
-    const result = TypedBoundary({
+    const result = resolveBranch(TypedBoundary({
       result: AsyncResult.failure({ _tag: "ApiError", message: "bad" }),
       catch: ApiError,
       children: (e) => `schema:${e.message}`,
       fallback: () => "fallback",
-    });
+    }));
     expect(result).toBe("schema:bad");
   });
 
   it("falls back when catch does not match", () => {
-    const result = TypedBoundary({
+    const result = resolveBranch(TypedBoundary({
       result: AsyncResult.failure({ _tag: "Other", message: "x" }),
       catch: (e: unknown): e is { readonly _tag: "ApiError" } =>
         typeof e === "object" && e !== null && (e as any)._tag === "ApiError",
       children: () => "matched",
       fallback: () => "fallback",
-    });
+    }));
     expect(result).toBe("fallback");
   });
 });
