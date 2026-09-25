@@ -25,7 +25,7 @@ specs; no open design question in any lane)
     into `onFailure: "proceed"`), both with `GovernanceUnsatisfiedError`.
     `singleFlightHandler` only reaches `access.http` entries.
   - `effect` is a peer and dev dependency only, no longer also a runtime
-    dependency, and the docs quote the pinned `4.0.0-beta.102`.
+    dependency, and the docs quote the pinned version.
   - CI runs the Playwright suite; `npm run test:all` passes on the empty
     `future/` suite.
   - The README covers resumability and the agent surface, and states that slot

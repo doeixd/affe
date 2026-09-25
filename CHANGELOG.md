@@ -2,6 +2,28 @@
 
 ## Unreleased (Redesign Track)
 
+### Dependencies updated to their latest versions
+
+- **Effect `4.0.0-beta.102` → `4.0.0-rc.117`** (exact peer). The only API
+  changes that reached Affe: `Schema.TaggedErrorClass` is now
+  `Schema.TaggedError` (same shape), and `SchemaIssue.InvalidValue` takes
+  `(annotations, input)`. Schema issue messages no longer echo the rejected
+  value.
+- **`@typeonce/effect-machine` `0.1.0` → `0.38.1`.** Its authoring API was
+  rewritten, so `Machine.defineStates` is gone. Author with `Machine.state`,
+  `Machine.targets`, `Machine.events` / `Machine.eventsFromSchemas` and
+  `Machine.make({ root, events }).handle({ initial, states })`; `Machine.resume`
+  and `Machine.waitFor` are re-exported. `Machine.spawn` and
+  `Machine.resumable` are unchanged. **Breaking for persisted state:**
+  encoded snapshots are now codec version 2 (`version: 2`, root at path
+  `""`), and snapshots saved by earlier versions are rejected.
+- Tooling: Vite 8, Vitest 5 (benchmarks use the `bench` test-context fixture;
+  see `src/__bench__/group.ts`), `@effect/tsgo` 0.45, Playwright 1.63,
+  `babel-plugin-jsx-dom-expressions` 0.40 (now emits `setStyleProperty`,
+  which the runtime already exports), `seroval` 1.6.7. Babel stays on 7.x:
+  the JSX plugin does not support Babel 8 yet.
+- CI runs on Node 24 (Vitest 5 needs Node 22.12+; Node 20 is end-of-life).
+
 ### Agent governance fails closed
 
 - **Breaking:** plain `Agent.dispatch` refuses an entry that declares

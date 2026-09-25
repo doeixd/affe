@@ -263,7 +263,7 @@
     "bench:resumability": "npm run build && npm run build:resumability-benchmark && node benchmarks/resumability/run.mjs",
     "bench:resumability:verify": "node benchmarks/resumability/verify.mjs bench-results/resumability/latest.json",
     "bench": "vitest bench --run",
-    "bench:ci": "vitest bench --run --outputJson bench-results.json",
+    "bench:ci": "vitest bench --run --reporter=json --outputFile=bench-results.json",
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
     "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",
@@ -274,24 +274,24 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@typeonce/effect-machine": "0.1.0",
-    "seroval": "^1.6.2"
+    "@typeonce/effect-machine": "0.38.1",
+    "seroval": "^1.6.7"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "@babel/preset-typescript": "^7.24.0",
-    "@effect/tsgo": "^0.24.3",
-    "@playwright/test": "^1.62.0",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-typescript": "^7.29.7",
+    "@effect/tsgo": "^0.45.0",
+    "@playwright/test": "^1.63.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.0.0",
-    "babel-plugin-jsx-dom-expressions": "^0.39.0",
-    "effect": "4.0.0-beta.102",
-    "jest": "^30.2.0",
+    "@types/node": "^24.0.0",
+    "babel-plugin-jsx-dom-expressions": "^0.40.10",
+    "effect": "4.0.0-rc.117",
+    "jest": "^30.5.2",
     "typescript": "^7.0.2",
-    "vite": "^7.3.6",
-    "vitest": "^4.0.18"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "peerDependencies": {
-    "effect": "4.0.0-beta.102"
+    "effect": "4.0.0-rc.117"
   }
 }

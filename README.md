@@ -42,11 +42,11 @@ router; the router works without the server runtime.
 ## Install
 
 ```sh
-npm install @doeixd/affe effect@4.0.0-beta.102
+npm install @doeixd/affe effect@4.0.0-rc.117
 ```
 
-**Effect compatibility:** this package peers on **Effect 4 beta**, pinned to
-exactly `effect@4.0.0-beta.102`. Ship as **0.x prerelease / beta** until
+**Effect compatibility:** this package peers on **Effect 4** (a release candidate), pinned to
+exactly `effect@4.0.0-rc.117`. Ship as **0.x prerelease / beta** until
 Effect 4 is stable; a `1.0.0` cut waits on a stable Effect core. See
 `docs/RELEASE_CHECKLIST.md` and `docs/V1_SCOPE.md`.
 

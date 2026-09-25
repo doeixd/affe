@@ -11,6 +11,10 @@ const here = (relative: string) => fileURLToPath(new URL(relative, import.meta.u
  * Run with `npm run test:future`.
  */
 export default defineConfig({
+  // Vite 8 transforms TypeScript with Oxc, which does not read
+  // `jsxImportSource` from tsconfig; without this, JSX in examples compiles
+  // against react/jsx-dev-runtime.
+  oxc: { jsx: { runtime: "automatic", importSource: "@doeixd/affe" } },
   resolve: {
     // Same aliasing rule as vitest.config.ts: adapter packages under test
     // resolve the public core subpaths to `src/` and `@doeixd/affe-ui-agent` to its

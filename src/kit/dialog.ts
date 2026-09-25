@@ -84,26 +84,19 @@ class Open extends Schema.TaggedClass<Open>()("DialogOpen", {}) {}
 class OpenEvent extends Schema.TaggedClass<OpenEvent>()("DialogOpenEvent", {}) {}
 class CloseEvent extends Schema.TaggedClass<CloseEvent>()("DialogCloseEvent", {}) {}
 
-const states = Machine.defineStates({ Closed, Open });
+const Root = Machine.state({ states: { Closed, Open } });
+const targets = Machine.targets(Root);
 
 /** Spawnable on its own: our machine with your DOM. */
 export const machine = Machine.make({
   id: "kit-dialog",
-  states: states.states,
-  events: [OpenEvent, CloseEvent],
-  initial: () => states.initial.Closed(new Closed()),
+  root: Root,
+  events: Machine.eventsFromSchemas(OpenEvent, CloseEvent),
 }).handle({
-  Closed: {
-    on: {
-      DialogOpenEvent: ({ target }: { target: { full: { Open: (s: Open) => unknown } } }) =>
-        Effect.succeed(target.full.Open(new Open({}))),
-    },
-  },
-  Open: {
-    on: {
-      DialogCloseEvent: ({ target }: { target: { full: { Closed: (s: Closed) => unknown } } }) =>
-        Effect.succeed(target.full.Closed(new Closed({}))),
-    },
+  initial: { target: targets.root.Closed },
+  states: {
+    Closed: { on: { DialogOpenEvent: { target: targets.root.Open } } },
+    Open: { on: { DialogCloseEvent: { target: targets.root.Closed } } },
   },
 });
 

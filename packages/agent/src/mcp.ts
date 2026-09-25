@@ -23,7 +23,7 @@ import * as Agent from "@doeixd/affe/Agent";
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class McpUnknownToolError extends Schema.TaggedErrorClass<McpUnknownToolError>(
+export class McpUnknownToolError extends Schema.TaggedError<McpUnknownToolError>(
   "@doeixd/affe-ui-agent/McpUnknownToolError",
 )("McpUnknownToolError", {
   tool: Schema.String,
@@ -35,7 +35,7 @@ export class McpUnknownToolError extends Schema.TaggedErrorClass<McpUnknownToolE
  * flags" and "does not exist" must be distinguishable codes, or a probe
  * cannot be told apart from a typo and a single catch-all satisfies both.
  */
-export class McpToolNotExposedError extends Schema.TaggedErrorClass<McpToolNotExposedError>(
+export class McpToolNotExposedError extends Schema.TaggedError<McpToolNotExposedError>(
   "@doeixd/affe-ui-agent/McpToolNotExposedError",
 )("McpToolNotExposedError", {
   tool: Schema.String,

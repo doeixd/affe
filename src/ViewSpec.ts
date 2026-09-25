@@ -41,7 +41,7 @@ export type NodeKind = (typeof NodeKinds)[number];
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class ViewSpecDecodeError extends Schema.TaggedErrorClass<ViewSpecDecodeError>(
+export class ViewSpecDecodeError extends Schema.TaggedError<ViewSpecDecodeError>(
   "affe/ViewSpecDecodeError",
 )("ViewSpecDecodeError", {
   /** Structural description only — never echoes field contents. */
@@ -49,7 +49,7 @@ export class ViewSpecDecodeError extends Schema.TaggedErrorClass<ViewSpecDecodeE
   path: Schema.String,
 }) {}
 
-export class ViewSpecInvalidError extends Schema.TaggedErrorClass<ViewSpecInvalidError>(
+export class ViewSpecInvalidError extends Schema.TaggedError<ViewSpecInvalidError>(
   "affe/ViewSpecInvalidError",
 )("ViewSpecInvalidError", {
   message: Schema.String,

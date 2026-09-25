@@ -1,7 +1,7 @@
 import { Effect, Context, Schema } from "effect";
 
 /** The transport failed to move the envelope at all (network, endpoint). */
-export class SingleFlightTransportError extends Schema.TaggedErrorClass<SingleFlightTransportError>(
+export class SingleFlightTransportError extends Schema.TaggedError<SingleFlightTransportError>(
   "affe/SingleFlightTransportError",
 )("SingleFlightTransportError", {
   message: Schema.String,

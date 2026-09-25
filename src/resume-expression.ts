@@ -203,7 +203,7 @@ export interface ExpressionContext {
   readonly values: ReadonlyArray<unknown>;
 }
 
-export class ExpressionDependencyDecodeError extends Schema.TaggedErrorClass<ExpressionDependencyDecodeError>(
+export class ExpressionDependencyDecodeError extends Schema.TaggedError<ExpressionDependencyDecodeError>(
   "affe/ExpressionDependencyDecodeError",
 )("ExpressionDependencyDecodeError", {
   codeId: Portable.CodeId,

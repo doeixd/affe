@@ -986,7 +986,7 @@ fragment merge** only.
   `effect`, or `kind: "recipe"` lacks `recipe`.
 - Devtools: `tag` on definition for doctor / inspect.
 - Runtime: invalid options → Schema error (typed); missing effect →
-  `Schema.TaggedErrorClass` or define-time throw in `toBehavior`.
+  `Schema.TaggedError` or define-time throw in `toBehavior`.
 
 ### Desugaring checklist (implementation acceptance)
 
@@ -1068,8 +1068,8 @@ integration seams only.
 
 | Layer | Owner |
 | --- | --- |
-| Definition (`defineStates` / `make` / `handle`) | `@typeonce/effect-machine` |
-| Execution (`start` / `send` / encode-decode snapshot) | `@typeonce/effect-machine` |
+| Definition (`state` / `targets` / `events` / `make(...).handle(...)`) | `@typeonce/effect-machine` |
+| Execution (`start` / `resume` / `send` / encode-decode snapshot) | `@typeonce/effect-machine` |
 | Affe spawn bridge (`Component.state`, Scope dispose, resume policy) | `src/Machine.ts` |
 | DOM wiring | `Behavior` (never machine state) |
 | Their `AtomMachine` / `effect/unstable/reactivity` | **not used** |
@@ -1078,33 +1078,26 @@ integration seams only.
 import { Effect, Schema } from "effect"
 import * as Machine from "@doeixd/affe/Machine"
 
-class Idle extends Schema.TaggedClass()("Idle", {}) {}
-class Open extends Schema.TaggedClass()("Open", {
+// Updated 2026-09-25 for @typeonce/effect-machine 0.38 (state/targets/make).
+class Idle extends Schema.TaggedClass<Idle>()("Idle", {}) {}
+class Open extends Schema.TaggedClass<Open>()("Open", {
   highlighted: Schema.NullOr(Schema.Number),
 }) {}
-class OpenEvent extends Schema.TaggedClass()("OpenEvent", {}) {}
-class CloseEvent extends Schema.TaggedClass()("CloseEvent", {}) {}
+class OpenEvent extends Schema.TaggedClass<OpenEvent>()("OpenEvent", {}) {}
+class CloseEvent extends Schema.TaggedClass<CloseEvent>()("CloseEvent", {}) {}
 
-const states = Machine.defineStates({ Idle, Open })
+const Root = Machine.state({ states: { Idle, Open } })
+const targets = Machine.targets(Root)
 
 const ComboboxMachine = Machine.make({
   id: "combobox",
-  states: states.states,
-  events: [OpenEvent, CloseEvent],
-  // initial is a function (effect-machine API; not a bare snapshot value)
-  initial: () => states.initial.Idle(new Idle({})),
+  root: Root,
+  events: Machine.eventsFromSchemas(OpenEvent, CloseEvent),
 }).handle({
-  Idle: {
-    on: {
-      OpenEvent: ({ target }) =>
-        Effect.succeed(target.full.Open(new Open({ highlighted: null }))),
-    },
-  },
-  Open: {
-    on: {
-      CloseEvent: ({ target }) =>
-        Effect.succeed(target.full.Idle(new Idle({}))),
-    },
+  initial: { target: targets.root.Idle },
+  states: {
+    Idle: { on: { OpenEvent: { target: targets.root.Open, data: { highlighted: null } } } },
+    Open: { on: { CloseEvent: { target: targets.root.Idle } } },
   },
 })
 
@@ -1125,10 +1118,11 @@ machine.send(new OpenEvent({}))
   `ref.stop` exactly once (double-dispose is a no-op).
 - **Resumability is the differentiator**: encoded snapshots round-trip
   through `Resume.snapshotState(Machine.EncodedSnapshotSchema)`;
-  `Machine.spawn(def, { snapshot })` rebinds `initial` so a dormant
+  `Machine.spawn(def, { snapshot })` resumes from it (effect-machine's
+  `Machine.resume`) so a dormant
   combobox restores open/highlighted without replaying setup. DOM refs
   stay in Behavior scope — never in machine state.
-- Peer: `effect@4.0.0-beta.102` (exact). When Effect ships Machine in-core,
+- Peer: `effect@4.0.0-rc.117` (exact, matching `@typeonce/effect-machine@0.38.1`). When Effect ships Machine in-core,
   the adapter swaps the import; the Affe spawn surface stays stable.
 
 **Correction (2026-07-30, found while writing `future/components/` specs):
@@ -1281,7 +1275,7 @@ vocabulary widgets should speak. These are the working rules, not a
 tutorial.
 
 **Errors (`E`).** Widget failures are values: define them with
-`Schema.TaggedErrorClass` (the resume layer's discipline — never untagged
+`Schema.TaggedError` (the resume layer's discipline — never untagged
 `{_tag: ...}` literals, never `throw`). Distinguish three kinds: *typed
 failures* (a date parse fails → `E`, catchable at a boundary with types
 intact), *defects* (impossible states — let them die loudly), and
@@ -1878,7 +1872,7 @@ against the live primitives:
 
 ### House rules (violations will fail review)
 
-1. Errors: `Schema.TaggedErrorClass` with a `message` getter (copy the
+1. Errors: `Schema.TaggedError` with a `message` getter (copy the
    pattern from `src/Resume.ts` error classes). Never untagged `{_tag}`
    literals, never `throw` in Effect code.
 2. Services: `Context.Service<T>("name")` + `Layer.succeed`/

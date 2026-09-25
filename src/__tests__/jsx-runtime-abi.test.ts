@@ -151,6 +151,9 @@ describe("JSX compiler/runtime ABI", () => {
       "setAttribute",
       "setAttributeNS",
       "setBoolAttribute",
+      // babel-plugin-jsx-dom-expressions 0.40 sets object `style` properties
+      // one at a time through this helper.
+      "setStyleProperty",
       "spread",
       "template",
       "use",

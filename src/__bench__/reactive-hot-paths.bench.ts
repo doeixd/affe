@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { group } from "./group.js";
 import * as Atom from "../Atom.js";
 import * as Reactivity from "../Reactivity.js";
 import { normalizeReactivityKeys } from "../reactivity-runtime.js";
@@ -11,7 +11,7 @@ import { normalizeReactivityKeys } from "../reactivity-runtime.js";
  * the hot paths are visible. See docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md (PR3).
  */
 
-describe("atom read/write", () => {
+group("atom read/write", (bench) => {
   const count = Atom.make(0);
 
   bench("callable read", () => {
@@ -27,7 +27,7 @@ describe("atom read/write", () => {
   });
 });
 
-describe("derived propagation", () => {
+group("derived propagation", (bench) => {
   const base = Atom.make(1);
   const d1 = Atom.map(base, (n) => n + 1);
   const d2 = Atom.map(d1, (n) => n * 2);
@@ -39,7 +39,7 @@ describe("derived propagation", () => {
   });
 });
 
-describe("family lookup", () => {
+group("family lookup", (bench) => {
   const trieFamily = Atom.family((id: number) => Atom.make(id));
   const equalsFamily = Atom.family((id: number) => Atom.make(id), {
     equals: (a, b) => a[0] === b[0],
@@ -54,7 +54,7 @@ describe("family lookup", () => {
   });
 });
 
-describe("reactivity keys", () => {
+group("reactivity keys", (bench) => {
   const Users = Reactivity.Key.make("users");
   const user = Reactivity.Key.family("user");
   const stringKeys = ["users", "user:1", "user:2"];

@@ -141,8 +141,8 @@ findings. Status:
 - **No example typecheck gate** — added `typecheck:examples`.
 
 **Release-blocking for a true 1.0 stable (updated 2026-07-09):**
-- **Effect *beta* dependency only.** `effect 4.0.0-beta.102` (exact peer). A
-  1.0 cannot be stable on a beta core. Gated on Effect 4 stable.
+- **Effect *prerelease* dependency only.** `effect 4.0.0-rc.117` (exact peer). A
+  1.0 cannot be stable on a prerelease core. Gated on Effect 4 stable.
 
 **Resolved since the 2026-07-07 scrutiny pass:**
 - `typecheck:tests` and `typecheck:examples` are green and enforced via
@@ -209,7 +209,7 @@ backlog + archive log):
 | 11 | P13 action inputSchema boundary | ✅ optional schema decode before effect / single-flight (2026-07-09) |
 
 Remaining release-blocking work for **1.0 stable** (updated 2026-07-09):
-**`effect` stable release** only (external — pinned to `4.0.0-beta.102`).
+**`effect` stable release** only (external — pinned to `4.0.0-rc.117`).
 Prerelease is ready when quality gates are green (see
 `docs/RELEASE_CHECKLIST.md`). Do not cut by re-adding deferred features.
 

@@ -29,7 +29,7 @@ const TestBuildId = "future-components-build";
 
 async function disclosureMachine() {
   const Machine = MachineModule as Record<string, any>;
-  const { defineStates, make } = ((Machine) as any);
+  const { state, targets: targetsOf, eventsFromSchemas, make } = ((Machine) as any);
 
   class Closed extends Schema.TaggedClass<Closed>()("Closed", {}) {}
   class Opened extends Schema.TaggedClass<Opened>()("Opened", {
@@ -40,23 +40,25 @@ async function disclosureMachine() {
     index: Schema.Number,
   }) {}
 
-  const states = defineStates({ Closed, Opened });
+  const Root = state({ states: { Closed, Opened } });
+  const targets = targetsOf(Root);
   const definition = make({
     id: "future-disclosure",
-    states: states.states,
-    events: [OpenEvent, HighlightEvent],
-    initial: () => states.initial.Closed(new Closed()),
+    root: Root,
+    events: eventsFromSchemas(OpenEvent, HighlightEvent),
   }).handle({
-    Closed: {
-      on: {
-        OpenEvent: ({ target }: any) =>
-          Effect.succeed(target.full.Opened(new Opened({ highlighted: null }))),
+    initial: { target: targets.root.Closed },
+    states: {
+      Closed: {
+        on: { OpenEvent: { target: targets.root.Opened, data: { highlighted: null } } },
       },
-    },
-    Opened: {
-      on: {
-        HighlightEvent: ({ event, target }: any) =>
-          Effect.succeed(target.full.Opened(new Opened({ highlighted: event.index }))),
+      Opened: {
+        on: {
+          HighlightEvent: {
+            update: targets.root.Opened,
+            data: ({ event }: any) => ({ highlighted: event.index }),
+          },
+        },
       },
     },
   });

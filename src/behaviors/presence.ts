@@ -85,42 +85,46 @@ export const presence = (config: PresenceConfig = {}) =>
         ? maybeReducedMotion.value.prefersReducedMotion
         : () => false;
 
-      const states = Machine.defineStates({ Mounted, Exiting, Unmounted });
+      const Root = Machine.state({
+        states: { Mounted, Exiting, Unmounted },
+      });
+      const targets = Machine.targets(Root);
       const definition = Machine.make({
         id: "af-presence",
-        states: states.states,
-        events: [OpenEvent, CloseEvent, AnimationEndEvent],
-        initial: () =>
-          options.initiallyPresent
-            ? states.initial.Mounted(new Mounted())
-            : states.initial.Unmounted(new Unmounted()),
+        root: Root,
+        events: Machine.eventsFromSchemas(OpenEvent, CloseEvent, AnimationEndEvent),
+        branches: {
+          close: {
+            exit: { target: targets.root.Exiting, title: "Animate out" },
+            unmount: { target: targets.root.Unmounted, title: "Reduced motion" },
+          },
+        },
       }).handle({
-        Mounted: {
-          on: {
-            // The whole decision in one branch: with motion, close parks in
-            // Exiting and waits; under reduced motion it unmounts NOW.
-            PresenceClose: ({ target }: any) =>
-              Effect.succeed(
-                prefersReducedMotion()
-                  ? target.full.Unmounted(new Unmounted())
-                  : target.full.Exiting(new Exiting()),
-              ),
-          },
+        initial: {
+          target: options.initiallyPresent ? targets.root.Mounted : targets.root.Unmounted,
         },
-        Exiting: {
-          on: {
-            PresenceAnimationEnd: ({ target }: any) =>
-              Effect.succeed(target.full.Unmounted(new Unmounted())),
-            // Reopening mid-exit cancels the exit; a stale animationend then
-            // arrives in Mounted, which has no handler for it — ignored.
-            PresenceOpen: ({ target }: any) =>
-              Effect.succeed(target.full.Mounted(new Mounted())),
+        states: {
+          Mounted: {
+            on: {
+              // The whole decision in one branch: with motion, close parks in
+              // Exiting and waits; under reduced motion it unmounts NOW.
+              PresenceClose: {
+                branches: "close",
+                resolve: ({ select }: any) =>
+                  prefersReducedMotion() ? select.unmount() : select.exit(),
+              },
+            },
           },
-        },
-        Unmounted: {
-          on: {
-            PresenceOpen: ({ target }: any) =>
-              Effect.succeed(target.full.Mounted(new Mounted())),
+          Exiting: {
+            on: {
+              PresenceAnimationEnd: { target: targets.root.Unmounted },
+              // Reopening mid-exit cancels the exit; a stale animationend then
+              // arrives in Mounted, which has no handler for it — ignored.
+              PresenceOpen: { target: targets.root.Mounted },
+            },
+          },
+          Unmounted: {
+            on: { PresenceOpen: { target: targets.root.Mounted } },
           },
         },
       });

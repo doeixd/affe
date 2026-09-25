@@ -14,14 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
-      # @effect/tsgo-linux-x64 0.24.x ships its native binary without the
-      # executable bit (fixed upstream in later releases); typecheck:effect
-      # spawns it directly.
-      - name: Make the effect-tsgo binary executable
-        run: chmod +x node_modules/@effect/tsgo-linux-x64/lib/tsc node_modules/@effect/tsgo-linux-x64/lib/tsc-next
       # Build first: the workspace packages (agent, css, permissive) type-check
       # and test against the core's published dist, as an outside consumer would.
       - name: Build
@@ -38,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - name: Install Chromium
@@ -60,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - name: Run benchmarks

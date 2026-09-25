@@ -164,11 +164,14 @@ function parseJson(wire: string): Effect.Effect<unknown, Schema.SchemaError> {
     try: () => JSON.parse(wire) as unknown,
     catch: (cause) =>
       new Schema.SchemaError(
-        new SchemaIssue.InvalidValue(Option.some(wire), {
-          message: `Malformed JSON wire payload: ${
-            cause instanceof Error ? cause.message : String(cause)
-          }`,
-        }),
+        new SchemaIssue.InvalidValue(
+          {
+            message: `Malformed JSON wire payload: ${
+              cause instanceof Error ? cause.message : String(cause)
+            }`,
+          },
+          wire,
+        ),
       ),
   });
 }

@@ -44,35 +44,35 @@ import * as ViewSpec from "./ViewSpec.js";
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class AgentToolNotFoundError extends Schema.TaggedErrorClass<AgentToolNotFoundError>(
+export class AgentToolNotFoundError extends Schema.TaggedError<AgentToolNotFoundError>(
   "affe/AgentToolNotFoundError",
 )("AgentToolNotFoundError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
-export class AgentArgsDecodeError extends Schema.TaggedErrorClass<AgentArgsDecodeError>(
+export class AgentArgsDecodeError extends Schema.TaggedError<AgentArgsDecodeError>(
   "affe/AgentArgsDecodeError",
 )("AgentArgsDecodeError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
-export class AgentErrorEncodeError extends Schema.TaggedErrorClass<AgentErrorEncodeError>(
+export class AgentErrorEncodeError extends Schema.TaggedError<AgentErrorEncodeError>(
   "affe/AgentErrorEncodeError",
 )("AgentErrorEncodeError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
-export class AgentBuildIdMissingError extends Schema.TaggedErrorClass<AgentBuildIdMissingError>(
+export class AgentBuildIdMissingError extends Schema.TaggedError<AgentBuildIdMissingError>(
   "affe/AgentBuildIdMissingError",
 )("AgentBuildIdMissingError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
-export class GovernanceUnsatisfiedError extends Schema.TaggedErrorClass<GovernanceUnsatisfiedError>(
+export class GovernanceUnsatisfiedError extends Schema.TaggedError<GovernanceUnsatisfiedError>(
   "affe/GovernanceUnsatisfiedError",
 )("GovernanceUnsatisfiedError", {
   tool: Schema.String,
@@ -81,14 +81,14 @@ export class GovernanceUnsatisfiedError extends Schema.TaggedErrorClass<Governan
   message: Schema.String,
 }) {}
 
-export class ApprovalDeniedError extends Schema.TaggedErrorClass<ApprovalDeniedError>(
+export class ApprovalDeniedError extends Schema.TaggedError<ApprovalDeniedError>(
   "affe/ApprovalDeniedError",
 )("ApprovalDeniedError", {
   summary: Schema.String,
   reason: Schema.String,
 }) {}
 
-export class AuthorizationDeniedError extends Schema.TaggedErrorClass<AuthorizationDeniedError>(
+export class AuthorizationDeniedError extends Schema.TaggedError<AuthorizationDeniedError>(
   "affe/AuthorizationDeniedError",
 )("AuthorizationDeniedError", {
   tool: Schema.String,
@@ -117,7 +117,7 @@ export const Approval = Context.Service<ApprovalService>(
 
 // ─── ApprovalStore (DQ-095) ──────────────────────────────────────────────────
 
-export class ApprovalNotFoundError extends Schema.TaggedErrorClass<ApprovalNotFoundError>(
+export class ApprovalNotFoundError extends Schema.TaggedError<ApprovalNotFoundError>(
   "affe/ApprovalNotFoundError",
 )("ApprovalNotFoundError", {
   id: Schema.String,
@@ -1116,21 +1116,21 @@ export function makeDispatcher<Provided, LE>(
 
 // ─── Result rendering (AN-4) ─────────────────────────────────────────────────
 
-export class AgentRenderTargetMissingError extends Schema.TaggedErrorClass<AgentRenderTargetMissingError>(
+export class AgentRenderTargetMissingError extends Schema.TaggedError<AgentRenderTargetMissingError>(
   "affe/AgentRenderTargetMissingError",
 )("AgentRenderTargetMissingError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
-export class AgentRenderPropsError extends Schema.TaggedErrorClass<AgentRenderPropsError>(
+export class AgentRenderPropsError extends Schema.TaggedError<AgentRenderPropsError>(
   "affe/AgentRenderPropsError",
 )("AgentRenderPropsError", {
   tool: Schema.String,
   message: Schema.String,
 }) {}
 
-export class AgentRenderError extends Schema.TaggedErrorClass<AgentRenderError>(
+export class AgentRenderError extends Schema.TaggedError<AgentRenderError>(
   "affe/AgentRenderError",
 )("AgentRenderError", {
   tool: Schema.String,

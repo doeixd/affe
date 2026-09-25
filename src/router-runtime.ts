@@ -349,7 +349,7 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
  * Schema-tagged like the resumability layer's errors: a real `Error` with a
  * stack, carrying which route and against which budget.
  */
-export class RouteLoaderTimeoutError extends Schema.TaggedErrorClass<RouteLoaderTimeoutError>(
+export class RouteLoaderTimeoutError extends Schema.TaggedError<RouteLoaderTimeoutError>(
   "affe/RouteLoaderTimeoutError",
 )("RouteLoaderTimeoutError", {
   routeId: Schema.String,

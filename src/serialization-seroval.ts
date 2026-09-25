@@ -71,7 +71,7 @@ export const serializerEnvelopeKey = "$afSerializer";
 
 function schemaError(message: string, value?: unknown): Schema.SchemaError {
   return new Schema.SchemaError(
-    new SchemaIssue.InvalidValue(Option.some(value), { message }),
+    new SchemaIssue.InvalidValue({ message }, value),
   );
 }
 

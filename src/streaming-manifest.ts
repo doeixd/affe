@@ -50,7 +50,7 @@ export type StreamRecord = typeof StreamRecordSchema.Type;
  * the record that blew the budget — one shared tag would make "which record"
  * unanswerable.
  */
-export class ResumeStreamPayloadTooLargeError extends Schema.TaggedErrorClass<ResumeStreamPayloadTooLargeError>(
+export class ResumeStreamPayloadTooLargeError extends Schema.TaggedError<ResumeStreamPayloadTooLargeError>(
   "affe/ResumeStreamPayloadTooLargeError",
 )("ResumeStreamPayloadTooLargeError", {
   region: Schema.String,
@@ -60,7 +60,7 @@ export class ResumeStreamPayloadTooLargeError extends Schema.TaggedErrorClass<Re
 }) {}
 
 /** A streamed record referenced code from a different build. */
-export class ResumeStreamRecordBuildError extends Schema.TaggedErrorClass<ResumeStreamRecordBuildError>(
+export class ResumeStreamRecordBuildError extends Schema.TaggedError<ResumeStreamRecordBuildError>(
   "affe/ResumeStreamRecordBuildError",
 )("ResumeStreamRecordBuildError", {
   region: Schema.String,

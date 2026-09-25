@@ -177,7 +177,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
   });
 
   it("an MCP tool error is a typed discriminated value, not a stringified message", async () => {
-    class QuotaError extends Schema.TaggedErrorClass<QuotaError>(
+    class QuotaError extends Schema.TaggedError<QuotaError>(
       "agent-mcp-test/QuotaError",
     )("QuotaError", { limit: Schema.Number }) {}
 

@@ -11,9 +11,12 @@ test("loads only the portable action chunk and resumes without the component", a
   const actionGate = new Promise<void>((resolve) => {
     releaseAction = resolve;
   });
-  let actionRequests = 0;
+  // The bundler may split the action into several files (Rolldown emits a
+  // small facade chunk for the dynamic import plus the implementation), so
+  // record URLs rather than counting one file.
+  const actionRequests: string[] = [];
   await page.route(/\/assets\/save-action-[^/]+\.js$/, async (route) => {
-    actionRequests += 1;
+    actionRequests.push(route.request().url());
     await actionGate;
     await route.continue();
   });
@@ -30,7 +33,7 @@ test("loads only the portable action chunk and resumes without the component", a
 
   await button.click();
   await button.click();
-  await expect.poll(() => actionRequests).toBe(1);
+  await expect.poll(() => actionRequests.length).toBeGreaterThan(0);
 
   const whileLoading = await page.evaluate(() => window.__RESUME_TEST__);
   expect(whileLoading).toMatchObject({
@@ -49,6 +52,8 @@ test("loads only the portable action chunk and resumes without the component", a
     .poll(() => page.evaluate(() => window.__RESUME_TEST__.saves))
     .toEqual(["saved-from-browser", "saved-from-browser"]);
 
+  // Two clicks, one load: no action file was fetched twice.
+  expect(new Set(actionRequests).size).toBe(actionRequests.length);
   const resumed = await page.evaluate(() => window.__RESUME_TEST__);
   expect(resumed).toMatchObject({
     actionImports: 1,

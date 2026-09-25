@@ -611,7 +611,7 @@ export interface CollectionResult {
   readonly diagnostics: ReadonlyArray<ResumeDiagnostic>;
 }
 
-export class ResumeConfigurationError extends Schema.TaggedErrorClass<ResumeConfigurationError>(
+export class ResumeConfigurationError extends Schema.TaggedError<ResumeConfigurationError>(
   "affe/ResumeConfigurationError",
 )("ResumeConfigurationError", {
   message: Schema.String,
@@ -623,7 +623,7 @@ export class ResumeConfigurationError extends Schema.TaggedErrorClass<ResumeConf
  * misdecoding is worse than not decoding. Distinct from a build mismatch,
  * its nearest neighbour, since both gate in the same place.
  */
-export class ResumeSerializerMismatchError extends Schema.TaggedErrorClass<ResumeSerializerMismatchError>(
+export class ResumeSerializerMismatchError extends Schema.TaggedError<ResumeSerializerMismatchError>(
   "affe/ResumeSerializerMismatchError",
 )("ResumeSerializerMismatchError", {
   expected: Schema.String,
@@ -631,13 +631,13 @@ export class ResumeSerializerMismatchError extends Schema.TaggedErrorClass<Resum
   message: Schema.String,
 }) {}
 
-export class ResumeRenderError extends Schema.TaggedErrorClass<ResumeRenderError>(
+export class ResumeRenderError extends Schema.TaggedError<ResumeRenderError>(
   "affe/ResumeRenderError",
 )("ResumeRenderError", {
   message: Schema.String,
 }) {}
 
-export class ResumeDescriptorError extends Schema.TaggedErrorClass<ResumeDescriptorError>(
+export class ResumeDescriptorError extends Schema.TaggedError<ResumeDescriptorError>(
   "affe/ResumeDescriptorError",
 )("ResumeDescriptorError", {
   eventId: EventId,
@@ -645,7 +645,7 @@ export class ResumeDescriptorError extends Schema.TaggedErrorClass<ResumeDescrip
   message: Schema.String,
 }) {}
 
-export class ResumeBuildMismatchError extends Schema.TaggedErrorClass<ResumeBuildMismatchError>(
+export class ResumeBuildMismatchError extends Schema.TaggedError<ResumeBuildMismatchError>(
   "affe/ResumeBuildMismatchError",
 )("ResumeBuildMismatchError", {
   eventId: EventId,
@@ -654,7 +654,7 @@ export class ResumeBuildMismatchError extends Schema.TaggedErrorClass<ResumeBuil
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionDescriptorError extends Schema.TaggedErrorClass<ResumeExpressionDescriptorError>(
+export class ResumeExpressionDescriptorError extends Schema.TaggedError<ResumeExpressionDescriptorError>(
   "affe/ResumeExpressionDescriptorError",
 )("ResumeExpressionDescriptorError", {
   expressionId: ExpressionId,
@@ -662,7 +662,7 @@ export class ResumeExpressionDescriptorError extends Schema.TaggedErrorClass<Res
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionInputDecodeError extends Schema.TaggedErrorClass<ResumeExpressionInputDecodeError>(
+export class ResumeExpressionInputDecodeError extends Schema.TaggedError<ResumeExpressionInputDecodeError>(
   "affe/ResumeExpressionInputDecodeError",
 )("ResumeExpressionInputDecodeError", {
   expressionId: ExpressionId,
@@ -670,7 +670,7 @@ export class ResumeExpressionInputDecodeError extends Schema.TaggedErrorClass<Re
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionBuildMismatchError extends Schema.TaggedErrorClass<ResumeExpressionBuildMismatchError>(
+export class ResumeExpressionBuildMismatchError extends Schema.TaggedError<ResumeExpressionBuildMismatchError>(
   "affe/ResumeExpressionBuildMismatchError",
 )("ResumeExpressionBuildMismatchError", {
   expressionId: ExpressionId,
@@ -679,7 +679,7 @@ export class ResumeExpressionBuildMismatchError extends Schema.TaggedErrorClass<
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationDescriptorError extends Schema.TaggedErrorClass<ResumeComponentActivationDescriptorError>(
+export class ResumeComponentActivationDescriptorError extends Schema.TaggedError<ResumeComponentActivationDescriptorError>(
   "affe/ResumeComponentActivationDescriptorError",
 )("ResumeComponentActivationDescriptorError", {
   componentId: ComponentId,
@@ -687,7 +687,7 @@ export class ResumeComponentActivationDescriptorError extends Schema.TaggedError
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationBuildMismatchError extends Schema.TaggedErrorClass<ResumeComponentActivationBuildMismatchError>(
+export class ResumeComponentActivationBuildMismatchError extends Schema.TaggedError<ResumeComponentActivationBuildMismatchError>(
   "affe/ResumeComponentActivationBuildMismatchError",
 )("ResumeComponentActivationBuildMismatchError", {
   componentId: ComponentId,
@@ -696,61 +696,61 @@ export class ResumeComponentActivationBuildMismatchError extends Schema.TaggedEr
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationNotFoundError extends Schema.TaggedErrorClass<ResumeComponentActivationNotFoundError>(
+export class ResumeComponentActivationNotFoundError extends Schema.TaggedError<ResumeComponentActivationNotFoundError>(
   "affe/ResumeComponentActivationNotFoundError",
 )("ResumeComponentActivationNotFoundError", {
   componentId: Schema.String,
   message: Schema.String,
 }) {}
 
-export class ResumeComponentNotAddressableError extends Schema.TaggedErrorClass<ResumeComponentNotAddressableError>(
+export class ResumeComponentNotAddressableError extends Schema.TaggedError<ResumeComponentNotAddressableError>(
   "affe/ResumeComponentNotAddressableError",
 )("ResumeComponentNotAddressableError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationDisposedError extends Schema.TaggedErrorClass<ResumeComponentActivationDisposedError>(
+export class ResumeComponentActivationDisposedError extends Schema.TaggedError<ResumeComponentActivationDisposedError>(
   "affe/ResumeComponentActivationDisposedError",
 )("ResumeComponentActivationDisposedError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationResolutionError extends Schema.TaggedErrorClass<ResumeComponentActivationResolutionError>(
+export class ResumeComponentActivationResolutionError extends Schema.TaggedError<ResumeComponentActivationResolutionError>(
   "affe/ResumeComponentActivationResolutionError",
 )("ResumeComponentActivationResolutionError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationExecutionError extends Schema.TaggedErrorClass<ResumeComponentActivationExecutionError>(
+export class ResumeComponentActivationExecutionError extends Schema.TaggedError<ResumeComponentActivationExecutionError>(
   "affe/ResumeComponentActivationExecutionError",
 )("ResumeComponentActivationExecutionError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeComponentActivationMountError extends Schema.TaggedErrorClass<ResumeComponentActivationMountError>(
+export class ResumeComponentActivationMountError extends Schema.TaggedError<ResumeComponentActivationMountError>(
   "affe/ResumeComponentActivationMountError",
 )("ResumeComponentActivationMountError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeManifestEncodeError extends Schema.TaggedErrorClass<ResumeManifestEncodeError>(
+export class ResumeManifestEncodeError extends Schema.TaggedError<ResumeManifestEncodeError>(
   "affe/ResumeManifestEncodeError",
 )("ResumeManifestEncodeError", {
   message: Schema.String,
 }) {}
 
-export class ResumeManifestDecodeError extends Schema.TaggedErrorClass<ResumeManifestDecodeError>(
+export class ResumeManifestDecodeError extends Schema.TaggedError<ResumeManifestDecodeError>(
   "affe/ResumeManifestDecodeError",
 )("ResumeManifestDecodeError", {
   message: Schema.String,
 }) {}
 
-export class ResumeClientBuildMismatchError extends Schema.TaggedErrorClass<ResumeClientBuildMismatchError>(
+export class ResumeClientBuildMismatchError extends Schema.TaggedError<ResumeClientBuildMismatchError>(
   "affe/ResumeClientBuildMismatchError",
 )("ResumeClientBuildMismatchError", {
   expected: Portable.BuildId,
@@ -758,7 +758,7 @@ export class ResumeClientBuildMismatchError extends Schema.TaggedErrorClass<Resu
   message: Schema.String,
 }) {}
 
-export class ResumeUnknownEventMarkerError extends Schema.TaggedErrorClass<ResumeUnknownEventMarkerError>(
+export class ResumeUnknownEventMarkerError extends Schema.TaggedError<ResumeUnknownEventMarkerError>(
   "affe/ResumeUnknownEventMarkerError",
 )("ResumeUnknownEventMarkerError", {
   marker: Schema.String,
@@ -766,7 +766,7 @@ export class ResumeUnknownEventMarkerError extends Schema.TaggedErrorClass<Resum
   message: Schema.String,
 }) {}
 
-export class ResumeDuplicateEventMarkerError extends Schema.TaggedErrorClass<ResumeDuplicateEventMarkerError>(
+export class ResumeDuplicateEventMarkerError extends Schema.TaggedError<ResumeDuplicateEventMarkerError>(
   "affe/ResumeDuplicateEventMarkerError",
 )("ResumeDuplicateEventMarkerError", {
   eventId: EventId,
@@ -775,7 +775,7 @@ export class ResumeDuplicateEventMarkerError extends Schema.TaggedErrorClass<Res
   message: Schema.String,
 }) {}
 
-export class ResumeMissingEventMarkerError extends Schema.TaggedErrorClass<ResumeMissingEventMarkerError>(
+export class ResumeMissingEventMarkerError extends Schema.TaggedError<ResumeMissingEventMarkerError>(
   "affe/ResumeMissingEventMarkerError",
 )("ResumeMissingEventMarkerError", {
   eventId: EventId,
@@ -783,7 +783,7 @@ export class ResumeMissingEventMarkerError extends Schema.TaggedErrorClass<Resum
   message: Schema.String,
 }) {}
 
-export class ResumeEventTypeMismatchError extends Schema.TaggedErrorClass<ResumeEventTypeMismatchError>(
+export class ResumeEventTypeMismatchError extends Schema.TaggedError<ResumeEventTypeMismatchError>(
   "affe/ResumeEventTypeMismatchError",
 )("ResumeEventTypeMismatchError", {
   eventId: EventId,
@@ -792,7 +792,7 @@ export class ResumeEventTypeMismatchError extends Schema.TaggedErrorClass<Resume
   message: Schema.String,
 }) {}
 
-export class ResumeActivationEventOwnershipError extends Schema.TaggedErrorClass<ResumeActivationEventOwnershipError>(
+export class ResumeActivationEventOwnershipError extends Schema.TaggedError<ResumeActivationEventOwnershipError>(
   "affe/ResumeActivationEventOwnershipError",
 )("ResumeActivationEventOwnershipError", {
   eventId: EventId,
@@ -800,7 +800,7 @@ export class ResumeActivationEventOwnershipError extends Schema.TaggedErrorClass
   message: Schema.String,
 }) {}
 
-export class ResumeUnsupportedActivationEventTypeError extends Schema.TaggedErrorClass<ResumeUnsupportedActivationEventTypeError>(
+export class ResumeUnsupportedActivationEventTypeError extends Schema.TaggedError<ResumeUnsupportedActivationEventTypeError>(
   "affe/ResumeUnsupportedActivationEventTypeError",
 )("ResumeUnsupportedActivationEventTypeError", {
   eventId: EventId,
@@ -809,7 +809,7 @@ export class ResumeUnsupportedActivationEventTypeError extends Schema.TaggedErro
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionOwnershipError extends Schema.TaggedErrorClass<ResumeExpressionOwnershipError>(
+export class ResumeExpressionOwnershipError extends Schema.TaggedError<ResumeExpressionOwnershipError>(
   "affe/ResumeExpressionOwnershipError",
 )("ResumeExpressionOwnershipError", {
   expressionId: ExpressionId,
@@ -817,14 +817,14 @@ export class ResumeExpressionOwnershipError extends Schema.TaggedErrorClass<Resu
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionDependencyMetadataError extends Schema.TaggedErrorClass<ResumeExpressionDependencyMetadataError>(
+export class ResumeExpressionDependencyMetadataError extends Schema.TaggedError<ResumeExpressionDependencyMetadataError>(
   "affe/ResumeExpressionDependencyMetadataError",
 )("ResumeExpressionDependencyMetadataError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
-class ResumeEventHandoffError extends Schema.TaggedErrorClass<ResumeEventHandoffError>(
+class ResumeEventHandoffError extends Schema.TaggedError<ResumeEventHandoffError>(
   "affe/ResumeEventHandoffError",
 )("ResumeEventHandoffError", {
   componentId: ComponentId,
@@ -833,33 +833,33 @@ class ResumeEventHandoffError extends Schema.TaggedErrorClass<ResumeEventHandoff
   message: Schema.String,
 }) {}
 
-export class ResumeListenerInstallError extends Schema.TaggedErrorClass<ResumeListenerInstallError>(
+export class ResumeListenerInstallError extends Schema.TaggedError<ResumeListenerInstallError>(
   "affe/ResumeListenerInstallError",
 )("ResumeListenerInstallError", {
   message: Schema.String,
 }) {}
 
-export class ResumeDuplicateClientInstallationError extends Schema.TaggedErrorClass<ResumeDuplicateClientInstallationError>(
+export class ResumeDuplicateClientInstallationError extends Schema.TaggedError<ResumeDuplicateClientInstallationError>(
   "affe/ResumeDuplicateClientInstallationError",
 )("ResumeDuplicateClientInstallationError", {
   message: Schema.String,
 }) {}
 
-export class ResumeInvalidComponentBoundaryMarkerError extends Schema.TaggedErrorClass<ResumeInvalidComponentBoundaryMarkerError>(
+export class ResumeInvalidComponentBoundaryMarkerError extends Schema.TaggedError<ResumeInvalidComponentBoundaryMarkerError>(
   "affe/ResumeInvalidComponentBoundaryMarkerError",
 )("ResumeInvalidComponentBoundaryMarkerError", {
   marker: Schema.String,
   message: Schema.String,
 }) {}
 
-export class ResumeUnknownComponentBoundaryError extends Schema.TaggedErrorClass<ResumeUnknownComponentBoundaryError>(
+export class ResumeUnknownComponentBoundaryError extends Schema.TaggedError<ResumeUnknownComponentBoundaryError>(
   "affe/ResumeUnknownComponentBoundaryError",
 )("ResumeUnknownComponentBoundaryError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeDuplicateComponentBoundaryError extends Schema.TaggedErrorClass<ResumeDuplicateComponentBoundaryError>(
+export class ResumeDuplicateComponentBoundaryError extends Schema.TaggedError<ResumeDuplicateComponentBoundaryError>(
   "affe/ResumeDuplicateComponentBoundaryError",
 )("ResumeDuplicateComponentBoundaryError", {
   componentId: ComponentId,
@@ -867,7 +867,7 @@ export class ResumeDuplicateComponentBoundaryError extends Schema.TaggedErrorCla
   message: Schema.String,
 }) {}
 
-export class ResumeComponentBoundaryNestingError extends Schema.TaggedErrorClass<ResumeComponentBoundaryNestingError>(
+export class ResumeComponentBoundaryNestingError extends Schema.TaggedError<ResumeComponentBoundaryNestingError>(
   "affe/ResumeComponentBoundaryNestingError",
 )("ResumeComponentBoundaryNestingError", {
   componentId: ComponentId,
@@ -875,7 +875,7 @@ export class ResumeComponentBoundaryNestingError extends Schema.TaggedErrorClass
   message: Schema.String,
 }) {}
 
-export class ResumeMissingComponentBoundaryError extends Schema.TaggedErrorClass<ResumeMissingComponentBoundaryError>(
+export class ResumeMissingComponentBoundaryError extends Schema.TaggedError<ResumeMissingComponentBoundaryError>(
   "affe/ResumeMissingComponentBoundaryError",
 )("ResumeMissingComponentBoundaryError", {
   componentId: ComponentId,
@@ -887,21 +887,21 @@ export class ResumeMissingComponentBoundaryError extends Schema.TaggedErrorClass
   message: Schema.String,
 }) {}
 
-export class ResumeInvalidExpressionBoundaryMarkerError extends Schema.TaggedErrorClass<ResumeInvalidExpressionBoundaryMarkerError>(
+export class ResumeInvalidExpressionBoundaryMarkerError extends Schema.TaggedError<ResumeInvalidExpressionBoundaryMarkerError>(
   "affe/ResumeInvalidExpressionBoundaryMarkerError",
 )("ResumeInvalidExpressionBoundaryMarkerError", {
   marker: Schema.String,
   message: Schema.String,
 }) {}
 
-export class ResumeUnknownExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeUnknownExpressionBoundaryError>(
+export class ResumeUnknownExpressionBoundaryError extends Schema.TaggedError<ResumeUnknownExpressionBoundaryError>(
   "affe/ResumeUnknownExpressionBoundaryError",
 )("ResumeUnknownExpressionBoundaryError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
-export class ResumeDuplicateExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeDuplicateExpressionBoundaryError>(
+export class ResumeDuplicateExpressionBoundaryError extends Schema.TaggedError<ResumeDuplicateExpressionBoundaryError>(
   "affe/ResumeDuplicateExpressionBoundaryError",
 )("ResumeDuplicateExpressionBoundaryError", {
   expressionId: ExpressionId,
@@ -909,7 +909,7 @@ export class ResumeDuplicateExpressionBoundaryError extends Schema.TaggedErrorCl
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionBoundaryNestingError extends Schema.TaggedErrorClass<ResumeExpressionBoundaryNestingError>(
+export class ResumeExpressionBoundaryNestingError extends Schema.TaggedError<ResumeExpressionBoundaryNestingError>(
   "affe/ResumeExpressionBoundaryNestingError",
 )("ResumeExpressionBoundaryNestingError", {
   expressionId: ExpressionId,
@@ -917,7 +917,7 @@ export class ResumeExpressionBoundaryNestingError extends Schema.TaggedErrorClas
   message: Schema.String,
 }) {}
 
-export class ResumeMissingExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeMissingExpressionBoundaryError>(
+export class ResumeMissingExpressionBoundaryError extends Schema.TaggedError<ResumeMissingExpressionBoundaryError>(
   "affe/ResumeMissingExpressionBoundaryError",
 )("ResumeMissingExpressionBoundaryError", {
   expressionId: ExpressionId,
@@ -929,35 +929,35 @@ export class ResumeMissingExpressionBoundaryError extends Schema.TaggedErrorClas
   message: Schema.String,
 }) {}
 
-export class ResumeInvalidExpressionElementMarkerError extends Schema.TaggedErrorClass<ResumeInvalidExpressionElementMarkerError>(
+export class ResumeInvalidExpressionElementMarkerError extends Schema.TaggedError<ResumeInvalidExpressionElementMarkerError>(
   "affe/ResumeInvalidExpressionElementMarkerError",
 )("ResumeInvalidExpressionElementMarkerError", {
   marker: Schema.String,
   message: Schema.String,
 }) {}
 
-export class ResumeUnknownExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeUnknownExpressionElementTargetError>(
+export class ResumeUnknownExpressionElementTargetError extends Schema.TaggedError<ResumeUnknownExpressionElementTargetError>(
   "affe/ResumeUnknownExpressionElementTargetError",
 )("ResumeUnknownExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
-export class ResumeDuplicateExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeDuplicateExpressionElementTargetError>(
+export class ResumeDuplicateExpressionElementTargetError extends Schema.TaggedError<ResumeDuplicateExpressionElementTargetError>(
   "affe/ResumeDuplicateExpressionElementTargetError",
 )("ResumeDuplicateExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
-export class ResumeMissingExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeMissingExpressionElementTargetError>(
+export class ResumeMissingExpressionElementTargetError extends Schema.TaggedError<ResumeMissingExpressionElementTargetError>(
   "affe/ResumeMissingExpressionElementTargetError",
 )("ResumeMissingExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedErrorClass<ResumeExpressionTargetKindMismatchError>(
+export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedError<ResumeExpressionTargetKindMismatchError>(
   "affe/ResumeExpressionTargetKindMismatchError",
 )("ResumeExpressionTargetKindMismatchError", {
   expressionId: ExpressionId,
@@ -974,13 +974,13 @@ export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedErrorC
   message: Schema.String,
 }) {}
 
-export class ResumeExpressionElementMarkerCleanupError extends Schema.TaggedErrorClass<ResumeExpressionElementMarkerCleanupError>(
+export class ResumeExpressionElementMarkerCleanupError extends Schema.TaggedError<ResumeExpressionElementMarkerCleanupError>(
   "affe/ResumeExpressionElementMarkerCleanupError",
 )("ResumeExpressionElementMarkerCleanupError", {
   message: Schema.String,
 }) {}
 
-export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedErrorClass<ResumeUnsupportedExpressionTargetError>(
+export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedError<ResumeUnsupportedExpressionTargetError>(
   "affe/ResumeUnsupportedExpressionTargetError",
 )("ResumeUnsupportedExpressionTargetError", {
   expressionId: ExpressionId,
@@ -992,7 +992,7 @@ export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedErrorCl
   message: Schema.String,
 }) {}
 
-export class ResumePayloadTooLargeError extends Schema.TaggedErrorClass<ResumePayloadTooLargeError>(
+export class ResumePayloadTooLargeError extends Schema.TaggedError<ResumePayloadTooLargeError>(
   "affe/ResumePayloadTooLargeError",
 )("ResumePayloadTooLargeError", {
   maximumBytes: Schema.Finite,
@@ -1011,7 +1011,7 @@ export class ResumePayloadTooLargeError extends Schema.TaggedErrorClass<ResumePa
   message: Schema.String,
 }) {}
 
-export class ResumeStateSnapshotEncodeError extends Schema.TaggedErrorClass<ResumeStateSnapshotEncodeError>(
+export class ResumeStateSnapshotEncodeError extends Schema.TaggedError<ResumeStateSnapshotEncodeError>(
   "affe/ResumeStateSnapshotEncodeError",
 )("ResumeStateSnapshotEncodeError", {
   componentId: ComponentId,
@@ -1019,14 +1019,14 @@ export class ResumeStateSnapshotEncodeError extends Schema.TaggedErrorClass<Resu
   message: Schema.String,
 }) {}
 
-export class ResumeComponentSnapshotNotFoundError extends Schema.TaggedErrorClass<ResumeComponentSnapshotNotFoundError>(
+export class ResumeComponentSnapshotNotFoundError extends Schema.TaggedError<ResumeComponentSnapshotNotFoundError>(
   "affe/ResumeComponentSnapshotNotFoundError",
 )("ResumeComponentSnapshotNotFoundError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeComponentPlanUnsupportedError extends Schema.TaggedErrorClass<ResumeComponentPlanUnsupportedError>(
+export class ResumeComponentPlanUnsupportedError extends Schema.TaggedError<ResumeComponentPlanUnsupportedError>(
   "affe/ResumeComponentPlanUnsupportedError",
 )("ResumeComponentPlanUnsupportedError", {
   componentId: ComponentId,
@@ -1038,7 +1038,7 @@ export class ResumeComponentPlanUnsupportedError extends Schema.TaggedErrorClass
  * already owns one. Two restorations of the same boundary would both claim the
  * boundary's hydration keys and DOM region, so the duplicate fails closed.
  */
-export class ResumeDuplicateComponentRestorationError extends Schema.TaggedErrorClass<ResumeDuplicateComponentRestorationError>(
+export class ResumeDuplicateComponentRestorationError extends Schema.TaggedError<ResumeDuplicateComponentRestorationError>(
   "affe/ResumeDuplicateComponentRestorationError",
 )("ResumeDuplicateComponentRestorationError", {
   componentId: ComponentId,
@@ -1050,14 +1050,14 @@ export class ResumeDuplicateComponentRestorationError extends Schema.TaggedError
  * Classified as a restoration fallback: the region is rolled back to its SSR
  * content and the boundary is handed to one normal activation.
  */
-export class ResumeRestoredRenderError extends Schema.TaggedErrorClass<ResumeRestoredRenderError>(
+export class ResumeRestoredRenderError extends Schema.TaggedError<ResumeRestoredRenderError>(
   "affe/ResumeRestoredRenderError",
 )("ResumeRestoredRenderError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeStateBindingMissingError extends Schema.TaggedErrorClass<ResumeStateBindingMissingError>(
+export class ResumeStateBindingMissingError extends Schema.TaggedError<ResumeStateBindingMissingError>(
   "affe/ResumeStateBindingMissingError",
 )("ResumeStateBindingMissingError", {
   componentId: ComponentId,
@@ -1065,7 +1065,7 @@ export class ResumeStateBindingMissingError extends Schema.TaggedErrorClass<Resu
   message: Schema.String,
 }) {}
 
-export class ResumeStateBindingUnexpectedError extends Schema.TaggedErrorClass<ResumeStateBindingUnexpectedError>(
+export class ResumeStateBindingUnexpectedError extends Schema.TaggedError<ResumeStateBindingUnexpectedError>(
   "affe/ResumeStateBindingUnexpectedError",
 )("ResumeStateBindingUnexpectedError", {
   componentId: ComponentId,
@@ -1073,7 +1073,7 @@ export class ResumeStateBindingUnexpectedError extends Schema.TaggedErrorClass<R
   message: Schema.String,
 }) {}
 
-export class ResumeStateSnapshotDecodeError extends Schema.TaggedErrorClass<ResumeStateSnapshotDecodeError>(
+export class ResumeStateSnapshotDecodeError extends Schema.TaggedError<ResumeStateSnapshotDecodeError>(
   "affe/ResumeStateSnapshotDecodeError",
 )("ResumeStateSnapshotDecodeError", {
   componentId: ComponentId,
@@ -1081,7 +1081,7 @@ export class ResumeStateSnapshotDecodeError extends Schema.TaggedErrorClass<Resu
   message: Schema.String,
 }) {}
 
-export class ResumeQueryExecutorDescriptorError extends Schema.TaggedErrorClass<ResumeQueryExecutorDescriptorError>(
+export class ResumeQueryExecutorDescriptorError extends Schema.TaggedError<ResumeQueryExecutorDescriptorError>(
   "affe/ResumeQueryExecutorDescriptorError",
 )("ResumeQueryExecutorDescriptorError", {
   componentId: ComponentId,
@@ -1090,7 +1090,7 @@ export class ResumeQueryExecutorDescriptorError extends Schema.TaggedErrorClass<
   message: Schema.String,
 }) {}
 
-export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedErrorClass<ResumeQueryExecutorBuildMismatchError>(
+export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedError<ResumeQueryExecutorBuildMismatchError>(
   "affe/ResumeQueryExecutorBuildMismatchError",
 )("ResumeQueryExecutorBuildMismatchError", {
   componentId: ComponentId,
@@ -1100,7 +1100,7 @@ export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedErrorCla
   message: Schema.String,
 }) {}
 
-export class ResumeRestoredQueryDisposedError extends Schema.TaggedErrorClass<ResumeRestoredQueryDisposedError>(
+export class ResumeRestoredQueryDisposedError extends Schema.TaggedError<ResumeRestoredQueryDisposedError>(
   "affe/ResumeRestoredQueryDisposedError",
 )("ResumeRestoredQueryDisposedError", {
   componentId: ComponentId,
@@ -1108,14 +1108,14 @@ export class ResumeRestoredQueryDisposedError extends Schema.TaggedErrorClass<Re
   message: Schema.String,
 }) {}
 
-export class ResumePortableBehaviorAttachmentError extends Schema.TaggedErrorClass<ResumePortableBehaviorAttachmentError>(
+export class ResumePortableBehaviorAttachmentError extends Schema.TaggedError<ResumePortableBehaviorAttachmentError>(
   "affe/ResumePortableBehaviorAttachmentError",
 )("ResumePortableBehaviorAttachmentError", {
   componentId: ComponentId,
   message: Schema.String,
 }) {}
 
-export class ResumeBindingSnapshotNotFoundError extends Schema.TaggedErrorClass<ResumeBindingSnapshotNotFoundError>(
+export class ResumeBindingSnapshotNotFoundError extends Schema.TaggedError<ResumeBindingSnapshotNotFoundError>(
   "affe/ResumeBindingSnapshotNotFoundError",
 )("ResumeBindingSnapshotNotFoundError", {
   componentId: Schema.String,
@@ -1123,7 +1123,7 @@ export class ResumeBindingSnapshotNotFoundError extends Schema.TaggedErrorClass<
   message: Schema.String,
 }) {}
 
-export class ResumeBindingSnapshotNotWritableError extends Schema.TaggedErrorClass<ResumeBindingSnapshotNotWritableError>(
+export class ResumeBindingSnapshotNotWritableError extends Schema.TaggedError<ResumeBindingSnapshotNotWritableError>(
   "affe/ResumeBindingSnapshotNotWritableError",
 )("ResumeBindingSnapshotNotWritableError", {
   componentId: ComponentId,
@@ -1131,7 +1131,7 @@ export class ResumeBindingSnapshotNotWritableError extends Schema.TaggedErrorCla
   message: Schema.String,
 }) {}
 
-export class ResumeBindingSnapshotWriteDisposedError extends Schema.TaggedErrorClass<ResumeBindingSnapshotWriteDisposedError>(
+export class ResumeBindingSnapshotWriteDisposedError extends Schema.TaggedError<ResumeBindingSnapshotWriteDisposedError>(
   "affe/ResumeBindingSnapshotWriteDisposedError",
 )("ResumeBindingSnapshotWriteDisposedError", {
   componentId: Schema.String,
@@ -1139,7 +1139,7 @@ export class ResumeBindingSnapshotWriteDisposedError extends Schema.TaggedErrorC
   message: Schema.String,
 }) {}
 
-export class ResumeBindingSnapshotWriteEncodeError extends Schema.TaggedErrorClass<ResumeBindingSnapshotWriteEncodeError>(
+export class ResumeBindingSnapshotWriteEncodeError extends Schema.TaggedError<ResumeBindingSnapshotWriteEncodeError>(
   "affe/ResumeBindingSnapshotWriteEncodeError",
 )("ResumeBindingSnapshotWriteEncodeError", {
   componentId: Schema.String,
@@ -6205,7 +6205,7 @@ function installClientClaimed<R, ER>(
  * activated component regions are released with the caller's Scope.
  */
 /** A record stream ended without its terminal completeness record (M11.5). */
-export class ResumeStreamTruncatedError extends Schema.TaggedErrorClass<ResumeStreamTruncatedError>(
+export class ResumeStreamTruncatedError extends Schema.TaggedError<ResumeStreamTruncatedError>(
   "affe/ResumeStreamTruncatedError",
 )("ResumeStreamTruncatedError", {
   message: Schema.String,

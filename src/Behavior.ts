@@ -126,7 +126,7 @@ export function inspectAttachment(
  * happens where an error channel exists — inside `run`, surfacing on attach —
  * never as a synchronous throw at the factory call site.
  */
-export class BehaviorOptionsError extends Schema.TaggedErrorClass<BehaviorOptionsError>(
+export class BehaviorOptionsError extends Schema.TaggedError<BehaviorOptionsError>(
   "affe/BehaviorOptionsError",
 )("BehaviorOptionsError", {
   behavior: Schema.String,

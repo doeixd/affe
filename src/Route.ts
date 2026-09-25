@@ -460,7 +460,7 @@ export type SingleFlightResponse<A, E = unknown> =
 // a loader produced on the server is a `Date` again in the client cache.
 
 /** The transport failed: network, endpoint, or the action itself. */
-export class SingleFlightInvokeError extends Schema.TaggedErrorClass<SingleFlightInvokeError>(
+export class SingleFlightInvokeError extends Schema.TaggedError<SingleFlightInvokeError>(
   "affe/SingleFlightInvokeError",
 )("SingleFlightInvokeError", {
   message: Schema.String,
@@ -474,7 +474,7 @@ export class SingleFlightInvokeError extends Schema.TaggedErrorClass<SingleFligh
  * a malformed payload is deploy skew or tampering, a failed transport is a
  * retry.
  */
-export class SingleFlightDecodeError extends Schema.TaggedErrorClass<SingleFlightDecodeError>(
+export class SingleFlightDecodeError extends Schema.TaggedError<SingleFlightDecodeError>(
   "affe/SingleFlightDecodeError",
 )("SingleFlightDecodeError", {
   message: Schema.String,

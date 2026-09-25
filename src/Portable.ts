@@ -33,7 +33,7 @@ export const BuildId = Schema.String.check(Schema.isNonEmpty()).pipe(
 );
 export type BuildId = typeof BuildId.Type;
 
-export class PortableCodeNotFoundError extends Schema.TaggedErrorClass<PortableCodeNotFoundError>(
+export class PortableCodeNotFoundError extends Schema.TaggedError<PortableCodeNotFoundError>(
   "affe/PortableCodeNotFoundError",
 )("PortableCodeNotFoundError", {
   id: CodeId,
@@ -44,7 +44,7 @@ export class PortableCodeNotFoundError extends Schema.TaggedErrorClass<PortableC
   }
 }
 
-export class PortableCodeLoadError extends Schema.TaggedErrorClass<PortableCodeLoadError>(
+export class PortableCodeLoadError extends Schema.TaggedError<PortableCodeLoadError>(
   "affe/PortableCodeLoadError",
 )("PortableCodeLoadError", {
   id: CodeId,
@@ -55,7 +55,7 @@ export class PortableCodeLoadError extends Schema.TaggedErrorClass<PortableCodeL
   }
 }
 
-export class PortableCodeIdentityMismatchError extends Schema.TaggedErrorClass<PortableCodeIdentityMismatchError>(
+export class PortableCodeIdentityMismatchError extends Schema.TaggedError<PortableCodeIdentityMismatchError>(
   "affe/PortableCodeIdentityMismatchError",
 )("PortableCodeIdentityMismatchError", {
   requested: CodeId,
@@ -67,7 +67,7 @@ export class PortableCodeIdentityMismatchError extends Schema.TaggedErrorClass<P
   }
 }
 
-export class PortableBuildMismatchError extends Schema.TaggedErrorClass<PortableBuildMismatchError>(
+export class PortableBuildMismatchError extends Schema.TaggedError<PortableBuildMismatchError>(
   "affe/PortableBuildMismatchError",
 )("PortableBuildMismatchError", {
   id: CodeId,
@@ -80,7 +80,7 @@ export class PortableBuildMismatchError extends Schema.TaggedErrorClass<Portable
   }
 }
 
-export class PortableCaptureEncodeError extends Schema.TaggedErrorClass<PortableCaptureEncodeError>(
+export class PortableCaptureEncodeError extends Schema.TaggedError<PortableCaptureEncodeError>(
   "affe/PortableCaptureEncodeError",
 )("PortableCaptureEncodeError", {
   id: CodeId,
@@ -91,7 +91,7 @@ export class PortableCaptureEncodeError extends Schema.TaggedErrorClass<Portable
   }
 }
 
-export class PortableCaptureDecodeError extends Schema.TaggedErrorClass<PortableCaptureDecodeError>(
+export class PortableCaptureDecodeError extends Schema.TaggedError<PortableCaptureDecodeError>(
   "affe/PortableCaptureDecodeError",
 )("PortableCaptureDecodeError", {
   id: CodeId,
