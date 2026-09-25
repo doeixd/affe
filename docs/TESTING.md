@@ -173,7 +173,7 @@ await scene("open combobox", { driver }, [
 
 ```ts
 // Unit path: short-circuit Result without running Effects.
-resolveQuery(todos, Result.success([...]));
+resolveQuery(todos, Result.success([{ id: 1, title: "Write docs" }]));
 resolveAction(save, Result.failure(new ValidationError()));
 // Integration path still uses mockService / withTestLayer.
 ```

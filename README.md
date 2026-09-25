@@ -196,7 +196,7 @@ Policies are pipeable data, not config soup:
 const usersFresh = users.pipe(
   Atom.withStaleTime("30 seconds"),
   Atom.withRetry(Schedule.exponential("100 millis")),
-  Atom.withPolling("1 minute"),
+  Atom.withPolling(Schedule.spaced("1 minute")),
 );
 ```
 
@@ -213,16 +213,17 @@ import { Reactivity } from "@doeixd/affe";
 // value, so a typo'd key is a compile error instead of a silent non-refresh.
 const Users = Reactivity.Key.make("users");
 
-class Api extends Effect.Tag("Api")<Api, {
+class Api extends Context.Service<Api, {
   readonly listUsers: () => Effect.Effect<User[]>
-}>() {
+  readonly addUser: (name: string) => Effect.Effect<User>
+}>()("Api") {
   static live = Layer.succeed(Api, {
+    // Reads record the key they depend on...
     listUsers: () => Reactivity.tracked(fetchUsers(), { keys: [Users] }),
+    // ...and writes invalidate it once they succeed.
+    addUser: (name) => Reactivity.invalidating(createUser(name), [Users]),
   });
 }
-
-const addUser = (name: string) =>
-  Reactivity.invalidating(api.addUser(name), [Users]);
 ```
 
 Parameterized keys use families (`Reactivity.Key.family("user")`, then
@@ -515,14 +516,17 @@ What you don't give up: incremental adoption inside an existing app, and SSR
 
 ## Learn more
 
-- `docs/README.md` — docs map and current golden paths
-- `docs/afui.md` — the full narrative: inside-out model, runtime, routing
-- `docs/SLOT_CONTRACT_GOLDEN_PATH.md` — the authored component shape
-- `docs/component.md`, `docs/view.md`, `docs/style.md`, `docs/router.md` —
-  current focused guides for the main subsystems
-- `docs/SERVICES_AND_LAYERS.md` — dependency injection, provision tiers, request scoping
-- `docs/API.md` — API reference
-- `docs/TESTING.md` — DOM-free test harness, layer swapping, `Reactivity.test`
+- [`docs/README.md`](docs/README.md) — docs map and current golden paths
+- [`docs/state.md`](docs/state.md) — atoms, queries, actions, `Result`, control flow
+- [`docs/SLOT_CONTRACT_GOLDEN_PATH.md`](docs/SLOT_CONTRACT_GOLDEN_PATH.md) — the authored component shape
+- [`docs/component.md`](docs/component.md), [`docs/view.md`](docs/view.md),
+  [`docs/style.md`](docs/style.md), [`docs/router.md`](docs/router.md) —
+  focused guides for the main subsystems
+- [`docs/reactivity.md`](docs/reactivity.md) — reactivity keys: refresh reads after writes
+- [`docs/SERVICES_AND_LAYERS.md`](docs/SERVICES_AND_LAYERS.md) — dependency injection, provision tiers, request scoping
+- [`docs/TESTING.md`](docs/TESTING.md) — DOM-free test harness, layer swapping
+- [`docs/API.md`](docs/API.md) — API reference
+- [`docs/afui.md`](docs/afui.md) — the full narrative: inside-out model, runtime, routing
 - `docs/RESUMABILITY_GUIDE.md` — resumability: markers, manifests, strict vs permissive
 - `docs/AGENT_SURFACE_GUIDE.md` — the agent catalog, governance services, MCP, ViewSpec
 - `docs/V1_SCOPE.md` — what v1 ships and what is deliberately deferred

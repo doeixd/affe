@@ -21,12 +21,7 @@ const User = Route.page("/users/:userId", UserPage).pipe(
   Route.id("users.detail"),
   Route.paramsSchema(Schema.Struct({ userId: Schema.String })),
   Route.querySchema(Schema.Struct({
-    tab: Schema.optional(
-      Schema.Union(
-        Schema.Literal("profile"),
-        Schema.Literal("settings"),
-      ),
-    ),
+    tab: Schema.optional(Schema.Literals(["profile", "settings"])),
   })),
   Route.loader((params) =>
     Effect.gen(function* () {
@@ -286,7 +281,7 @@ Built-in layers:
 
 - `Route.Router.Browser` uses the History API and `popstate`.
 - `Route.Router.Hash` uses URL hashes and `hashchange`.
-- `Route.Router.Server(request)` provides a fixed request URL for SSR.
+- `Route.Router.Server({ url })` provides a fixed request URL for SSR.
 - `Route.Router.Memory(initial?)` provides in-memory history for tests and
   non-browser environments.
 

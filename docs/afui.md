@@ -67,7 +67,7 @@ Affe's design is fundamentally influenced by **Effect-TS**, inheriting its core 
 Here is a complete example demonstrating the inside-out workflow, following the authored "golden path":
 
 ```ts
-import { Behavior, Component, Element, Style, View } from "af-ui";
+import { Behavior, Component, Element, Style, View } from "@doeixd/affe";
 import { Effect } from "effect";
 
 // 1. Define the Slot Contract (first-class slot witnesses).
@@ -82,21 +82,18 @@ const FieldSlots = View.Slots.define({
   },
 });
 
-// 2. Define the Component (setup for logic, JSX for structure)
-const Field = Component.make(
-  Component.props<{ readonly label: string }>(),
-  Component.require<never>(),
-  () => Effect.succeed({}),
-  (props) =>
-    View.fromSlots(FieldSlots, (
-      <label>
-        <span>{props.label}</span>
-        <input />
-      </label>
-    )),
-).pipe(
-  Component.withSlots(FieldSlots),
-);
+// 2. Define the Component (setup for logic, JSX for structure).
+//    `View.Slot.ref` binds each slot to the element it names.
+const Field = Component.makeWithSlots(FieldSlots, {
+  props: Component.props<{ readonly label: string }>(),
+  setup: () => Effect.succeed({}),
+  view: (props) => (
+    <label ref={View.Slot.ref(FieldSlots, "root")}>
+      <span ref={View.Slot.ref(FieldSlots, "label")}>{props.label}</span>
+      <input ref={View.Slot.ref(FieldSlots, "input")} />
+    </label>
+  ),
+});
 
 // 3. Define the Style (appearance), keyed by the same slot contract
 const FieldStyle = Style.make(FieldSlots, {
@@ -125,7 +122,7 @@ One slot contract (`FieldSlots`) is the single source of truth: the view is buil
 
 Components separate logical state (**Bindings**) from structural representation (**Slots**) by returning a `View<Slots>`:
 
-```ts
+```text
 Component.make(
   Component.props<Props>(),          // caller configuration
   Component.require<Req>(...tags),   // declared services
@@ -235,14 +232,15 @@ The system supports the full expressiveness of modern CSS while adding structura
 Because components publish their slot contract, external code customizes them **without forking**:
 
 ```ts
-// Primary authored path: style keyed directly by the contract
-Component.pipe(Style.attachToSlots(style, FieldSlots))
+// Primary authored path: a style keyed directly by the contract
+Field.pipe(Style.attachToSlots(FieldStyle, FieldSlots))
 
-// Typed remapping when names differ
-Component.pipe(Style.attachBySlotContract(style, { root: "container", title: "heading" }))
+// Typed remapping: a style written for other names (`container`, `caption`)
+// maps each of its names to one of the component's slots
+Field.pipe(Style.attachBySlotContract(CardStyle, { container: FieldSlots.bound.root.slot, caption: FieldSlots.bound.label.slot }))
 
 // Dynamic string map — for generated code and migration
-Component.pipe(Style.attachBySlots(style, { root: "root", title: "title" }))
+Field.pipe(Style.attachBySlots(CardStyle, { container: "root", caption: "label" }))
 ```
 
 ## The Behavior System
@@ -330,14 +328,14 @@ const web = View.platform({
   requirements: [View.Requirement.Keyboard /* ... */],
 });
 
-View.validatePlatform(view, web);
+View.validatePlatform(view, web.metadata);
 // → diagnostics like "view:unsupported-slot-capability",
 //   "view:unsupported-slot-event", "view:missing-platform-requirement"
 
-Style.validatePlatform(style, Style.platform({
+Style.validatePlatform(style, {
   name: "web",
   properties: [Style.Property.Color, Style.Property.BackgroundColor],
-}));
+});
 // → "style:unsupported-property" diagnostics
 ```
 
@@ -395,7 +393,7 @@ const items: Element.Collection<Element.Interactive> = Element.collection([
 // A selection behavior that consumes the whole collection
 const selectionBehavior = Behavior.make<
   { readonly items: Element.Collection<Element.Interactive> },
-  { readonly selected: Atom<ReadonlyArray<string>> },
+  { readonly selected: Atom.Atom<ReadonlyArray<string>> },
   never,
   never
 >(/* ... */);
@@ -419,18 +417,17 @@ Most UI frameworks track reactivity via object identity or dependency graphs. Af
 const Users = Reactivity.Key.make("users");
 
 // 2. A service read method marked as participating in reactivity
-class Api extends Effect.Tag("Api")<Api, {
+class Api extends Context.Service<Api, {
   readonly listUsers: () => Effect.Effect<User[]>
-}>() {
+  readonly addUser: (name: string) => Effect.Effect<User>
+}>()("Api") {
   static live = Layer.succeed(Api, {
     // track dependency on the Users key
     listUsers: () => Reactivity.tracked(fetchUsers(), { keys: [Users] }),
+    // 3. A mutation marked as invalidating semantic keys
+    addUser: (name) => Reactivity.invalidating(createUser(name), [Users]),
   });
 }
-
-// 3. A mutation marked as invalidating semantic keys
-const addUser = (name: string) =>
-  Reactivity.invalidating(api.addUser(name), [Users]);
 ```
 
 When `addUser` completes, the `Users` key is invalidated. Every atom, component, route loader, or behavior across the entire application that has tracked a dependency on that key refreshes automatically. Parameterized keys use families — `const user = Reactivity.Key.family("user")`, then `user(id)` — and a child key participates in its parent's invalidations.

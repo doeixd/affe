@@ -119,7 +119,11 @@ adoption inside an existing app and SSR.
 - `README.md` — quick start, all subsystems
 - `docs/afui.md` — the inside-out model narrative (components/style/behavior/runtime/routing)
 - `docs/SLOT_CONTRACT_GOLDEN_PATH.md` — authored component shape + cheap tier
+- `docs/state.md` — atoms, runtime queries/actions, `Result`, control-flow components
+- `docs/reactivity.md` — reactivity keys: refresh reads after writes
+- `docs/router.md` — routes, loaders, links, single flight, SSR
 - `docs/SERVICES_AND_LAYERS.md` — DI, provision tiers, request scoping
+- `docs/TESTING.md` — DOM-free tests, layer swapping
 - `docs/API.md` — API reference
 - `docs/V1_SCOPE.md` — what v1 ships vs. defers
 

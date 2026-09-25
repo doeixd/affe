@@ -46,6 +46,30 @@ Chromium found:
 - **`Component.withLayer` services leaked** to siblings rendered after the
   component.
 
+### Documentation
+
+- New guide, [`docs/state.md`](docs/state.md): atoms, runtime queries and
+  actions, `Result` (including `Idle`), and the control-flow components.
+- [`docs/reactivity.md`](docs/reactivity.md) is rewritten as a guide. It was
+  an early design conversation describing APIs that never shipped. The
+  conversation is kept in `docs/archive/`.
+- Snippets across the guides fixed for Effect 4 (`Context.Service` classes,
+  `Effect.catch`, `Schema.Literals`) and for the current API
+  (`Route.renderRequest`, `Router.Server({ url })`, `View.textNode`,
+  `Result.builder(...).onLoading`, slot refs in every slot example).
+- `npm run check:docs` type-checks every TypeScript block in the README, the
+  guides and the package READMEs against the built package, and fails on a
+  missing export, namespace member or module. CI runs it.
+
+### Type fixes
+
+- `Show`, `Optional` and `Match` infer the parameter of a function child
+  (`{(user) => user.name}`). It was an implicit `any`.
+- `For` accepts a readonly array, which is what an atom usually holds.
+- A shadow token type-checks as a style value (`shadow: "md"`). Its type
+  listed the token's fields (`"md.blur"`) instead of the token.
+  `StyleUtils.elevated` takes any shadow value.
+
 ### New
 
 - `Router.browser({ base })` serves an app under a sub-path; the hash router

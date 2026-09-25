@@ -1,747 +1,212 @@
-clarify if it follows Solid 2.0's microtask model or Solid 1.x's synchronous model.
-From effect-atom: Atom.withReactivity and the Reactivity integration from @effect/experimental. This is a much cleaner invalidation model than manually wiring invalidates arrays.
+# Reactivity Keys
 
-Could we use the Effect Reactivity Atom layer  for the reactivity glue instead? from @effect/experimental
-Reactivity is an Effect service that allows you make queries reactive when mutations happen.
+Atoms keep the UI in sync with local state. Reactivity keys keep it in sync
+with **data that lives somewhere else**: a server, a database, another tab.
+After a write you don't refresh particular queries. You invalidate a named
+piece of data, such as "users" or "user 42", and every query, loader or atom
+that read it refreshes.
 
-You can use an Atom.runtime to hook into the Reactivity service and trigger Atom refreshes when mutations happen.
+The model has three parts:
 
-import { Atom } from "@effect-atom/atom-react"
-import { Effect, Layer } from "effect"
-import { Reactivity } from "@effect/experimental"
+- A **key** names a piece of data: `Reactivity.Key.make("users")`.
+- A **read** records the keys it depends on: `Reactivity.tracked(effect, { keys })`.
+- A **write** invalidates keys once it succeeds: `Reactivity.invalidating(effect, keys)`.
 
-const runtimeAtom = Atom.runtime(Layer.empty)
+The service layer is the only place that knows both sides. Components, atoms
+and route loaders call service methods and never mention keys, but they still
+refresh at the right time.
 
-let i = 0
+## The canonical pattern
 
-//      ┌─── Atom.Atom<number>
-//      ▼
-const count = Atom.make(() => i++).pipe(
-  // Refresh when the "counter" key changes
-  Atom.withReactivity(["counter"]),
-  // Or refresh when "counter" or "counter:1" or "counter:2" changes
-  Atom.withReactivity({
-    counter: [1, 2],
-  }),
-)
-
-const someMutation = runtimeAtom.fn(
-  Effect.fn(function* () {
-    yield* Effect.log("Mutating the counter")
-  }),
-  // Invalidate the "counter" key when the Effect is finished
-  { reactivityKeys: ["counter"] },
-)
-
-const someMutationManual = runtimeAtom.fn(
-  Effect.fn(function* () {
-    yield* Effect.log("Mutating the counter again")
-    // You can also manually invalidate the "counter" key
-    yield* Reactivity.invalidate(["counter"])
-  }),
-)Yes. This is the right move. `Reactivity` from `@effect/experimental` is already an Effect service with key-based invalidation. Instead of building our own subscription system, our own atom notification system, and then bridging that to each framework's reactivity — we make `Reactivity` the single source of truth for "something changed, consumers need to update." Every framework bridge just subscribes to `Reactivity` invalidations and does whatever its framework needs to re-render.
-
-**The insight:**
-
-Right now we have multiple reactive notification paths:
-
-- Atoms have `.subscribe()` for direct listeners
-- `Atom.withReactivity(keys)` hooks into the `Reactivity` service
-- `reactivityKeys` on actions/mutations triggers invalidation
-- Each framework bridge needs its own subscription mechanism
-
-Collapse all of these into `Reactivity`. Every atom gets reactivity keys. Every atom read registers interest in those keys. Every atom write invalidates those keys. `Reactivity` is the universal event bus for "data changed." Framework bridges subscribe to `Reactivity` invalidations and trigger their framework's re-render mechanism.
-
-**Atom backed by Reactivity:**
+Put the keys in the service. Reads track them, writes invalidate them:
 
 ```ts
-// Every atom gets a reactivity key — derived from identity or explicit
-const count = Atom.make(0);
-// Internally: count has reactivity key "atom:<unique-id>"
+import { Atom, Reactivity } from "@doeixd/affe";
+import { Context, Effect, Layer } from "effect";
 
-// Derived atoms track their source keys
-const doubled = Atom.make((get) => get(count) * 2);
-// Internally: doubled depends on count's key
+// One shared value for both sides. A typo is a compile error, not a
+// query that silently never refreshes.
+const Users = Reactivity.Key.make("users");
 
-// When count is written, Reactivity.invalidate(["atom:<count-id>"]) fires
-// doubled sees the invalidation because it depends on count's key
-// Any framework subscriber watching doubled's key gets notified
-```
+class Api extends Context.Service<Api, {
+  readonly listUsers: () => Effect.Effect<ReadonlyArray<User>>;
+  readonly addUser: (name: string) => Effect.Effect<User>;
+}>()("Api") {
+  static live = Layer.succeed(Api, {
+    listUsers: () => Reactivity.tracked(fetchUsers(), { keys: [Users] }),
+    addUser: (name) => Reactivity.invalidating(createUser(name), [Users]),
+  });
+}
 
-But you don't have to think about this. The atom API stays the same. Under the hood, every `atom.set(...)` calls `Reactivity.invalidate` with the atom's keys. Every `atom()` read registers interest in the atom's keys via the current `Reactivity` subscription context.
+const runtime = Atom.runtime(Layer.mergeAll(Api.live, Reactivity.live));
 
-**Explicit reactivity keys are the power feature:**
+// Reads Users (through listUsers), so it tracks the key.
+const users = runtime.atom(Effect.gen(function* () {
+  const api = yield* Api;
+  return yield* api.listUsers();
+}));
 
-The `@effect/experimental` `Reactivity` pattern shines because keys are semantic, not identity-based. You don't invalidate "this specific atom" — you invalidate a concept like "users" or "user:alice". Multiple atoms can watch the same key. One mutation can invalidate a key that refreshes ten different atoms across ten different components.
-
-```ts
-const userList = apiRuntime.atom(
+// Invalidates Users when it succeeds, so `users` refetches.
+const addUser = runtime.action((name: string) =>
   Effect.gen(function* () {
     const api = yield* Api;
-    return yield* api.listUsers();
-  }),
-).pipe(Atom.withReactivity(["users"]));
-
-const userCount = apiRuntime.atom(
-  Effect.gen(function* () {
-    const api = yield* Api;
-    return yield* api.countUsers();
-  }),
-).pipe(Atom.withReactivity(["users"]));
-
-const activeUsers = apiRuntime.atom(
-  Effect.gen(function* () {
-    const api = yield* Api;
-    return yield* api.listActiveUsers();
-  }),
-).pipe(Atom.withReactivity(["users"]));
-
-// One mutation invalidates all three
-const addUser = apiRuntime.action(
-  Effect.fn(function* (name: string) {
-    const api = yield* Api;
-    yield* api.addUser(name);
-  }),
-  { reactivityKeys: ["users"] },
-);
-```
-
-When `addUser` runs, `Reactivity.invalidate(["users"])` fires. All three atoms refresh. No manual wiring. No "which queries does this mutation invalidate" lists. Just semantic keys.
-
-**Reactivity as the universal bridge layer:**
-
-Instead of each framework bridge implementing its own atom subscription:
-
-```ts
-// OLD: each bridge implements atom subscription differently
-// React: useSyncExternalStore(atom.subscribe, atom.read)
-// Vue: watch(() => atom(), (v) => vueRef.value = v)
-// Svelte: atom.subscribe((v) => svelteState = v)
-```
-
-Each framework bridge subscribes to `Reactivity` invalidation events and batch-triggers its own update mechanism:
-
-```ts
-class FrameworkReactivityBridge extends Effect.Tag("FrameworkReactivityBridge")
-  FrameworkReactivityBridge,
-  {
-    // Connect Reactivity invalidations to the host framework's update cycle
-    readonly connect: (
-      keys: readonly string[],
-      onInvalidate: () => void,
-    ) => Effect.Effect<void, never, Scope>;
-  }
->() {}
-```
-
-**React bridge via Reactivity:**
-
-```ts
-const ReactReactivityBridge = Layer.succeed(FrameworkReactivityBridge, {
-  connect: (keys, onInvalidate) =>
-    Effect.gen(function* () {
-      const reactivity = yield* Reactivity;
-
-      // Subscribe to invalidation events for these keys
-      yield* reactivity.subscribe(keys, () => {
-        // When any watched key is invalidated,
-        // trigger React's re-render mechanism
-        // This works with useSyncExternalStore or setState
-        onInvalidate();
-      });
-
-      // Subscription is scoped — cleaned up when component unmounts
-    }),
-});
-
-// In a React component wrapper:
-function useReactivityAtom<A>(atom: ReadonlyAtom<A>): A {
-  const bridge = useFrameworkBridge();
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
-
-  React.useEffect(() => {
-    const cleanup = Effect.runSync(
-      bridge.connect(atom.reactivityKeys, () => forceUpdate()).pipe(
-        Effect.scoped,
-      )
-    );
-    return cleanup;
-  }, [atom]);
-
-  return atom();
-}
-```
-
-**Vue bridge via Reactivity:**
-
-```ts
-const VueReactivityBridge = Layer.succeed(FrameworkReactivityBridge, {
-  connect: (keys, onInvalidate) =>
-    Effect.gen(function* () {
-      const reactivity = yield* Reactivity;
-
-      yield* reactivity.subscribe(keys, () => {
-        // Trigger Vue's reactivity system
-        // Vue will re-render any component reading the affected refs
-        onInvalidate();
-      });
-    }),
-});
-
-// In a Vue composable:
-function useReactivityAtom<A>(atom: ReadonlyAtom<A>): Ref<A> {
-  const vueRef = shallowRef(atom());
-  const bridge = inject("reactivity-bridge");
-
-  onMounted(() => {
-    Effect.runSync(
-      bridge.connect(atom.reactivityKeys, () => {
-        vueRef.value = atom();
-      }).pipe(Effect.scoped)
-    );
-  });
-
-  return vueRef;
-}
-```
-
-**Svelte bridge via Reactivity:**
-
-```ts
-const SvelteReactivityBridge = Layer.succeed(FrameworkReactivityBridge, {
-  connect: (keys, onInvalidate) =>
-    Effect.gen(function* () {
-      const reactivity = yield* Reactivity;
-
-      yield* reactivity.subscribe(keys, () => {
-        onInvalidate();
-      });
-    }),
-});
-
-// In Svelte 5 with runes:
-function useReactivityAtom<A>(atom: ReadonlyAtom<A>) {
-  let value = $state(atom());
-  const bridge = getContext("reactivity-bridge");
-
-  $effect(() => {
-    return Effect.runSync(
-      bridge.connect(atom.reactivityKeys, () => {
-        value = atom();
-      }).pipe(Effect.scoped)
-    );
-  });
-
-  return { get value() { return value; } };
-}
-```
-
-**The deeper point: Reactivity replaces our internal atom subscription system entirely.**
-
-Instead of atoms having their own `.subscribe()` mechanism with their own notification graph, atoms are thin wrappers around `Ref` (for storage) + `Reactivity` (for change notification):
-
-```ts
-// Atom internal implementation backed by Reactivity
-function makeAtom<A>(initial: A, options?: { key?: string }): WritableAtom<A> {
-  const key = options?.key ?? `atom:${generateId()}`;
-  const ref = Effect.runSync(Ref.make(initial));
-
-  const atom = Object.assign(
-    // Read — just read the ref
-    () => Effect.runSync(Ref.get(ref)),
-    {
-      // Write — update ref, then invalidate via Reactivity
-      set: (value: A) => {
-        Effect.runSync(Ref.set(ref, value));
-        Effect.runSync(
-          Effect.gen(function* () {
-            const reactivity = yield* Reactivity;
-            yield* reactivity.invalidate([key]);
-          }).pipe(
-            // If no Reactivity service is available (standalone usage),
-            // fall back to direct notification
-            Effect.catchAll(() => Effect.void),
-          )
-        );
-      },
-
-      update: (fn: (a: A) => A) => {
-        Effect.runSync(Ref.update(ref, fn));
-        Effect.runSync(
-          Reactivity.invalidate([key]).pipe(
-            Effect.catchAll(() => Effect.void),
-          )
-        );
-      },
-
-      // Reactivity metadata
-      reactivityKeys: [key],
-    },
-  );
-
-  return atom;
-}
-```
-
-Derived atoms subscribe to their sources' reactivity keys:
-
-```ts
-function makeDerived<A>(fn: (get: AtomGetter) => A): ReadonlyAtom<A> {
-  const key = `derived:${generateId()}`;
-  const trackedKeys: string[] = [];
-
-  // The getter tracks which keys are read
-  const get: AtomGetter = (source) => {
-    trackedKeys.push(...source.reactivityKeys);
-    return source();
-  };
-
-  const compute = () => fn(get);
-  let cached = compute();
-
-  const atom = Object.assign(
-    () => cached,
-    {
-      reactivityKeys: [key, ...trackedKeys],
-      recompute: () => {
-        cached = compute();
-        // Derived atom invalidates its own key when it recomputes
-        // so downstream derived atoms and framework bridges get notified
-      },
-    },
-  );
-
-  // Subscribe to source keys via Reactivity
-  // When sources change, recompute and invalidate own key
-  Effect.runSync(
-    Effect.gen(function* () {
-      const reactivity = yield* Reactivity;
-      yield* reactivity.subscribe(trackedKeys, () => {
-        atom.recompute();
-        yield* reactivity.invalidate([key]);
-      });
-    }).pipe(
-      Effect.catchAll(() => Effect.void),
-    )
-  );
-
-  return atom;
-}
-```
-
-**Async atoms (queries) are just atoms with Reactivity-triggered refresh:**
-
-```ts
-function makeQueryAtom<A, E>(
-  effect: () => Effect.Effect<A, E>,
-  options?: { reactivityKeys?: string[] },
-): ReadonlyAtom<Result<A, E>> {
-  const key = `query:${generateId()}`;
-  const resultRef = Effect.runSync(Ref.make<Result<A, E>>(Result.loading()));
-
-  // Run the effect, store result
-  const execute = Effect.gen(function* () {
-    yield* Ref.set(resultRef, Result.loading());
-    const exit = yield* Effect.exit(effect());
-    const result = Exit.match(exit, {
-      onSuccess: (a) => Result.success(a),
-      onFailure: (cause) => Result.failure(cause),
-    });
-    yield* Ref.set(resultRef, result);
-    // Invalidate our own key so subscribers know the result changed
-    yield* Reactivity.invalidate([key]);
-  });
-
-  // Subscribe to reactivity keys — when they're invalidated, re-execute
-  if (options?.reactivityKeys) {
-    Effect.runSync(
-      Effect.gen(function* () {
-        const reactivity = yield* Reactivity;
-        yield* reactivity.subscribe(options.reactivityKeys!, () => {
-          // Re-run the query
-          Effect.runFork(execute);
-        });
-      })
-    );
-  }
-
-  return Object.assign(
-    () => Effect.runSync(Ref.get(resultRef)),
-    {
-      reactivityKeys: [key, ...(options?.reactivityKeys ?? [])],
-    },
-  );
-}
-```
-
-**Actions invalidate via Reactivity — which is already how effect-atom works:**
-
-```ts
-const addUser = apiRuntime.action(
-  Effect.fn(function* (name: string) {
-    const api = yield* Api;
-    yield* api.addUser(name);
-    // This invalidation is the ONLY mechanism needed
-    // No "refresh(userList)" — Reactivity handles the fan-out
-  }),
-  { reactivityKeys: ["users"] },
-);
-
-// Or manually inside the Effect
-const addUserManual = apiRuntime.action(
-  Effect.fn(function* (name: string) {
-    const api = yield* Api;
-    yield* api.addUser(name);
-    yield* Reactivity.invalidate(["users"]);
+    return yield* api.addUser(name);
   }),
 );
 ```
 
-When `Reactivity.invalidate(["users"])` fires:
-- `userList` atom refreshes (it subscribed via `Atom.withReactivity(["users"])`)
-- `userCount` atom refreshes (same key)
-- `activeUsers` atom refreshes (same key)
-- React components reading any of these atoms re-render (React bridge subscribed to those keys)
-- Vue components reading any of these atoms update (Vue bridge subscribed)
-- Svelte components update
-- Any framework, any number of consumers
+Neither `users` nor `addUser` mentions a key. A route loader or a
+`Component.query` that calls `api.listUsers()` refreshes the same way.
 
-One invalidation call. `Reactivity` fans it out to every subscriber. No framework-specific notification code needed.
-
-**Hierarchical keys for fine-grained invalidation:**
-
-The `@effect/experimental` `Reactivity` already supports structured keys:
+`Reactivity.invalidating` fires only when the effect succeeds. A failed write
+refreshes nothing. It can also compute the keys from the result:
 
 ```ts
-const userProfile = apiRuntime.atom(
-  Effect.gen(function* () {
-    const api = yield* Api;
-    return yield* api.findUser(userId);
-  }),
-).pipe(
-  // Refreshes on "users" (all users changed) or "user:alice" (this user changed)
-  Atom.withReactivity({ users: [userId] }),
-);
-
-// Invalidate all user-related atoms
-yield* Reactivity.invalidate(["users"]);
-
-// Invalidate only alice's profile
-yield* Reactivity.invalidate({ users: ["alice"] });
+const renameUser = (id: string, name: string) =>
+  Reactivity.invalidating(updateUser(id, name), (user) => [Users, `user:${user.id}`]);
 ```
 
-This is exactly what `@effect-atom/atom` already does. The structure `{ users: ["alice"] }` means "invalidate the 'users' key with sub-key 'alice'". Atoms subscribed to `{ users: [userId] }` where `userId === "alice"` get refreshed. Atoms subscribed to just `["users"]` (all users) also get refreshed.
-
-This granularity means a mutation that updates one user doesn't refresh the entire user list — only atoms watching that specific user's sub-key. But a mutation that creates a new user invalidates `["users"]` which refreshes everything.
-
-**Framework bridge becomes extremely simple:**
-
-Since `Reactivity` handles all the notification routing, each framework bridge is just "subscribe to keys, call framework update":
+## Keys
 
 ```ts
-// The ENTIRE React bridge for reactivity
-function useAtom<A>(atom: ReadonlyAtom<A>): A {
-  return React.useSyncExternalStore(
-    (onStoreChange) => {
-      // Subscribe to this atom's reactivity keys
-      const unsubscribe = Effect.runSync(
-        Effect.gen(function* () {
-          const reactivity = yield* Reactivity;
-          return yield* reactivity.subscribe(
-            atom.reactivityKeys,
-            onStoreChange,
-          );
-        }).pipe(Effect.scoped)
-      );
-      return unsubscribe;
-    },
-    // Read current value
-    () => atom(),
-  );
-}
+const Users = Reactivity.Key.make("users");   // a key
+const user = Reactivity.Key.family("user");   // a parameterized family
+
+user(42);      // the "user:42" key
+user.key;      // the "user" parent key
+Users.child("admins"); // the "users:admins" key
 ```
 
-That's the entire React reactivity bridge. One hook. `useSyncExternalStore` + `Reactivity.subscribe`. Everything else — invalidation routing, dependency tracking, cache management, stale-while-revalidate — is handled by `Reactivity` and the atom layer.
+A child key stands for itself **and its ancestors**, for both reads and
+writes:
 
-Vue:
+- A read tracking `user(42)` refreshes when `user(42)` or `user.key` is invalidated.
+- Invalidating `user(42)` also invalidates `user.key`, so a list that tracks
+  the family parent refreshes too.
 
-```ts
-function useAtom<A>(atom: ReadonlyAtom<A>): Ref<A> {
-  const value = shallowRef(atom());
+The cost is occasional over-refreshing. Invalidating `user(1)` reaches every
+reader of the `user` parent, which includes readers of `user(2)`. That is
+safe; it is just broader than it has to be.
 
-  onMounted(() => {
-    Effect.runSync(
-      Effect.gen(function* () {
-        const reactivity = yield* Reactivity;
-        yield* reactivity.subscribe(atom.reactivityKeys, () => {
-          value.value = atom();
-        });
-      }).pipe(Effect.scoped)
-    );
-  });
+Plain strings work anywhere a key does, and match keys by name (`"users"`
+equals `Reactivity.Key.make("users")`). Use them for keys built at runtime.
+Keys beginning with `af:` are reserved for the library, and naming one throws.
 
-  return readonly(value);
-}
-```
+## Where keys can go
 
-Svelte:
+When a read does not go through a tracked service method, attach keys where
+the data is consumed instead:
 
-```ts
-function useAtom<A>(atom: ReadonlyAtom<A>) {
-  let value = $state(atom());
-
-  $effect(() => {
-    return Effect.runSync(
-      Effect.gen(function* () {
-        const reactivity = yield* Reactivity;
-        yield* reactivity.subscribe(atom.reactivityKeys, () => {
-          value = atom();
-        });
-      }).pipe(Effect.scoped)
-    );
-  });
-
-  return { get value() { return value; } };
-}
-```
-
-Angular:
+| Where | Tracks (refreshes on) | Invalidates (after success) |
+| --- | --- | --- |
+| Service methods | `Reactivity.tracked(effect, { keys })` | `Reactivity.invalidating(effect, keys)` |
+| Atoms | `atom.pipe(Atom.withReactivity(keys))` | |
+| Actions | | `runtime.action(fn, { reactivityKeys })`, `Atom.action(fn, { reactivityKeys })` |
+| Component setup | `Component.query(fn, { reactivityKeys })` | `Component.action(fn, { reactivityKeys })` |
+| Route loaders | `Route.loader(fn, { reactivityKeys })` | |
+| Single flight | | `Route.singleFlight(fn, { reactivityKeys })` |
 
 ```ts
-function useAtom<A>(atom: ReadonlyAtom<A>): Signal<A> {
-  const sig = signal(atom());
+const todo = Reactivity.Key.family("todo");
 
-  Effect.runSync(
-    Effect.gen(function* () {
-      const reactivity = yield* Reactivity;
-      yield* reactivity.subscribe(atom.reactivityKeys, () => {
-        sig.set(atom());
-      });
-    }).pipe(Effect.scoped)
-  );
+const todos = runtime.atom(fetchTodos()).pipe(Atom.withReactivity([todo.key]));
 
-  return sig.asReadonly();
-}
-```
-
-Every bridge is the same pattern: subscribe to reactivity keys, update framework-native reactive primitive. Five lines of framework-specific code.
-
-**Our own dom-expressions renderer also uses Reactivity:**
-
-For the standalone renderer (no host framework), the dom-expressions reactive system subscribes to `Reactivity` the same way:
-
-```ts
-// dom-expressions integration
-function createReactiveExpression<A>(fn: () => A): () => A {
-  let cached = fn();
-  const trackedKeys = trackReactivityKeys(fn);
-
-  Effect.runSync(
-    Effect.gen(function* () {
-      const reactivity = yield* Reactivity;
-      yield* reactivity.subscribe(trackedKeys, () => {
-        const next = fn();
-        if (next !== cached) {
-          cached = next;
-          // Update the specific DOM node
-          updateDOMBinding(cached);
-        }
-      });
-    }).pipe(Effect.scoped)
-  );
-
-  return () => cached;
-}
-```
-
-This means dom-expressions' internal `createSignal`/`createEffect`/`createMemo` can be backed by `Reactivity` instead of their own notification system. The reactive core becomes a thin wrapper over Effect's `Reactivity` service.
-
-**Batching through Reactivity:**
-
-Multiple atom writes in the same synchronous block should produce one invalidation, not N:
-
-```ts
-count.set(5);
-name.set("hello");
-flag.set(true);
-// Should produce ONE batch of invalidations, not three separate ones
-```
-
-`Reactivity` can batch invalidations. The service collects invalidated keys during a synchronous block and flushes them as a batch on the next microtask (matching our existing microtask batching model):
-
-```ts
-// Internally, Reactivity batches invalidations
-Reactivity.invalidate(["count-key"]);   // queued
-Reactivity.invalidate(["name-key"]);    // queued
-Reactivity.invalidate(["flag-key"]);    // queued
-// Microtask fires → all subscribers notified once with the full set of invalidated keys
-```
-
-Framework bridges receive the batched notification and trigger one re-render, not three.
-
-**`Reactivity` as a layer — provided or not:**
-
-The beauty of making `Reactivity` a service: it's optional. In tests, you can provide a test `Reactivity` that gives you manual control:
-
-```ts
-const test = Effect.gen(function* () {
-  const reactivity = yield* Reactivity;
-
-  // Create atoms and queries
-  const count = Atom.make(0);
-  const doubled = Atom.make((get) => get(count) * 2);
-
-  // Write
-  count.set(5);
-
-  // Manually flush reactivity (in tests, don't wait for microtask)
-  yield* reactivity.flush();
-
-  // Now doubled has recomputed
-  assert.equal(doubled(), 10);
-
-  // Inspect what was invalidated
-  const invalidated = yield* reactivity.lastInvalidated();
-  assert.deepEqual(invalidated, ["atom:<count-id>", "derived:<doubled-id>"]);
-}).pipe(
-  Effect.provide(Reactivity.test), // test implementation with manual flush
+const toggle = runtime.action(
+  (id: number) => toggleTodo(id),
+  { reactivityKeys: [todo.key] },
 );
 ```
 
-In production, provide the standard `Reactivity` layer:
+Tracking in the service is usually better. Tracking in the atom is useful when
+the read is not in a service you own, such as a third-party client or a
+generated one.
+
+## Batching
+
+Invalidation works without any setup: each invalidation reaches its readers
+immediately. Mounting with `Reactivity.live` in the layer batches them
+instead. Invalidations are collected and delivered once, on the next
+microtask, so five writes in one handler cause one refresh per reader.
 
 ```ts
 Component.mount(App, {
-  layer: Layer.mergeAll(
-    AppLive,
-    Reactivity.live, // standard implementation with microtask batching
-    WebPlatformLive,
-  ),
-  target: root,
+  props: {},
+  target: document.getElementById("app")!,
+  layer: Layer.mergeAll(Api.live, Reactivity.live),
 });
 ```
 
-In standalone scripts without any framework, atoms still work — they just won't have `Reactivity` and writes are synchronous. The `Effect.catchAll(() => Effect.void)` fallback in the atom implementation means atoms gracefully degrade when no `Reactivity` service is present.
+Mounting with `Reactivity.test` holds every invalidation until
+`Effect.runSync(Atom.flushReactivity())`, for tests that need to look at the
+page between a write and the refresh.
 
-**Cross-component communication via Reactivity keys:**
+## Testing
 
-`Reactivity` is already a pub/sub system. You don't need a separate `PubSub` for most cross-component communication:
+Test the behavior, not the keys. Give the runtime a fake service whose read
+tracks the key and whose write invalidates it, run the action, then read the
+query again:
 
 ```ts
-// Toast notifications via reactivity keys
-const toasts = Atom.make<Toast[]>([]).pipe(
-  Atom.withReactivity(["toasts"]),
-);
+import { it, expect } from "vitest";
 
-// Any component can trigger a toast by invalidating the key
-// after updating the atom
-function showToast(toast: Toast) {
-  toasts.update((prev) => [...prev, toast]);
-  // The atom write already invalidates ["toasts"] via Reactivity
-  // All subscribers (the toast display component) re-render
-}
+const FakeApi = () => {
+  let names: ReadonlyArray<string> = [];
+  return Layer.succeed(Api, {
+    listUsers: () => Reactivity.tracked(Effect.sync(() => names), { keys: [Users] }),
+    addUser: (name) =>
+      Reactivity.invalidating(Effect.sync(() => { names = [...names, name]; return name; }), [Users]),
+  });
+};
 
-// Or from an Effect
-const saveAction = apiRuntime.action(
-  Effect.fn(function* () {
-    yield* api.save();
-    toasts.update((prev) => [...prev, { message: "Saved!", type: "success" }]);
-    // No need for separate PubSub — Reactivity keys handle the notification
-  }),
-);
-```
+it("adding a user refreshes the list", async () => {
+  const runtime = Atom.runtime(FakeApi());
+  const users = runtime.atom(Effect.gen(function* () {
+    return yield* (yield* Api).listUsers();
+  }));
+  const addUser = runtime.action((name: string) =>
+    Effect.gen(function* () { return yield* (yield* Api).addUser(name); }),
+  );
 
-For cases where you genuinely need event-style communication (not state-based), `Effect.PubSub` is still there. But for most UI reactive communication patterns, `Reactivity` keys are sufficient and simpler.
-
-**The `Reactivity` service replaces:**
-
-Our internal atom `.subscribe()` mechanism — atoms subscribe to reactivity keys instead.
-
-Our internal dependency tracking graph — derived atoms subscribe to source keys via `Reactivity`.
-
-Our internal batch notification system — `Reactivity` batches invalidations.
-
-The `refresh()` function — becomes `Reactivity.invalidate(keys)`.
-
-The `invalidates` option on mutations — becomes `reactivityKeys` (already exists in effect-atom).
-
-The `FrameworkReactivityBridge` service — each framework bridge just subscribes to `Reactivity`.
-
-Cross-component events for most cases — invalidation keys are the pub/sub mechanism.
-
-**What the dependency graph looks like:**
-
-```
-Reactivity (from @effect/experimental)
-  │
-  ├── Atom.make(value)
-  │     writes → Reactivity.invalidate([atomKey])
-  │
-  ├── Atom.make((get) => derived)
-  │     subscribes → Reactivity.subscribe(sourceKeys)
-  │     recompute → Reactivity.invalidate([derivedKey])
-  │
-  ├── apiRuntime.atom(effect)
-  │     subscribes → Reactivity.subscribe(reactivityKeys)
-  │     result change → Reactivity.invalidate([queryKey])
-  │
-  ├── apiRuntime.action(effect, { reactivityKeys })
-  │     on success → Reactivity.invalidate(reactivityKeys)
-  │
-  ├── React bridge
-  │     useSyncExternalStore → Reactivity.subscribe(atomKeys)
-  │
-  ├── Vue bridge
-  │     watch → Reactivity.subscribe(atomKeys)
-  │
-  ├── Svelte bridge
-  │     $effect → Reactivity.subscribe(atomKeys)
-  │
-  ├── Angular bridge
-  │     signal → Reactivity.subscribe(atomKeys)
-  │
-  └── dom-expressions bridge
-        createEffect → Reactivity.subscribe(atomKeys)
-```
-
-One service. One notification mechanism. Every atom, every query, every mutation, every framework bridge, every derived computation — all routing through `Reactivity`. The service is Effect-native, scoped, testable, and already exists in the ecosystem.
-
-**The final layer stack for any app:**
-
-```ts
-// Core (always present)
-const CoreLayer = Layer.mergeAll(
-  Reactivity.live,      // THE reactivity engine — from @effect/experimental
-  AppServicesLive,      // your business logic services
-);
-
-// Standalone (our own renderer)
-Component.mount(App, {
-  layer: Layer.mergeAll(CoreLayer, DomPlatformLive),
-  target: root,
+  expect(await Effect.runPromise(Atom.result(users))).toEqual([]);
+  await Effect.runPromise(addUser.runEffect("Ada"));
+  expect(await Effect.runPromise(Atom.result(users))).toEqual(["Ada"]);
 });
-
-// React host
-const reactBridge = createReactBridge(CoreLayer);
-ReactDOM.createRoot(root).render(<reactBridge.Root component={App} />);
-
-// Vue host
-const vueBridge = createVueBridge(CoreLayer);
-createApp(vueBridge.root(App)).mount("#root");
-
-// TUI
-Component.mount(App, {
-  layer: Layer.mergeAll(CoreLayer, TuiPlatformLive),
-  target: process.stdout,
-});
-
-// Test (no framework, no rendering)
-Effect.gen(function* () {
-  const bindings = yield* Component.setupEffect(App, {});
-  // test bindings directly
-}).pipe(
-  Effect.provide(Layer.mergeAll(CoreLayer, Reactivity.test)),
-);
 ```
 
-`Reactivity` from `@effect/experimental` is the single piece that makes the entire multi-framework story work. It's the universal reactive glue. Everything subscribes to it, everything invalidates through it, and every framework bridge is just five lines of "subscribe to keys, update my framework's reactive primitive."
+`Atom.result(atom)` waits for a query's current value as an Effect, so the test
+needs no timers.
+
+## Across the network
+
+Keys also decide what a server round trip returns. When a mutation runs
+through single flight, the server collects the keys it invalidated, reruns
+the matched route loaders that tracked those keys, and sends the fresh loader
+data back with the mutation result. The client applies both at once, so there
+is no second request. See [Single-Flight Mutations](router.md#single-flight).
+
+A resumable page keeps its queries' keys in the page's resume state, so a
+query restored on the client still refreshes when its keys are invalidated.
+See the [Resumability Guide](RESUMABILITY_GUIDE.md).
+
+## What keys are not for
+
+Keys are for data that lives outside the page. Atoms already update their
+readers: `count.set(1)` needs no key. Use a key when a *write* in one place
+must refresh a *read* in another that is coupled only by the data. That is
+typically a mutation and the queries or loaders that fetched the same
+records.
+
+## API
+
+| API | What it does |
+| --- | --- |
+| `Reactivity.Key.make(name)` | A key with a literal-typed name. |
+| `Reactivity.Key.family(name)` | A function from an id to a child key; `.key` is the parent. |
+| `Reactivity.Key.is(value)` | Is this a key (not a plain string)? |
+| `Reactivity.tracked(effect, { keys })` | Records the keys when the effect runs inside a reactive read. |
+| `Reactivity.invalidating(effect, keys \| (a) => keys)` | Invalidates the keys after the effect succeeds. |
+| `Reactivity.live` | Mount with it to batch invalidations to one microtask. |
+| `Reactivity.test` | Mount with it to hold invalidations until `Atom.flushReactivity()`. |
+| `Reactivity.ReactivityTag` | The service: `invalidate`, `subscribe`, `flush`. |
+| `Atom.withReactivity(keys)` | Refreshes an atom when the keys are invalidated. |
+| `Atom.reactivityKeys(atom)` | The keys attached by `withReactivity`. |

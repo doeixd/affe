@@ -284,6 +284,7 @@
     "prepack": "npm run build",
     "verify:package": "node scripts/verify-package.mjs",
     "size": "node scripts/size.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
     "set-version": "node scripts/set-version.mjs"
   },
   "dependencies": {

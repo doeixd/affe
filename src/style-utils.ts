@@ -5,8 +5,7 @@ export const padded = (amount: StyleSpacing) => Style.slot({ padding: amount });
 
 export const rounded = (amount: StyleRadius) => Style.slot({ borderRadius: amount });
 
-export const elevated = (level: StyleShadow extends infer _ ? "sm" | "md" | "lg" | "xl" : never) =>
-  Style.slot({ shadow: level as any });
+export const elevated = (level: StyleShadow) => Style.slot({ shadow: level });
 
 export const bordered = (options?: { readonly width?: number; readonly color?: StyleColor }) =>
   Style.slot({ border: { width: options?.width ?? 1, color: options?.color ?? "border" } });

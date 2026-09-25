@@ -96,7 +96,8 @@ type LeafPaths<T, Depth extends number = 6> = [Depth] extends [never]
   : T extends Primitive
   ? ""
   : {
-      [K in keyof T & string]: T[K] extends Primitive ? K : Join<K, LeafPaths<T[K], Dec<Depth>>>;
+      // A shadow definition is one token value (`shadow: "md"`), not a group.
+      [K in keyof T & string]: T[K] extends Primitive | ShadowDef ? K : Join<K, LeafPaths<T[K], Dec<Depth>>>;
     }[keyof T & string];
 
 export type ThemeTokenSchema = object;
