@@ -26,6 +26,14 @@ import * as Serialization from "../Serialization.js";
 import { bindExpression, expressionCode } from "../portable-extract.js";
 import { FakeDocument } from "./resume-fake-dom.js";
 
+/**
+ * Absolute root for the fixture project on the platform running the suite.
+ * Babel resolves `filename` against its cwd, so a Windows drive path is only
+ * absolute on Windows; elsewhere it would be nested under the cwd and never
+ * match `root`.
+ */
+const DRIVE = process.platform === "win32" ? "C:" : "";
+
 const BuildId = "future-resume-build";
 
 function taggedFailure(exit: Exit.Exit<unknown, unknown>): string {
@@ -70,14 +78,14 @@ export const save = extract((captures) => Effect.succeed(captures.payload), {
 });
 `,
       {
-        filename: "C:/app/src/big.ts",
+        filename: `${DRIVE}/app/src/big.ts`,
         babelrc: false,
         configFile: false,
         plugins: [[
           plugin,
           {
             buildId: BuildId,
-            root: "C:/app",
+            root: `${DRIVE}/app`,
             maxBindSourceLength: 8,
             onDiagnostic: (diagnostic: Record<string, unknown>) => diagnostics.push(diagnostic),
           },
@@ -112,14 +120,14 @@ export const save = extract((captures) => Effect.succeed(captures.payload), {
 });
 `,
       {
-        filename: "C:/app/src/small.ts",
+        filename: `${DRIVE}/app/src/small.ts`,
         babelrc: false,
         configFile: false,
         plugins: [[
           plugin,
           {
             buildId: BuildId,
-            root: "C:/app",
+            root: `${DRIVE}/app`,
             maxBindSourceLength: 8_000,
             onDiagnostic: (diagnostic: Record<string, unknown>) => clean.push(diagnostic),
           },

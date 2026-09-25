@@ -16,10 +16,18 @@ import { expr, extract } from "../portable-extract.js";
 import * as Portable from "../Portable.js";
 import { Effect, Schema } from "effect";
 
+/**
+ * Absolute root for the fixture project on the platform running the suite.
+ * Babel resolves `filename` against its cwd, so a Windows drive path is only
+ * absolute on Windows; elsewhere it would be nested under the cwd and never
+ * match `root`.
+ */
+const DRIVE = process.platform === "win32" ? "C:" : "";
+
 function transform(
   source: string,
   options: Partial<ResumeExtractOptions> = {},
-  filename = "C:/app/src/todo.ts",
+  filename = `${DRIVE}/app/src/todo.ts`,
 ): string {
   const result = babel.transformSync(source, {
     filename,
@@ -29,7 +37,7 @@ function transform(
       resumeExtractPlugin,
       {
         buildId: "build-1",
-        root: "C:/app",
+        root: `${DRIVE}/app`,
         ...options,
       } satisfies Partial<ResumeExtractOptions> & { buildId: string },
     ]],
@@ -49,7 +57,7 @@ function transform(
 async function evaluateTransformed(
   source: string,
   options: Partial<ResumeExtractOptions> = {},
-  filename = "C:/app/src/todo.ts",
+  filename = `${DRIVE}/app/src/todo.ts`,
 ): Promise<Record<string, unknown>> {
   const esm = transform(source, options, filename);
   const cjs = babel.transformSync(esm, {
@@ -254,7 +262,7 @@ export const bad = extract(() => 1, options);
   it("requires a buildId option", () => {
     expect(() =>
       babel.transformSync(fixture, {
-        filename: "C:/app/src/todo.ts",
+        filename: `${DRIVE}/app/src/todo.ts`,
         babelrc: false,
         configFile: false,
         plugins: [[resumeExtractPlugin, {}]],
@@ -1296,14 +1304,14 @@ const authoredRef = (element) => element;
 export const view = () => (${body});
 `,
     {
-      filename: "C:/app/src/view.tsx",
+      filename: `${DRIVE}/app/src/view.tsx`,
       babelrc: false,
       configFile: false,
       plugins: [
         "@babel/plugin-syntax-jsx",
         [
           resumeExtractPlugin,
-          { buildId: "build-1", root: "C:/app", ...options },
+          { buildId: "build-1", root: `${DRIVE}/app`, ...options },
         ],
       ],
     },
@@ -1457,12 +1465,12 @@ export const view = () => {
 };
 `,
         {
-          filename: "C:/app/src/view.tsx",
+          filename: `${DRIVE}/app/src/view.tsx`,
           babelrc: false,
           configFile: false,
           plugins: [
             "@babel/plugin-syntax-jsx",
-            [resumeExtractPlugin, { buildId: "build-1", root: "C:/app" }],
+            [resumeExtractPlugin, { buildId: "build-1", root: `${DRIVE}/app` }],
           ],
         },
       )

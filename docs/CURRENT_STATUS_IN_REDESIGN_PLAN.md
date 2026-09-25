@@ -1,8 +1,27 @@
 # Current Status In Redesign Plan
 
-Last updated: 2026-08-20 (every lane COMPLETE; `future/` holds no specs;
-no open design question in any lane; the ADR-006 examples gap — the last
-standing `typecheck:all` red — is closed)
+Last updated: 2026-09-25 (renamed to Affe / `@doeixd/affe`; the suite is
+green on Linux, with the Windows fixtures unchanged; every lane COMPLETE; `future/` holds no
+specs; no open design question in any lane)
+
+## Status as of 2026-09-25
+
+- **Renamed to Affe.** The package is `@doeixd/affe`, with
+  `@doeixd/affe-agent`, `@doeixd/affe-css`, and `@doeixd/affe-permissive`;
+  `deprecated/effect-atom-jsx` is the re-exporting alias. What landed and
+  what is still open (logo, domain, alias window, repo rename) is recorded in
+  `docs/RENAME_AFFE.md`.
+- **The suite now passes on Linux.** 28 tests in
+  `resume-extract-plugin.test.ts`, `resume-extract-vite.test.ts`, and
+  `resume-diagnostics.test.ts` hard-coded `C:/app` fixture paths. Babel
+  resolves `filename` against its cwd, so on POSIX those paths nested under
+  the cwd and never matched `root`, and every generated identity fell back
+  to the basename. The fixtures now take a platform-absolute root (still `C:/app` on
+  Windows); the plugin was already correct for the absolute roots Vite passes.
+- **Gates** (verified 2026-09-25, Linux): `npm run typecheck:all` **0
+  errors** across every leg, `npm test` (**1416 passing**, 110 files, plus
+  7 in `@doeixd/affe-permissive`), `npm run build`, the four example builds,
+  and the Playwright suite (**12 passing**).
 
 ## Status as of 2026-08-20
 

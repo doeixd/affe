@@ -9,6 +9,14 @@ import {
 } from "../compiler/resume-extract-vite.js";
 import * as Portable from "../Portable.js";
 
+/**
+ * Absolute root for the fixture project on the platform running the suite.
+ * Babel resolves `filename` against its cwd, so a Windows drive path is only
+ * absolute on Windows; elsewhere it would be nested under the cwd and never
+ * match `root`.
+ */
+const DRIVE = process.platform === "win32" ? "C:" : "";
+
 const fixture = `
 import { extract } from "@doeixd/affe/portable-extract";
 import { Effect, Schema } from "effect";
@@ -53,10 +61,10 @@ function hooksOf(plugin: ReturnType<typeof resumeExtract>): {
 
 describe("resume-extract Vite plugin", () => {
   it("transforms marker modules and aggregates build-manifest entries", async () => {
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const hooks = hooksOf(plugin);
 
-    const result = await hooks.transform(fixture, "C:/app/src/todo.ts");
+    const result = await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
     expect(result?.code).toContain('id: "src/todo.ts#save"');
     expect(result?.map).toBeDefined();
     expect(hooks.entries()).toMatchObject([
@@ -68,30 +76,30 @@ describe("resume-extract Vite plugin", () => {
     const plugin = resumeExtract({ buildId: "build-1" });
     const hooks = hooksOf(plugin);
     expect(
-      await hooks.transform("export const x = 1;", "C:/app/src/plain.ts"),
+      await hooks.transform("export const x = 1;", `${DRIVE}/app/src/plain.ts`),
     ).toBeNull();
     expect(
-      await hooks.transform(fixture, "C:/app/node_modules/dep/index.ts"),
+      await hooks.transform(fixture, `${DRIVE}/app/node_modules/dep/index.ts`),
     ).toBeNull();
     expect(hooks.entries()).toEqual([]);
   });
 
   it("replaces a module's entries on re-transform instead of duplicating them", async () => {
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const hooks = hooksOf(plugin);
-    await hooks.transform(fixture, "C:/app/src/todo.ts");
-    await hooks.transform(fixture, "C:/app/src/todo.ts");
+    await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
+    await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
     expect(hooks.entries()).toHaveLength(1);
 
     const withoutMarker = `export const save = 1;`;
     await hooks.transform(
       `${withoutMarker}\n// portable-extract mention only`,
-      "C:/app/src/todo.ts",
+      `${DRIVE}/app/src/todo.ts`,
     );
     expect(hooks.entries()).toEqual([]);
 
-    await hooks.transform(fixture, "C:/app/src/todo.ts");
-    await hooks.transform(withoutMarker, "C:/app/src/todo.ts");
+    await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
+    await hooks.transform(withoutMarker, `${DRIVE}/app/src/todo.ts`);
     expect(hooks.entries()).toEqual([]);
   });
 
@@ -99,12 +107,12 @@ describe("resume-extract Vite plugin", () => {
     const include = Object.freeze(/\.ts$/g);
     const plugin = resumeExtract({
       buildId: "build-1",
-      root: "C:/app",
+      root: `${DRIVE}/app`,
       include,
     });
     const hooks = hooksOf(plugin);
-    expect(await hooks.transform(fixture, "C:/app/src/one.ts")).not.toBeNull();
-    expect(await hooks.transform(fixture, "C:/app/src/two.ts")).not.toBeNull();
+    expect(await hooks.transform(fixture, `${DRIVE}/app/src/one.ts`)).not.toBeNull();
+    expect(await hooks.transform(fixture, `${DRIVE}/app/src/two.ts`)).not.toBeNull();
     expect(hooks.entries()).toHaveLength(2);
     expect(include.lastIndex).toBe(0);
   });
@@ -112,10 +120,10 @@ describe("resume-extract Vite plugin", () => {
   it("uses Vite's resolved root for stable module identities by default", async () => {
     const plugin = resumeExtract({ buildId: "build-1" });
     const hooks = hooksOf(plugin);
-    hooks.configResolved({ root: "C:/app" });
+    hooks.configResolved({ root: `${DRIVE}/app` });
     const result = await hooks.transform(
       fixture,
-      "C:/app/features/todo.ts",
+      `${DRIVE}/app/features/todo.ts`,
     );
     expect(result?.code).toContain('id: "features/todo.ts#save"');
   });
@@ -123,9 +131,9 @@ describe("resume-extract Vite plugin", () => {
   it("fails the contributing transform on a cross-module identity collision", async () => {
     const plugin = resumeExtract({ buildId: "build-1" });
     const hooks = hooksOf(plugin);
-    await hooks.transform(fixture, "C:/one/todo.ts");
+    await hooks.transform(fixture, `${DRIVE}/one/todo.ts`);
     await expect(
-      hooks.transform(fixture, "C:/two/todo.ts"),
+      hooks.transform(fixture, `${DRIVE}/two/todo.ts`),
     ).rejects.toThrow(/Portable code identity .* is emitted by both/);
   });
 
@@ -136,9 +144,9 @@ describe("resume-extract Vite plugin", () => {
   });
 
   it("serves the virtual resolver-entries module", async () => {
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const hooks = hooksOf(plugin);
-    await hooks.transform(fixture, "C:/app/src/todo.ts");
+    await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
 
     const resolved = hooks.resolveId(virtualEntriesId);
     expect(resolved).toBe(`\0${virtualEntriesId}`);
@@ -147,7 +155,7 @@ describe("resume-extract Vite plugin", () => {
     const moduleSource = await hooks.load(resolved!);
     expect(moduleSource).toContain('import { Effect } from "effect";');
     expect(moduleSource).toContain('"src/todo.ts#save": () => Effect.promise(');
-    expect(moduleSource).toContain('import("C:/app/src/todo.ts")');
+    expect(moduleSource).toContain(`import("${DRIVE}/app/src/todo.ts")`);
   });
 });
 
@@ -167,7 +175,7 @@ describe("sourceModules force-loading", () => {
     const context: Record<string, unknown> = {
       resolve: async (source: string) => {
         resolved.push(source);
-        return { id: `C:/app${source}` };
+        return { id: `${DRIVE}/app${source}` };
       },
     };
     if (options.withLoad) {
@@ -183,7 +191,7 @@ describe("sourceModules force-loading", () => {
   it("force-loads configured source modules before generating the virtual module", async () => {
     const plugin = resumeExtract({
       buildId: "build-1",
-      root: "C:/app",
+      root: `${DRIVE}/app`,
       sourceModules: ["/src/todo.ts", "/src/todo.ts"],
     });
     const load = plugin.load as unknown as (
@@ -200,7 +208,7 @@ describe("sourceModules force-loading", () => {
 
     // Falsifiable counts, not just "it happened": duplicates are collapsed.
     expect(resolved).toEqual(["/src/todo.ts"]);
-    expect(loaded).toEqual(["C:/app/src/todo.ts"]);
+    expect(loaded).toEqual([`${DRIVE}/app/src/todo.ts`]);
     expect(source).toContain('"src/todo.ts#save": () => Effect.promise(');
     expect(hooksOf(plugin).entries()).toHaveLength(1);
   });
@@ -214,7 +222,7 @@ describe("sourceModules force-loading", () => {
     // fixture never sees this.
     const plugin = resumeExtract({
       buildId: "build-1",
-      root: "C:/app",
+      root: `${DRIVE}/app`,
       sourceModules: ["/src/todo.ts"],
     });
     const load = plugin.load as unknown as (
@@ -232,7 +240,7 @@ describe("sourceModules force-loading", () => {
   it("tolerates a specifier that does not resolve", async () => {
     const plugin = resumeExtract({
       buildId: "build-1",
-      root: "C:/app",
+      root: `${DRIVE}/app`,
       sourceModules: ["/missing.ts"],
     });
     const load = plugin.load as unknown as (
@@ -253,7 +261,7 @@ describe("sourceModules force-loading", () => {
   });
 
   it("does not force-load anything when sourceModules is unset", async () => {
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const load = plugin.load as unknown as (
       this: unknown,
       id: string,
@@ -435,9 +443,9 @@ describe("resume-extract Vite plugin HMR", () => {
   }
 
   it("invalidates the virtual entries module when an eligible file changes", async () => {
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const hooks = hooksOf(plugin);
-    await hooks.transform(fixture, "C:/app/src/todo.ts");
+    await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
 
     const handleHotUpdate = plugin.handleHotUpdate as unknown as (
       context: unknown,
@@ -450,15 +458,15 @@ describe("resume-extract Vite plugin HMR", () => {
       { id: `\0${virtualEntriesId}` },
     ]);
 
-    const fresh = fakeContext("C:/app/src/new-module.ts");
+    const fresh = fakeContext(`${DRIVE}/app/src/new-module.ts`);
     handleHotUpdate(fresh.context);
     expect(fresh.graph.invalidated).toEqual([{ id: `\0${virtualEntriesId}` }]);
 
-    const irrelevant = fakeContext("C:/app/node_modules/dep/index.ts");
+    const irrelevant = fakeContext(`${DRIVE}/app/node_modules/dep/index.ts`);
     handleHotUpdate(irrelevant.context);
     expect(irrelevant.graph.invalidated).toEqual([]);
 
-    const nonScript = fakeContext("C:/app/README.md");
+    const nonScript = fakeContext(`${DRIVE}/app/README.md`);
     handleHotUpdate(nonScript.context);
     expect(nonScript.graph.invalidated).toEqual([]);
   });
@@ -467,7 +475,7 @@ describe("resume-extract Vite plugin HMR", () => {
     // The invalidation call is only a means; what must hold is that the *next*
     // load reflects the edited module. Drive the full sequence rather than
     // asserting on the spy.
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const hooks = hooksOf(plugin);
     const load = plugin.load as unknown as (
       this: unknown,
@@ -477,15 +485,15 @@ describe("resume-extract Vite plugin HMR", () => {
       context: unknown,
     ) => void;
 
-    await hooks.transform(fixture, "C:/app/src/todo.ts");
+    await hooks.transform(fixture, `${DRIVE}/app/src/todo.ts`);
     expect(await load.call({}, `\0${virtualEntriesId}`)).toContain(
       '"src/todo.ts#save"',
     );
 
     // The author renames the export; Vite re-transforms and fires HMR.
     const renamed = fixture.replace("export const save", "export const store");
-    await hooks.transform(renamed, "C:/app/src/todo.ts");
-    handleHotUpdate(fakeContext("C:/app/src/todo.ts").context);
+    await hooks.transform(renamed, `${DRIVE}/app/src/todo.ts`);
+    handleHotUpdate(fakeContext(`${DRIVE}/app/src/todo.ts`).context);
 
     const regenerated = await load.call({}, `\0${virtualEntriesId}`);
     expect(regenerated).toContain('"src/todo.ts#store"');
@@ -493,15 +501,15 @@ describe("resume-extract Vite plugin HMR", () => {
 
     // …and removing the marker entirely drops the loader instead of leaving a
     // dangling import of a deleted export.
-    await hooks.transform("export const store = 1;", "C:/app/src/todo.ts");
-    handleHotUpdate(fakeContext("C:/app/src/todo.ts").context);
+    await hooks.transform("export const store = 1;", `${DRIVE}/app/src/todo.ts`);
+    handleHotUpdate(fakeContext(`${DRIVE}/app/src/todo.ts`).context);
     expect(await load.call({}, `\0${virtualEntriesId}`)).not.toContain(
       "Effect.promise(",
     );
   });
 
   it("does not throw when the virtual module is absent from the graph", () => {
-    const plugin = resumeExtract({ buildId: "build-1", root: "C:/app" });
+    const plugin = resumeExtract({ buildId: "build-1", root: `${DRIVE}/app` });
     const handleHotUpdate = plugin.handleHotUpdate as unknown as (
       context: unknown,
     ) => void;
@@ -514,7 +522,7 @@ describe("resume-extract Vite plugin HMR", () => {
     };
     expect(() =>
       handleHotUpdate({
-        file: "C:/app/src/todo.ts",
+        file: `${DRIVE}/app/src/todo.ts`,
         server: { moduleGraph: graph },
       })
     ).not.toThrow();
