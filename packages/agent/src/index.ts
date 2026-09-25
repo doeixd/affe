@@ -11,6 +11,7 @@ export {
   mcpServer,
   mcpTools,
   McpToolNotExposedError,
+  McpAuthenticationRequiredError,
   McpUnknownToolError,
   type McpAuthService,
   type McpCallToolRequest,

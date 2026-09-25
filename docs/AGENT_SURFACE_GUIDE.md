@@ -195,7 +195,7 @@ yourself; no MCP SDK dependency.
 
 - `mcpTools(catalog)` — one tool per `access.agent: true` entry; object
   `inputSchema` derived from the declared schemas.
-- `mcpServer(catalog, {buildId?})` — `callTool` runs the SAME dispatch
+- `mcpServer(catalog, {buildId?, auth?})` — `callTool` runs the SAME dispatch
   pipeline (drift, errors, envelope inherited). Exposure is ENFORCEMENT, not
   hiding: a UI-only tool invoked by exact name refuses with
   `McpToolNotExposedError`, distinct from `McpUnknownToolError` (a probe
@@ -203,6 +203,10 @@ yourself; no MCP SDK dependency.
 - `McpAuth` — pluggable authenticator, run BEFORE tool-name validation; the
   authenticated identity supplies `CallerContext`, so audit lineage on MCP
   calls comes from the host's authenticator, never fabricated.
+- Authentication is **required by default**: with no `McpAuth` provided,
+  every call is refused with `McpAuthenticationRequiredError` (before the tool
+  name is checked). A trusted local transport opts out explicitly with
+  `mcpServer(catalog, { auth: "none" })`.
 - Tool errors are typed discriminated values in `structuredContent`, never
   stringified messages.
 - A2A / `ask-agent` is **userland** (`DQ-098`); if a bridge is ever built it
