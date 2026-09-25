@@ -2,8 +2,8 @@
  * K0b — `collection`, the load-bearing invisible behaviour. Promoted from
  * `future/components/collection.spec.ts` (all green 2026-08-12), retyped.
  *
- * Owning doc: `docs/COMPONENT_KIT_PLAN.md` K0b.1; requirements list:
- * `docs/kit-research/behaviors/collection.md` §9 "Tests day one".
+ * Owning doc: `docs/design/COMPONENT_KIT_PLAN.md` K0b.1; requirements list:
+ * `docs/design/kit-research/behaviors/collection.md` §9 "Tests day one".
  *
  * Every fixture is built inside its `it`: `Element.collection` handles are
  * mutable registries and module-scope sharing is a proven hazard

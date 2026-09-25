@@ -2,9 +2,9 @@
  * Diagnostics completeness. Promoted from
  * `future/resumability/diagnostics.spec.ts` (all green 2026-08-12), retyped.
  *
- * Owning plans: `docs/RESUMABILITY_M8C_PLAN.md` 8c.8 (documentation and status
+ * Owning plans: `docs/design/RESUMABILITY_M8C_PLAN.md` 8c.8 (documentation and status
  * closure: "supported target/value tables, examples, diagnostics") and
- * `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` Milestone 9 work item 3:
+ * `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` Milestone 9 work item 3:
  * "add diagnostics for capture size, unsupported policy, missing codec,
  * unknown code identity, build mismatch, stale DOM marker, and duplicate ID."
  *

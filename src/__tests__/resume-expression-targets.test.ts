@@ -4,7 +4,7 @@
  * `future/resumability/expression-targets.spec.ts` (all green 2026-08-12),
  * retyped.
  *
- * Owning plans: `docs/RESUMABILITY_M8C_PLAN.md` 8c.3, 8c.4, 8c.5 and the
+ * Owning plans: `docs/design/RESUMABILITY_M8C_PLAN.md` 8c.3, 8c.4, 8c.5 and the
  * "Ratify the Non-Text Target Protocol" section of 8c.2.
  *
  * The protocol foundation is built (manifest v4 discriminated targets, the

@@ -1,6 +1,6 @@
 # Task Brief: Router Workstream R1 (correctness + dead surface)
 
-You are implementing Workstream R1 from `docs/ROUTER_CONSOLIDATION_PLAN.md`.
+You are implementing Workstream R1 from `docs/design/ROUTER_CONSOLIDATION_PLAN.md`.
 Read that plan's "Findings inventory" section first, then follow this brief
 exactly. Do the tasks **in order**. Do not expand scope.
 
@@ -28,7 +28,7 @@ exactly. Do the tasks **in order**. Do not expand scope.
    after (they prove nothing broke).
 6. When in doubt about a design decision, do the smaller/safer thing and
    write the question into the "Handoff notes" section you will append to
-   `docs/ROUTER_CONSOLIDATION_PLAN.md` at the end. Do not invent new APIs.
+   `docs/design/ROUTER_CONSOLIDATION_PLAN.md` at the end. Do not invent new APIs.
 7. This project has an OptMem memory (see CLAUDE.md). Run its `wake` at
    session start. Write ONE `note` at the end summarizing what you
    completed. Do not write notes per-task.
@@ -185,7 +185,7 @@ In `src/Route.ts` (`LoaderOptions`) and `src/router-runtime.ts`:
 2. `npm test` — all green.
 3. `npm run build` — green.
 4. Append a `## R1 Handoff notes (<date>)` section to
-   `docs/ROUTER_CONSOLIDATION_PLAN.md` listing: tasks completed, tests
+   `docs/design/ROUTER_CONSOLIDATION_PLAN.md` listing: tasks completed, tests
    added/changed (and why), behavior changes (Task 5 especially), anything
    fenced instead of implemented (Task 4), and any question you deferred.
 5. One OptMem note summarizing the outcome.

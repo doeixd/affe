@@ -21,7 +21,7 @@
  * deferred twice.) No spec here pins the current rule; if one is ever added, it
  * belongs to that fallback and must say so.
  *
- * Owner: docs/ROUTER_CONSOLIDATION_PLAN.md § R3 (`DQ-030`, `DQ-037`).
+ * Owner: docs/design/ROUTER_CONSOLIDATION_PLAN.md § R3 (`DQ-030`, `DQ-037`).
  */
 import { describe, expect, it } from "vitest";
 import { Effect, Schema } from "effect";

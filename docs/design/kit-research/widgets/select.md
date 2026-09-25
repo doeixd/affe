@@ -2,7 +2,7 @@
 
 Date: 2026-07-29
 Status: **researched — K3 entry gate satisfied (Select)**
-Template: KR 9-section widget template (`docs/COMPONENT_KIT_PLAN.md`, KR phase),
+Template: KR 9-section widget template (`docs/design/COMPONENT_KIT_PLAN.md`, KR phase),
 following `widgets/combobox.md` as the exemplar.
 Downstream: gates K3's `Select`. Also settles the **native-first inversion** the
 plan mandates ("styled native `<select>` first … the custom-rendered variant is
@@ -24,7 +24,7 @@ anatomy; Radix `Select`; Base UI `Select`; react-aria `Select`/`ListBox`
 `@stylextras/ui` native-first select notes; CSS-Tags rung-zero contract. Local:
 `src/A11y.ts` (**has no Select/Listbox anatomy yet** — see Prerequisites),
 `src/Element.ts` capability lattice, `src/Machine.ts`,
-`docs/kit-research/behaviors/{typeahead,collection,list-navigation,roving-tabindex,selection-model,form-control,dismissable-layer,anchor-position,live-announce}.md`.
+`docs/design/kit-research/behaviors/{typeahead,collection,list-navigation,roving-tabindex,selection-model,form-control,dismissable-layer,anchor-position,live-announce}.md`.
 
 Scope decision up front: **one widget, `Select`, with a `render:
 "native" | "custom"` axis and a `multiple` boolean** — not two widgets and not

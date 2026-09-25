@@ -34,11 +34,14 @@ Run these before opening a pull request; CI runs the same ones.
 
 - `src/` — the library. `src/__tests__/` holds tests; `src/type-tests/`
   holds compile-time tests for public type behavior.
-- `packages/` — `create-affe` and the private workspace packages.
+- `packages/` — the published add-ons (`create-affe`, `affe-permissive`,
+  `affe-ui-agent`, `affe-css`), released in lockstep with the core.
 - `examples/` — runnable apps. A new one gets a spec in
   `browser-tests/examples.spec.ts`; the suite fails if one is missing.
-- `docs/` — guides at the top of [`docs/README.md`](docs/README.md), design
-  records below them.
+- `docs/` — user guides at the top level (indexed in
+  [`docs/README.md`](docs/README.md)); plans, audits and research in
+  `docs/design/`; open questions in `docs/design-questions/`; superseded
+  material in `docs/archive/`.
 - `future/` — executable specifications of unbuilt design. Red specs there
   are the backlog, not failures; never wire them into a gate.
 

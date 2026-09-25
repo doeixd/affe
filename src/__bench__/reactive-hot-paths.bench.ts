@@ -8,7 +8,7 @@ import { normalizeReactivityKeys } from "../reactivity-runtime.js";
  * README/afui.md ("granular updates, no VDOM diff, direct mutation, microtask
  * batching"). These are characterization benchmarks — run with
  * `npx vitest bench` — not asserted thresholds; they exist so regressions in
- * the hot paths are visible. See docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md (PR3).
+ * the hot paths are visible. See docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md (PR3).
  */
 
 group("atom read/write", (bench) => {

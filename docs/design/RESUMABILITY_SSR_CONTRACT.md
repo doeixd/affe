@@ -9,15 +9,15 @@ and the disagreement is called out explicitly below.
 
 Executable source of truth:
 
-- [`src/__tests__/ssr-characterization.test.ts`](../src/__tests__/ssr-characterization.test.ts)
+- [`src/__tests__/ssr-characterization.test.ts`](../../src/__tests__/ssr-characterization.test.ts)
   — the pinned lifecycle sequences, exception paths, and fallback behaviour.
-- [`src/__tests__/resume.test.ts`](../src/__tests__/resume.test.ts) — the
+- [`src/__tests__/resume.test.ts`](../../src/__tests__/resume.test.ts) — the
   collect/install/dispatch behaviour this document cross-references.
-- [`src/__tests__/ssr.test.ts`](../src/__tests__/ssr.test.ts) — the pre-existing
+- [`src/__tests__/ssr.test.ts`](../../src/__tests__/ssr.test.ts) — the pre-existing
   global save/restore-on-throw assertions.
 
 The full diagnostic catalogue is **not** duplicated here. It lives in
-[`docs/RESUMABILITY_GUIDE.md` § "Diagnostics reference"](RESUMABILITY_GUIDE.md#diagnostics-reference),
+[`docs/RESUMABILITY_GUIDE.md` § "Diagnostics reference"](../RESUMABILITY_GUIDE.md#diagnostics-reference),
 which is the authority for the collect-vs-client split and for every code's
 meaning. This document only records *what falls back to what*, and *when*.
 
@@ -172,6 +172,6 @@ would pin nothing and would break the green-tree constraint.
 
 The successor coverage is this document's executable half: the ordering and
 fallback characterization in
-[`src/__tests__/ssr-characterization.test.ts`](../src/__tests__/ssr-characterization.test.ts).
+[`src/__tests__/ssr-characterization.test.ts`](../../src/__tests__/ssr-characterization.test.ts).
 It serves the purpose item 6 was reaching for — a baseline that fails loudly if
 the SSR/resume contract moves — without a deliberately red test.

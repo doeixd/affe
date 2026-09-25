@@ -158,7 +158,7 @@ Type coverage includes:
     work.
 - `docs/API.md`
   - Documents View, Behavior, Style, Component, Route updates.
-- `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
+- `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
   - Records the AF-UI convergence checkpoint.
 - `docs/METADATA_WITNESS_IMPLEMENTATION_PLAN.md`
   - Rewritten as a status/handoff document with a golden-path example.

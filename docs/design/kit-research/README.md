@@ -7,8 +7,8 @@ Decision records for kit primitives. Two tracks:
 
 | Track | Path | Entry gate for |
 | --- | --- | --- |
-| **Behaviors / machines** | `docs/kit-research/behaviors/` | implementing a catalog behavior or shared machine |
-| **Widgets** | `docs/kit-research/widgets/` | implementing a shipped component (K2+) |
+| **Behaviors / machines** | `docs/design/kit-research/behaviors/` | implementing a catalog behavior or shared machine |
+| **Widgets** | `docs/design/kit-research/widgets/` | implementing a shipped component (K2+) |
 
 Research docs are **decision records, not surveys**. Every section ends in a
 choice. Building a behavior or widget without its research doc is out of process.

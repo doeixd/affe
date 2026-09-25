@@ -240,7 +240,7 @@ Files:
 - `README.md`
 - `docs/API.md`
 - `docs/ROUTER_IMPLEMENTATION_PLAN.md` (cross-reference)
-- `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
+- `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
 - `CHANGELOG.md`
 
 Work:

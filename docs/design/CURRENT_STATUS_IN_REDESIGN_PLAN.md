@@ -10,7 +10,7 @@ specs; no open design question in any lane)
   `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and `@doeixd/affe-permissive`;
   the old `effect-atom-jsx` npm package is left as it is (no alias). What landed and
   what is still open (logo, domain, repo rename) is recorded in
-  `docs/RENAME_AFFE.md`.
+  `docs/design/RENAME_AFFE.md`.
 - **The suite now passes on Linux.** 28 tests in
   `resume-extract-plugin.test.ts`, `resume-extract-vite.test.ts`, and
   `resume-diagnostics.test.ts` hard-coded `C:/app` fixture paths. Babel
@@ -155,7 +155,7 @@ Setup/view comparison: `docs/archive/SETUP_VIEW_COMPARISON.md`
 
 Component setup builder plan: `docs/archive/COMPONENT_SETUP_BUILDER_PLAN.md`
 
-Resumability implementation: `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md`
+Resumability implementation: `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md`
 
 ## Overall
 
@@ -221,7 +221,7 @@ Resumability implementation: `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md`
 ## Completed So Far
 
 The full landed-work log (2026-03 through 2026-07-06, ~860 lines) moved to
-[`docs/archive/REDESIGN_COMPLETED_LOG.md`](archive/REDESIGN_COMPLETED_LOG.md)
+[`docs/archive/REDESIGN_COMPLETED_LOG.md`](../archive/REDESIGN_COMPLETED_LOG.md)
 as part of the PR2 plan-doc consolidation.
 
 High-level state of what has landed:
@@ -982,7 +982,7 @@ compile-time teeth when P2 key witnesses land.)
 - [x] Scaffolding (D3): **done 2026-07-09** — `scripts/create-af-ui.mjs` + package bin `create-af-ui`; project + component golden-path scaffold; test in `scaffold.test.ts`.
 - [x] A11y pattern contracts (P8): **done 2026-07-09** — catalog Dialog/Tooltip/Popover/Tabs/Slider/Calendar/DragAndDrop + two-tier taxonomy; tests in `a11y-catalog.test.ts`.
 - [x] Forms vertical (P9): **done 2026-07-09** — `src/Form.ts` fields, schema validate, submit mutation, `applyServerErrors`; tests in `form.test.ts`.
-- [x] Exit-animation ownership note (P10): **done 2026-07-09** — `docs/EXIT_ANIMATION_OWNERSHIP.md` (renderer owns deferred unmount).
+- [x] Exit-animation ownership note (P10): **done 2026-07-09** — `docs/design/EXIT_ANIMATION_OWNERSHIP.md` (renderer owns deferred unmount).
 - [x] Devtools + MCP (P11): **MVP done 2026-07-09** — `src/Devtools.ts` timeline, snapshots, slot-contract tree, MCP read/rewind/dispatch, exclude/keyframe knobs; tests in `devtools.test.ts`.
 - [x] Gated subscription primitive (P12): **done 2026-07-09** — `Atom.Stream.gated` + `Component.subscription`; tests in `atom-gated-stream.test.ts`.
 - [x] Amend P5 with story/scene test taxonomy and naming conventions (F3): **done 2026-07-08** — `story`/`scene` helpers + docs in `TESTING.md` (`*.story.test.ts` / `*.scene.test.ts` convention).

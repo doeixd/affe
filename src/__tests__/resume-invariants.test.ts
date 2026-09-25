@@ -5,7 +5,7 @@
  * 2026-08-12), retyped.
  *
  * Owning plans: the "M0-7 Test Audit Findings" and "M8 Test Audit Findings"
- * sections of `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` (findings 4, 5, 6, 8
+ * sections of `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` (findings 4, 5, 6, 8
  * and M8 findings 2, 5), plus `RESUMABILITY_M8C_PLAN.md`'s ownership
  * invariants.
  *

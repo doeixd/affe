@@ -1,7 +1,7 @@
 # AF-UI Contract
 
 > **Renamed:** AF-UI is now **Affe**, and `effect-atom-jsx` is published as
-> `@doeixd/affe` (see [RENAME_AFFE.md](../RENAME_AFFE.md)). This contract keeps
+> `@doeixd/affe` (see [RENAME_AFFE.md](../design/RENAME_AFFE.md)). This contract keeps
 > its filename and original wording; read "AF-UI" and `effect-atom-jsx` as Affe.
 
 This document is the source of truth for aligning `effect-atom-jsx` with the AF-UI vision. It describes the target model the implementation should converge on; older design notes remain useful, but this contract wins when documents disagree.
@@ -696,7 +696,7 @@ Required before release checkpoints:
 - `npm run typecheck`
 - `npm test`
 - `npm run build`
-- update `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
+- update `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
 - update README/API examples where public surface changed
 - add type tests for public type guarantees
 - label stale exploratory docs as historical or superseded

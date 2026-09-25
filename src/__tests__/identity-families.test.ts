@@ -1,5 +1,5 @@
 /**
- * Identity-family unification — `docs/DESIGN_IMPROVEMENT_NOTES.md` item 2.
+ * Identity-family unification — `docs/design/DESIGN_IMPROVEMENT_NOTES.md` item 2.
  * Promoted from `future/result/identity-families.spec.ts` (all green
  * 2026-08-12), retyped.
  *

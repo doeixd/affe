@@ -64,7 +64,7 @@ Result model (core, src/effect-ts.ts): Loading | Refreshing{previous} | Success{
 
 Reactivity: `Reactivity.Key.make/family` branded witnesses; `Reactivity.tracked(effect,{keys})` capture; `Reactivity.invalidating` / `Atom.invalidateReactivity` broadcast. Runtime capture stacks + normalizeReactivityKeys in reactivity-runtime.ts. Ratified M8 decision: dependency identity is semantic reactivity keys ONLY; binding hydration keys (`af:binding:id/name`) double as implicit reactivity keys; signal core stays identity-free.
 
-## 7. JSON-render proposal (docs/af-ui-json-render/, future)
+## 7. JSON-render proposal (docs/design/af-ui-json-render/, future)
 
 Four docs copied from ../gen2 as reference: README, gen-ui.md (motivation + 9 IR primitives), ui-dialect-af-ui-json-render.md (gen2 dialect mapping, 1459 lines), gen-ui-implementation-plan.md (4-phase plan, 1733 lines).
 

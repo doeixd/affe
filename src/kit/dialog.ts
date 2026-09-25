@@ -1,6 +1,6 @@
 /**
  * Kit dialog — the designated no-machine-required example widget
- * (`docs/kit-research/widgets/dialog.md`), shipped as its SIX LAYERS
+ * (`docs/design/kit-research/widgets/dialog.md`), shipped as its SIX LAYERS
  * (K4 no-fork guarantee): tokens → recipe → anatomy (+A11y pattern) →
  * machine → behavior → assembled `Dialog`. Every customization is
  * recomposition of published layers over plain imports — if a reasonable

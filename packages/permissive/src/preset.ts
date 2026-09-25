@@ -1,5 +1,5 @@
 /**
- * The `permissive()` preset (`docs/PERMISSIVE_PACKAGE_PLAN.md` S3, shape P3):
+ * The `permissive()` preset (`docs/design/PERMISSIVE_PACKAGE_PLAN.md` S3, shape P3):
  * Qwik-parity as a configuration. It returns the pieces an app wires, not
  * magic — the `extract.auto`-capable compiler plugin, and the universal
  * seroval codec for both sides of the wire.

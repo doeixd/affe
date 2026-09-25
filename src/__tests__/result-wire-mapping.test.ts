@@ -1,5 +1,5 @@
 /**
- * The frozen §2.3 field mapping of `docs/RESULT_UNIFICATION_PLAN.md`, as
+ * The frozen §2.3 field mapping of `docs/design/RESULT_UNIFICATION_PLAN.md`, as
  * executable round-trip specs.
  *
  * These expectations are **derived from the table in the plan**, not copied from

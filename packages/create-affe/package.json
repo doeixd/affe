@@ -15,6 +15,7 @@
   "engines": {
     "node": ">=20.19"
   },
+  "homepage": "https://github.com/doeixd/affe/tree/main/packages/create-affe#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/doeixd/affe.git",

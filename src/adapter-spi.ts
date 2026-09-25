@@ -2,7 +2,7 @@
  * The published resumability adapter SPI (`@doeixd/affe/adapter-spi`).
  *
  * Owned by `RESUMABILITY_IMPLEMENTATION_PLAN.md` M9 item 2, un-blocked by the
- * permissive-package milestone (`docs/PERMISSIVE_PACKAGE_PLAN.md` S1,
+ * permissive-package milestone (`docs/design/PERMISSIVE_PACKAGE_PLAN.md` S1,
  * `DQ-011`): the member list below is frozen around what the first external
  * consumer actually exercises — manifest schemas and decode, client install
  * (which carries the encoded binding-write escape hatch), the event/binding

@@ -2,7 +2,7 @@
 
 Date: 2026-07-29
 Status: **researched — K3 entry gate satisfied (Dialog)**
-Template: KR 9-section widget template (`docs/COMPONENT_KIT_PLAN.md`, KR phase),
+Template: KR 9-section widget template (`docs/design/COMPONENT_KIT_PLAN.md`, KR phase),
 following `widgets/combobox.md` as the exemplar.
 Downstream: gates K3's first widget (`Dialog`); also fixes the shared
 `presence`/`scrollLock`/`focusTrap` platform-floor seams that Popover, Menu,
@@ -21,7 +21,7 @@ never copied**), `@stylextras/ui` Dialog notes (native-first, no-React-state
 defaults, `/client` opt-in, lazy trigger-only entries), CSS-Tags
 `<dialog data-modal>` rung-zero contract. Local: `src/A11y.ts` `DialogSlots` /
 `Dialog` pattern (L116–131, catalog L196), `src/Element.ts` capability lattice,
-`src/Machine.ts`, `docs/kit-research/behaviors/{focus-trap,scroll-lock,presence,
+`src/Machine.ts`, `docs/design/kit-research/behaviors/{focus-trap,scroll-lock,presence,
 dismissable-layer}.md`.
 
 Scope decision up front: **one widget, `Dialog`, with a `role` axis

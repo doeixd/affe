@@ -4,7 +4,7 @@ Date: 2026-03-10
 Status: Proposed (breaking changes allowed)
 Owner: Core library redesign
 
-Implementation note (2026-03-10): this document includes exploratory and historical analysis sections written before several removals landed. Treat `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md` and `docs/V1_API_CONTRACT_DRAFT.md` as the source of truth for current active surface decisions.
+Implementation note (2026-03-10): this document includes exploratory and historical analysis sections written before several removals landed. Treat `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md` and `docs/V1_API_CONTRACT_DRAFT.md` as the source of truth for current active surface decisions.
 
 ## Intent
 
@@ -218,7 +218,7 @@ Deliverables:
 
 ## Historical Analysis Notes (Pre-Removal Snapshot)
 
-The following sections capture exploratory analysis and proposal drafts from before several redesign removals landed. Keep them as rationale/history, but treat `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md` and `docs/V1_API_CONTRACT_DRAFT.md` as authoritative for active API state.
+The following sections capture exploratory analysis and proposal drafts from before several redesign removals landed. Keep them as rationale/history, but treat `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md` and `docs/V1_API_CONTRACT_DRAFT.md` as authoritative for active API state.
 
 Important: below this line, references to removed names (`queryEffect`, `mutationEffect`, `Atom.fn`, legacy strict/scoped aliases, older async naming) are historical analysis only, not current recommendations.
 

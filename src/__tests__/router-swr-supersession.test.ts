@@ -15,7 +15,7 @@
  * which removes a last-write-wins race and matches how `Refreshing` already
  * reads as a single state.
  *
- * Owner: docs/ROUTER_CONSOLIDATION_PLAN.md § R2 handoff task 3 → R3/R4
+ * Owner: docs/design/ROUTER_CONSOLIDATION_PLAN.md § R2 handoff task 3 → R3/R4
  * (`DQ-032`).
  */
 import { describe, expect, it } from "vitest";

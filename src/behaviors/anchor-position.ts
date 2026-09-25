@@ -8,7 +8,7 @@
  * attaching with no `measure` fails closed with a typed error instead of
  * fabricating zero-valued coordinates.
  *
- * @see docs/kit-research/behaviors/anchor-position.md
+ * @see docs/design/kit-research/behaviors/anchor-position.md
  */
 import { Effect, Schema, Scope } from "effect";
 import * as Atom from "../Atom.js";

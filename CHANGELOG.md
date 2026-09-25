@@ -256,7 +256,7 @@ regression test that fails on the previous code. Highlights:
 
 ### Renamed to Affe (`@doeixd/affe`)
 
-- **Package rename** (docs/RENAME_AFFE.md). `effect-atom-jsx` is now Affe,
+- **Package rename** (docs/design/RENAME_AFFE.md). `effect-atom-jsx` is now Affe,
   published as `@doeixd/affe`; the `@affe` npm scope was unavailable, so the
   workspace packages are `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and
   `@doeixd/affe-permissive`. Replace `effect-atom-jsx` with `@doeixd/affe` in

@@ -8,7 +8,7 @@
  * `DismissableLayer` nesting rules and Zag's dismissable-layer utilities (not
  * a port of that code).
  *
- * @see docs/kit-research/behaviors/dismissable-layer.md
+ * @see docs/design/kit-research/behaviors/dismissable-layer.md
  */
 import { Context, Effect, Layer, Schema, Scope } from "effect";
 import * as Behavior from "../Behavior.js";

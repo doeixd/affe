@@ -427,7 +427,7 @@ Gates per slice, unless stated otherwise:
   table (it is testing the wire, not a model bridge).
 - Delete the `docs/API.md` `FetchResult` section; add a `result-wire.ts`
   subsection under Serialization.
-- Update `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md` (Finding-5 / P15 entries)
+- Update `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md` (Finding-5 / P15 entries)
   and `DESIGN_IMPROVEMENT_NOTES.md` item 1 to point at this document.
 - Slice 5 exit: `FetchResult` matches 0 files under `src/`; package export
   surface test (`src/__tests__/package.test.ts`) updated and green.

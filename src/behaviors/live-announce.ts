@@ -7,7 +7,7 @@
  * DOM adapter's concern; the service itself is renderer-neutral state a mock
  * Layer captures with NO DOM. Tests swap the whole service wholesale.
  *
- * @see docs/kit-research/behaviors/live-announce.md
+ * @see docs/design/kit-research/behaviors/live-announce.md
  */
 import { Context, Effect, Layer, Schema } from "effect";
 import * as Behavior from "../Behavior.js";

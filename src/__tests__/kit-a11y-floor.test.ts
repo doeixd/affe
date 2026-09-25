@@ -14,13 +14,13 @@ import * as formControlModule from "../behaviors/form-control.js";
 /**
  * A11y as a gate, and the platform-native / zero-JS floor.
  *
- * Owning doc: `docs/COMPONENT_KIT_PLAN.md` — "A11y as a gate, not a feature"
+ * Owning doc: `docs/design/COMPONENT_KIT_PLAN.md` — "A11y as a gate, not a feature"
  * (*a widget without a passing pattern contract does not ship*), "The
  * platform-native floor", and "Rung zero: CSS-Tags as the styling floor" (the
  * capability ladder: pure CSS → platform-native → dormant/resumable →
  * activated, each rung additive, none rewriting markup).
- * Research: `docs/kit-research/behaviors/form-control.md`,
- * `docs/kit-research/widgets/dialog.md`.
+ * Research: `docs/design/kit-research/behaviors/form-control.md`,
+ * `docs/design/kit-research/widgets/dialog.md`.
  */
 import { Effect, Exit, Scope } from "effect";
 import { describe, expect, it } from "vitest";

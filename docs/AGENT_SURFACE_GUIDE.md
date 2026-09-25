@@ -7,7 +7,7 @@ How an app exposes its actions to AI agents — and why the agent is **just
 another caller**, not a second system. This guide covers `src/Agent.ts`,
 `src/reactivity-push.ts`, `src/ViewSpec.ts` + `src/view-spec-json-render.ts`,
 and the `@doeixd/affe-ui-agent` adapter package. Design rationale lives in
-[`AGENT_NATIVE_NOTES.md`](./AGENT_NATIVE_NOTES.md); ratified decisions are
+[`AGENT_NATIVE_NOTES.md`](./design/AGENT_NATIVE_NOTES.md); ratified decisions are
 cited by their `DQ-xxx` ids.
 
 Completeness of the diagnostic-code and error tables below is **enforced by
@@ -258,7 +258,7 @@ Derived-audited against the `ViewSpecDiagnosticCode` union; every code is an
   json-render **v0.20** dialect: named slots verbatim (never flattened),
   `children: []` on every leaf, whole `{action, params}` bindings,
   `$state`/`$bindState` JSON Pointers only in this module. See
-  [`af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`](./af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md).
+  [`af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`](./design/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md).
 - **`Agent.emitViewSpec({catalog, state?, allowedActions?})`** exposes
   "render this spec" as an ordinary catalog entry (buildId:
   `Agent.viewSpecBuildId`). A refusal is a typed `ViewSpecInvalidError`

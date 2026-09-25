@@ -196,7 +196,7 @@ grammar the kit uses for behaviors.
    consumed by an agent emit-spec action. The largest piece.
    (`DQ-094`, ratified 2026-08-17: the earlier "json-render Phase 1" dependency
    was mis-scoped — that plan's Phase 1 defers every safety rule and targets
-   gen2's static generator IR. `docs/af-ui-json-render/` is reference input,
+   gen2's static generator IR. `docs/design/af-ui-json-render/` is reference input,
    not the dependency. Module names ratified with the same decision:
    `src/ViewSpec.ts` (core namespace module — the §4.2 security claim is a
    library boundary) and `src/view-spec-json-render.ts` (core internal
@@ -205,7 +205,7 @@ grammar the kit uses for behaviors.
    1:1 to `UIElement.slots` (no flattening), leaves carry `children: []`,
    action bindings carry `params`, and the renderer-bridge contract is
    `executeAction(ActionBinding)` — see
-   `docs/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`.)
+   `docs/design/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`.)
 6. Governance services (CallerContext/Approval/audit middleware) land inside
    AN-1 as its requirement set.
 

@@ -4,8 +4,8 @@
  *
  * Owning docs: `docs/archive/AF_UI_CONTRACT.md`,
  * `docs/SLOT_CONTRACT_UNIFICATION_PLAN.md` (declared-vs-rendered drift),
- * `docs/DESIGN_IMPROVEMENT_NOTES.md` item 11 (slot = named region),
- * `docs/COMPONENT_KIT_PLAN.md` ("attaching the combobox behavior to a slot
+ * `docs/design/DESIGN_IMPROVEMENT_NOTES.md` item 11 (slot = named region),
+ * `docs/design/COMPONENT_KIT_PLAN.md` ("attaching the combobox behavior to a slot
  * that lacks text-input capability is a *type error*" — and for the dynamic
  * path, a runtime diagnostic).
  *

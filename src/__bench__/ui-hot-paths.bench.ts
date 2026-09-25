@@ -10,7 +10,7 @@ import * as StyleUtils from "../style-utils.js";
  * "granular components without a VDOM"). Characterization benchmarks — run with
  * `npm run bench` — not asserted thresholds; they exist so regressions in style
  * construction/resolution and per-component setup are visible.
- * See docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md (PR3).
+ * See docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md (PR3).
  */
 
 // A representative one-slot styled component (mirrors src/__tests__/style.test.ts).

@@ -1,6 +1,6 @@
 # Router & data lane — triaged design questions (`DQ-030`–`DQ-049`)
 
-Triage pass 2026-07-30 over `future/router/*.spec.ts`, `docs/ROUTER_CONSOLIDATION_PLAN.md`
+Triage pass 2026-07-30 over `future/router/*.spec.ts`, `docs/design/ROUTER_CONSOLIDATION_PLAN.md`
 (including the R1 and R2 handoff notes), and `docs/adr/ADR-006-implementation-plan.md`.
 R1 and R2 are **done**.
 

@@ -37,7 +37,7 @@ Status key: ☐ pending · ✅ ratified · ❌ rejected.
     real dependency — "a repo-native typed catalog + view tree + validator
     covering the state-model/binding/action rules (the content of json-render
     Phases 1–5), specified by `future/agent/generative-view-spec.spec.ts`" —
-    and demote `docs/af-ui-json-render/` to *reference input*. Its Phase 1
+    and demote `docs/design/af-ui-json-render/` to *reference input*. Its Phase 1
     alone delivers nothing agent-facing (its own "Minimal First PR Target"
     defers every safety rule), and it is a plan for gen2's static generator
     IR, not this repo's runtime.

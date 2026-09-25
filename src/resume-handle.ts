@@ -263,7 +263,7 @@ export const ControlledBindingTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
  * Mark an adopted caller-owned atom as a CONTROLLED binding
  * (`Component.bindable`): the caller owns the value, so resume collection
  * must never snapshot it — "snapshot only for setup-owned state"
- * (`docs/kit-research/behaviors/controlled-uncontrolled.md`). Idempotent.
+ * (`docs/design/kit-research/behaviors/controlled-uncontrolled.md`). Idempotent.
  */
 export function markControlledBinding<T extends object>(value: T): T {
   if (!(ControlledBindingTypeId in value)) {

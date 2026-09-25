@@ -9,7 +9,7 @@
  *
  * Any future module that needs a serializable result must import this one.
  * Hand-rolling the mapping is a review-blocking defect
- * (`docs/RESULT_UNIFICATION_PLAN.md`, Decision 3).
+ * (`docs/design/RESULT_UNIFICATION_PLAN.md`, Decision 3).
  *
  * ## The frozen field mapping
  *

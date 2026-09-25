@@ -1,6 +1,6 @@
 # Redesign Completed Log (archive)
 
-Extracted from docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md on 2026-07-06 (PR2 plan-doc consolidation). This is the append-only historical record of landed redesign work. New entries: add a short pointer in the status doc and the full detail here.
+Extracted from docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md on 2026-07-06 (PR2 plan-doc consolidation). This is the append-only historical record of landed redesign work. New entries: add a short pointer in the status doc and the full detail here.
 
 ## Completed So Far
 

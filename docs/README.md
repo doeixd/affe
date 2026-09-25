@@ -59,15 +59,13 @@ serves them all.
 For contributors. These explain why things are the way they are; code
 snippets in them can be out of date.
 
-- [`CURRENT_STATUS_IN_REDESIGN_PLAN.md`](CURRENT_STATUS_IN_REDESIGN_PLAN.md) — the maintainers' status ledger.
+- [`design/`](design) — plans, audits and research notes: the
+  [status ledger](design/CURRENT_STATUS_IN_REDESIGN_PLAN.md), the
+  resumability, router, result and permissive-package plans, milestone
+  audits, kit research and the json-render notes.
 - [`design-questions/`](design-questions) — open and ratified design questions (DQ-###).
 - [`adr/`](adr) — architecture decision records.
-- Plans and audits: `*_PLAN.md`, `RESUMABILITY_*`, `ROUTER_*`,
-  `TEST_SUITE_AUDIT.md`, `KIT_LAYER_SPEC_FINDINGS.md`,
-  `EXIT_ANIMATION_OWNERSHIP.md`, `DESIGN_IMPROVEMENT_NOTES.md`,
-  `AGENT_NATIVE_NOTES.md`, `ARCHITECTURE_REFERENCE.md`, `RENAME_AFFE.md`.
-- [`archive/`](archive) — superseded plans and API sketches.
-- `af-ui-json-render/` — renderer and generator notes.
+- [`archive/`](archive) — superseded plans, API sketches and design conversations.
 
 ## Checking a change
 

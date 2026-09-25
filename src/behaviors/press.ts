@@ -3,7 +3,7 @@
  *
  * Semantics inspired by react-aria `usePress` (not a port of that code).
  *
- * @see docs/kit-research/behaviors/press.md
+ * @see docs/design/kit-research/behaviors/press.md
  */
 import { Effect, Schema } from "effect";
 import * as Atom from "../Atom.js";

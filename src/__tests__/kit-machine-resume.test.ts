@@ -2,7 +2,7 @@
  * K0 — `Machine` as the widget-state layer, and the resumability round trip
  * that makes it the kit's differentiator.
  *
- * Owning doc: `docs/COMPONENT_KIT_PLAN.md`, "Gap 1 — Typed state machines" and
+ * Owning doc: `docs/design/COMPONENT_KIT_PLAN.md`, "Gap 1 — Typed state machines" and
  * "K0 concrete acceptance": machine state is a `Component.state` atom holding
  * the **encoded** snapshot, so `Resume.snapshotState(Machine.EncodedSnapshotSchema)`
  * round-trips it with zero new resume-kernel code — *"a dormant combobox

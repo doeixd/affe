@@ -6,7 +6,7 @@
  * slots are named, actions are `{name, params}` values. Only THIS module
  * knows json-render's wire dialect — `$state` / `$bindState` JSON Pointers,
  * `type`-keyed elements, and the v0.20.0 semantics recorded in
- * `docs/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`:
+ * `docs/design/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`:
  *
  * - named slots lower to `slots` VERBATIM (#320) — no flattening into
  *   `children`, no invented wrapper elements, no name loss;

@@ -1,7 +1,7 @@
 /**
  * `@doeixd/affe-permissive` — Qwik-parity as a configuration, not a fork.
  *
- * Owning plan: `docs/PERMISSIVE_PACKAGE_PLAN.md`. This package builds against
+ * Owning plan: `docs/design/PERMISSIVE_PACKAGE_PLAN.md`. This package builds against
  * **public `@doeixd/affe` subpaths only** — that constraint IS the adapter
  * SPI test M9 requires, and the enforcement test in `src/__tests__/` fails on
  * any deep import.

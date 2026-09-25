@@ -268,7 +268,7 @@ Runtime tests:
 
 - Update `docs/API.md` with full Style2 API index.
 - Add `docs/STYLING_ADVANCED.md` with focused examples from `style2.md`.
-- Update `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md` after each phase.
+- Update `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md` after each phase.
 - Keep `CHANGELOG.md` aligned with shipped phases.
 
 ## 9) Risks and Mitigations
@@ -293,4 +293,4 @@ Runtime tests:
 - `npm run typecheck` passes with new type-tests.
 - Full test suite passes with Style2 runtime coverage.
 - `npm run build`, `npm pack --dry-run` pass.
-- `docs/API.md`, `CHANGELOG.md`, and `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md` reflect shipped Style2 APIs.
+- `docs/API.md`, `CHANGELOG.md`, and `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md` reflect shipped Style2 APIs.

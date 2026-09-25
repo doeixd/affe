@@ -1,5 +1,5 @@
 /**
- * S3 (`docs/PERMISSIVE_PACKAGE_PLAN.md`) — the `permissive()` preset.
+ * S3 (`docs/design/PERMISSIVE_PACKAGE_PLAN.md`) — the `permissive()` preset.
  *
  * Everything here goes through public subpaths (enforced by
  * `spi-consumer.test.ts`): the preset must be constructible and useful by an

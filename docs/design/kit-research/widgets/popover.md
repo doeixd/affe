@@ -2,7 +2,7 @@
 
 Date: 2026-07-30
 Status: **researched — K3 entry gate satisfied (Popover)**
-Template: KR 9-section widget template (`docs/COMPONENT_KIT_PLAN.md`, KR phase),
+Template: KR 9-section widget template (`docs/design/COMPONENT_KIT_PLAN.md`, KR phase),
 following `widgets/combobox.md` as the exemplar.
 Downstream: gates K3's Popover; shares its floating-layer floor with
 `widgets/tooltip.md` (read together — `popover`/anchor-positioning/
@@ -20,8 +20,8 @@ Ark UI Popover anatomy, Radix `Popover` (+ `HoverCard`), Base UI Popover, react-
 copied**), `@floating-ui/dom`, `@stylextras/ui` popover/invoker/anchor notes,
 CSS-Tags rung-zero contract. Local: `src/A11y.ts` `PopoverSlots`/`Popover`
 pattern (L151–157, catalog L198 `tier:"stateful"`, `roles:["dialog"]`),
-`src/Element.ts` capability lattice, `docs/kit-research/behaviors/{dismissable-layer,
-anchor-position,focus-scope,live-announce}.md`, `docs/kit-research/widgets/
+`src/Element.ts` capability lattice, `docs/design/kit-research/behaviors/{dismissable-layer,
+anchor-position,focus-scope,live-announce}.md`, `docs/design/kit-research/widgets/
 {dialog,tooltip}.md` (shared floor).
 
 Scope decision up front: **one widget, `Popover`, with a `trigger` policy axis
