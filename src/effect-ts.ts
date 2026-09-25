@@ -612,19 +612,11 @@ function withManagedRuntimeContext<A>(
     map = new Map();
     contextMap.set(owner, map);
   }
-  const key = ManagedRuntimeContext.id;
-  const hadPrevious = map.has(key);
-  const previous = map.get(key);
-  map.set(key, managed);
-  try {
-    return fn();
-  } finally {
-    if (hadPrevious) {
-      map.set(key, previous);
-    } else {
-      map.delete(key);
-    }
-  }
+  // Permanent for the owner's life (the mount's render computation), like
+  // the component scope: components created later under this mount — on a
+  // re-run or after an async setup — must still find the runtime.
+  map.set(ManagedRuntimeContext.id, managed);
+  return fn();
 }
 
 type RuntimeLike<R, ER = never> =

@@ -14,6 +14,7 @@ import * as Agent from "../Agent.js";
 import * as Component from "../Component.js";
 import * as Portable from "../Portable.js";
 import * as Resume from "../Resume.js";
+import * as SafeHtml from "../SafeHtml.js";
 
 const BUILD = "agent-render-test-build";
 
@@ -40,7 +41,8 @@ function makeRenderingCatalog(successValue: { readonly id: string; readonly text
       Component.setup(),
       (props: { readonly id: string; readonly text: string }) => {
         mounts.push(props);
-        return `<article data-todo="${props.id}">${props.text}</article>`;
+        // Markup is explicit: a plain string would be escaped as text.
+        return SafeHtml.make(`<article data-todo="${props.id}">${props.text}</article>`);
       },
     ),
   );
@@ -140,7 +142,7 @@ describe("AN-4 result rendering", () => {
     const PlainCard = Component.make(
       Component.setup(),
       (props: { readonly id: string; readonly text: string }) =>
-        `<article>${props.text}</article>`,
+        SafeHtml.make(`<article>${props.text}</article>`),
     );
 
     // Throws — synchronously, at construction, not on first render — naming

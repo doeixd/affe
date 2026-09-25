@@ -18,7 +18,7 @@ function styledRoot(style: Style.ComposedStyle<"root", never>) {
     Component.require<never>(),
     Component.setup<{}>().value("slots", () => ({ root })),
     () => View.fromSlots(slots, null),
-  ).pipe(Style.attachToSlots(style as any, slots)) as any;
+  ).pipe(Style.attachToSlots(style as any, slots) as any) as any;
   return W;
 }
 

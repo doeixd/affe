@@ -5345,6 +5345,10 @@ describe("Milestone 8 expression collection and text restoration", () => {
       )
     );
     Effect.runSync(Scope.close(scope, Exit.void));
+    // The server render records the initial count; this test is about what
+    // the client renders after resuming.
+    expect(rendered).toEqual([1]);
+    rendered.length = 0;
 
     const activation = Resume.activationOf(Counter);
     const runtime = ManagedRuntime.make(Layer.empty);

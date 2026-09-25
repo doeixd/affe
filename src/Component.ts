@@ -10,7 +10,7 @@ import {
   Stream as FxStream,
   Context,
 } from "effect";
-import { createEffect, createSignal, onCleanup, useContext, type Accessor, type Setter } from "./api.js";
+import { contextMap, createEffect, createSignal, onCleanup, useContext, type Accessor, type Setter } from "./api.js";
 import { Owner, getOwner, runWithOwner } from "./owner.js";
 import * as Atom from "./Atom.js";
 import type * as Behavior from "./Behavior.js";
@@ -47,7 +47,12 @@ import {
   type Result,
   type RuntimeLike,
 } from "./effect-ts.js";
-import { currentComponentScope } from "./component-scope.js";
+import {
+  closeComponentScope,
+  currentComponentScope,
+  currentComponentServices,
+  publishComponentServices,
+} from "./component-scope.js";
 import { normalizeReactivityKeys } from "./reactivity-runtime.js";
 import { currentLoaderCacheStore } from "./router-runtime.js";
 
@@ -542,9 +547,15 @@ function makeSetup<Props, Bindings, E, R>(
 function runForkWithAmbient<R, A, E>(effect: Effect.Effect<A, E, R>): Fiber.Fiber<A, E> {
   const ambient = useContext(ManagedRuntimeContext);
   const scope = currentComponentScope();
-  const scoped = scope === null
+  // Services an ancestor's `Component.withLayer` built reach this component's
+  // setup (docs/API.md: a parent `withLayer` satisfies child requirements).
+  const services = currentComponentServices();
+  const withServices = services === null
     ? effect
-    : Scope.provide(scope)(effect as Effect.Effect<A, E, R | Scope.Scope>) as Effect.Effect<A, E, R>;
+    : Effect.provideContext(effect, services) as Effect.Effect<A, E, R>;
+  const scoped = scope === null
+    ? withServices
+    : Scope.provide(scope)(withServices as Effect.Effect<A, E, R | Scope.Scope>) as Effect.Effect<A, E, R>;
   if (ambient !== null) {
     return ambient.runFork(scoped as Effect.Effect<A, E, never>) as Fiber.Fiber<A, E>;
   }
@@ -572,9 +583,17 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
     const [platform, setPlatform] = createSignal<View.PlatformService | undefined>(undefined);
     const [diagnosticsReporter, setDiagnosticsReporter] = createSignal<DiagnosticsReporterService | undefined>(undefined);
 
+    // The instance's own owner: `withLayer` publishes the services it builds
+    // here, and the view evaluates under an owner that carries this owner's
+    // context so descendants created by the view inherit it.
+    const componentOwner = getOwner();
+    const setup = withSetupOwner(
+      componentOwner,
+      () => runComponentSetup(out, internal, props),
+    );
     const fiber = runForkWithAmbient(
       Effect.all({
-        bindings: runComponentSetup(out, internal, props),
+        bindings: setup,
         platform: Effect.serviceOption(View.PlatformTag),
         diagnostics: Effect.serviceOption(DiagnosticsReporterTag),
       }).pipe(
@@ -612,14 +631,21 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
         return internal.loading?.() ?? null;
       }
 
-      if (internal.view === undefined) {
-        const renderProp = (props as RenderPropChildren<Bindings>).children;
-        return typeof renderProp === "function"
-          ? renderViewResult(out, renderProp(ready), ready, platform(), diagnosticsReporter())
-          : null;
-      }
-      const result = internal.view(props, ready);
-      return renderViewResult(out, result, ready, platform(), diagnosticsReporter());
+      const currentPlatform = platform();
+      const currentReporter = diagnosticsReporter();
+      return runInComponentViewOwner(componentOwner, () => {
+        if (
+          internal.view === undefined
+          && typeof (props as RenderPropChildren<Bindings>).children !== "function"
+        ) {
+          return null;
+        }
+        // DQ-050: the same committed-view path as `renderEffect`, so the
+        // view renders against this instance's slot handles (the ones
+        // `bindings.slots` carries), not the shared define-time handles.
+        const result = invokeCommittedView(internal, props, ready);
+        return renderViewResult(out, result, ready, currentPlatform, currentReporter);
+      });
     };
   }) as Component<Props, Req, E, Bindings, SlotContract>;
 
@@ -656,6 +682,39 @@ function internals<Props, Req, E, Bindings, SlotContract>(
   return component;
 }
 
+/**
+ * The owner of the component instance whose setup effect is being
+ * constructed (set synchronously by `toComponent`); `null` for direct
+ * `setupEffect`/`renderEffect` calls, which have no instance owner.
+ */
+let activeSetupOwner: Owner | null = null;
+
+function withSetupOwner<A>(owner: Owner | null, f: () => A): A {
+  const previous = activeSetupOwner;
+  activeSetupOwner = owner;
+  try {
+    return f();
+  } finally {
+    activeSetupOwner = previous;
+  }
+}
+
+/**
+ * Evaluate a component view under a fresh child of the CURRENT owner (so the
+ * view's children keep the evaluating computation's lifetime) that also
+ * carries the instance owner's context entries — its component scope and any
+ * `withLayer` services. Views are evaluated lazily at the insertion site, not
+ * under the instance owner, so without this descendants would never see them.
+ */
+function runInComponentViewOwner<A>(componentOwner: Owner | null, f: () => A): A {
+  const entries = componentOwner === null ? undefined : contextMap.get(componentOwner);
+  const current = getOwner();
+  if (entries === undefined || entries.size === 0 || current === null) return f();
+  const viewOwner = new Owner(current);
+  contextMap.set(viewOwner, new Map(entries));
+  return runWithOwner(viewOwner, f);
+}
+
 function provideLayerToSetup<Props, Req, E, Bindings, SlotContract, ROut, E2, RIn>(
   component: Component<Props, Req, E, Bindings, SlotContract>,
   layer: Layer.Layer<ROut, E2, RIn>,
@@ -663,7 +722,33 @@ function provideLayerToSetup<Props, Req, E, Bindings, SlotContract, ROut, E2, RI
   const i = internals(component);
   return toComponentLike(component, {
     ...i,
-    setup: (props) => i.setup(props).pipe(Effect.provide(layer as any)) as any,
+    setup: (props) => {
+      const owner = activeSetupOwner;
+      const inner = i.setup(props);
+      // Build the layer into the COMPONENT's scope, not a scope that closes
+      // when setup completes: scoped resources live as long as the mounted
+      // instance. The built services are published on the instance owner so
+      // descendant components' setup can use them too.
+      return Effect.flatMap(Effect.serviceOption(Scope.Scope), (maybeScope) => {
+        let scope: Scope.Scope | undefined = maybeScope._tag === "Some" ? maybeScope.value : undefined;
+        if (scope === undefined && owner !== null) {
+          const owned = Scope.makeUnsafe();
+          owner.addCleanup(() => closeComponentScope(owned));
+          scope = owned;
+        }
+        if (scope === undefined) return inner.pipe(Effect.provide(layer as any));
+        return Layer.buildWithScope(layer as Layer.Layer<ROut, E2, RIn>, scope).pipe(
+          Effect.tap((context) =>
+            Effect.sync(() => {
+              if (owner !== null) {
+                publishComponentServices(owner, context as Context.Context<never>);
+              }
+            })
+          ),
+          Effect.flatMap((context) => Effect.provideContext(inner, context)),
+        );
+      }) as any;
+    },
   }) as Component<Props, Exclude<Req, ROut> | RIn, E | E2, Bindings, SlotContract>;
 }
 
