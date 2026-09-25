@@ -1,7 +1,9 @@
 # Agent-Native Capabilities From Existing Affe Primitives
 
 Date: 2026-07-30
-Status: design exploration / gap analysis. No implementation scheduled.
+Status: design exploration / gap analysis, since implemented as AN-1–AN-5
+(see `docs/AGENT_SURFACE_GUIDE.md` for the shipped surface). Where this note
+and the guide disagree, the guide describes the code.
 Reference: https://www.agent-native.com/docs (actions, generative-ui, mcp-protocol pages reviewed 2026-07-30).
 
 ## 0. Thesis
@@ -77,6 +79,11 @@ Properties this buys, all statically:
   without providing `CallerContext`, `Authorizer`, `Approval`, `Reactivity`,
   etc. Their `authorize`/`needsApproval` are runtime flags; ours are unmet
   requirements — a compile error, not a 3am incident.
+  *As built:* `CatalogRequirements` was not implemented. Governance services
+  are optional Layers; a missing `Approval` for an entry that declares one, or
+  a missing `AuditLog` on an audited catalog, fails closed at call time with
+  `GovernanceUnsatisfiedError` (and `makeDispatcher` checks approval at
+  construction). A missing `Authorizer` permits every caller.
 - **Errors are typed on the wire.** TaggedError schemas serialize through the
   existing Serialization/result-wire layer, so an agent tool call failing
   returns a discriminated error, not a string.

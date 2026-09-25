@@ -94,7 +94,7 @@ Every refusal is a typed tagged error. The full set (audited against
 | `AgentArgsDecodeError` | The arg list failed the declared tuple; the handler never ran. |
 | `AgentErrorEncodeError` | The tool failed with an undeclared error (never forwarded raw), or produced a result its success schema rejects. |
 | `AgentBuildIdMissingError` | The request carried no `buildId`, so drift cannot be checked. |
-| `GovernanceUnsatisfiedError` | `makeDispatcher` found a declared approval requirement the supplied layer cannot satisfy (`DQ-082` — at CONSTRUCTION, never a call-time defect). |
+| `GovernanceUnsatisfiedError` | A governance service the call needs is missing. `makeDispatcher` reports a declared approval requirement at CONSTRUCTION (`DQ-082`); plain `dispatch` refuses the call with the same error when an entry declares `access.approval` and no `Approval` is provided, or when an `audited` catalog has no `AuditLog` for a mutation. `missing` names the service. |
 | `ApprovalDeniedError` | The human (or the approval store) declined, or a pending approval was denied on store close. |
 | `AuthorizationDeniedError` | The authorizer refused the caller. |
 | `ApprovalNotFoundError` | `ApprovalStore.resolve` named an unknown pending id. |
@@ -117,11 +117,18 @@ Provided per surface as ordinary Layers:
   catalogs. **Write-ahead, refuse by default (`DQ-083`)**: the sink is asked
   BEFORE the action runs; if it fails under the default policy the action
   never runs and the refusal record is itself written. `audited(catalog,
-  { onFailure: "proceed" })` is the explicit opt-out. Denials are audited
-  too, with `outcome: "denied"`.
+  { onFailure: "proceed" })` is the explicit opt-out. A missing `AuditLog`
+  is treated like a failed write: the mutation is refused with
+  `GovernanceUnsatisfiedError` unless the catalog opted out. Denials are
+  audited too, with `outcome: "denied"`.
 - **`Agent.makeDispatcher(catalog, layer)` (`DQ-082`)** — checks governance
   at construction: an entry declaring `access.approval` over a stack with no
-  `Approval` fails with the typed `GovernanceUnsatisfiedError`.
+  `Approval` fails with the typed `GovernanceUnsatisfiedError`. Plain
+  `dispatch` applies the same rule per call, so a declared approval never
+  runs unapproved.
+- **`Authorizer`** is optional: with none provided, every caller is
+  permitted. Provide one on any surface that is reachable by untrusted
+  callers.
 
 ### ApprovalStore (`DQ-095`)
 
@@ -260,8 +267,10 @@ Derived-audited against the `ViewSpecDiagnosticCode` union; every code is an
   declared secrets are structurally scrubbed from every record (`DQ-083`,
   `DQ-085`).
 - Pending approvals deny on restart — no silent drops, no hangs (`DQ-095`).
-- Exposure is per-surface enforcement (`access:` flags; MCP refuses hidden
-  tools by name); kit suggestions cannot carry exposure (`DQ-097`).
+- Exposure is per-surface enforcement: MCP only reaches `access.agent`
+  entries and refuses hidden tools by name; `singleFlightHandler` only
+  reaches `access.http` entries; in-process `dispatch` reaches every entry.
+  Kit suggestions cannot carry exposure (`DQ-097`).
 - Markup is unrepresentable in agent-emitted UI (`DQ-090`); `SafeHtml` is
   the only markup channel anywhere, and it fails closed unbranded.
 - The single-flight envelope is versioned (`singleFlightWireVersion`) and

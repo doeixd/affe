@@ -800,6 +800,15 @@ function scrubArgs(entry: CatalogEntry, args: ReadonlyArray<unknown>): unknown {
  * (`DQ-083` — `runFail`-observable, typed, never a defect).
  */
 export function dispatch(base: Catalog) {
+  return dispatchOn(base, undefined);
+}
+
+/**
+ * The one dispatch pipeline. `surface` names the transport whose `access`
+ * flag must admit the entry; `undefined` is the in-process path, which every
+ * entry admits.
+ */
+function dispatchOn(base: Catalog, surface: "http" | undefined) {
   return (request: DispatchRequest): Effect.Effect<DispatchResponse, unknown> =>
     Effect.gen(function* () {
       // DQ-086: authorization OUTERMOST — before the tool is even looked up,
@@ -820,6 +829,16 @@ export function dispatch(base: Catalog) {
           new AgentToolNotFoundError({
             tool: request.tool,
             message: `Unknown tool "${request.tool}".`,
+          }),
+        );
+      }
+      // Exposure is per-surface: an entry reaches HTTP only when it declares
+      // `access.http: true`, as MCP requires `access.agent: true`.
+      if (surface === "http" && entry.access?.http !== true) {
+        return failure(
+          new AgentToolNotFoundError({
+            tool: request.tool,
+            message: `Tool "${request.tool}" is not exposed over HTTP (access.http).`,
           }),
         );
       }
@@ -875,6 +894,19 @@ export function dispatch(base: Catalog) {
 
       // Approve (after drift: no human is asked about a stale call).
       const maybeApproval = yield* Effect.serviceOption(Approval);
+      // A declared approval requirement never runs unapproved: with no
+      // Approval service it fails closed, as makeDispatcher does at
+      // construction (DQ-082).
+      if (maybeApproval._tag === "None" && entry.access?.approval !== undefined) {
+        const error = new GovernanceUnsatisfiedError({
+          tool: request.tool,
+          missing: "Approval",
+          message:
+            `Catalog entry "${request.tool}" declares approval "${entry.access.approval}" but no Approval service is provided.`,
+        });
+        yield* auditDenial(base, request, error);
+        return failure(error);
+      }
       if (maybeApproval._tag === "Some") {
         const approval = yield* Effect.exit(
           maybeApproval.value.require(`Approve dispatch of "${request.tool}"`),
@@ -1003,7 +1035,17 @@ function auditWriteAhead(
 ): Effect.Effect<unknown | undefined> {
   return Effect.gen(function* () {
     const sink = yield* Effect.serviceOption(AuditLog);
-    if (sink._tag === "None") return undefined;
+    if (sink._tag === "None") {
+      // No sink is the same as a failed write: refuse unless the catalog
+      // opted into `onFailure: "proceed"` (DQ-083).
+      if (base.audit?.onFailure === "proceed") return undefined;
+      return new GovernanceUnsatisfiedError({
+        tool: request.tool,
+        missing: "AuditLog",
+        message:
+          `Catalog is audited but no AuditLog service is provided; "${request.tool}" was refused.`,
+      });
+    }
     const caller = callerOf((yield* Effect.serviceOption(CallerContext)) as never);
     const record: AuditRecord = {
       tool: request.tool,
@@ -1030,11 +1072,10 @@ function auditWriteAhead(
 
 /**
  * The single-flight entry point is the SAME implementation (§3: one dispatch
- * path); the alias exists so the router adapter and the agent endpoint are
- * visibly the same function.
+ * path), restricted to entries that declare `access.http: true`.
  */
 export function singleFlightHandler(base: Catalog) {
-  return dispatch(base);
+  return dispatchOn(base, "http");
 }
 
 // ─── makeDispatcher (DQ-082) ─────────────────────────────────────────────────

@@ -942,4 +942,109 @@ describe("AN-1 governance", () => {
     const missing = await runFail(store.resolve("a999", "approved"));
     expect(tagOf(missing)).toBe("ApprovalNotFoundError");
   });
+
+  it("plain dispatch refuses an entry that declares approval when no Approval service is provided", async () => {
+    // makeDispatcher checks this at construction; plain dispatch used to skip
+    // the approval step entirely and run the action.
+    const missing = makeMutatingCatalog();
+    const response = await run(
+      Agent.dispatch(missing.catalog)({ tool: "deleteList", args: ["inbox"], buildId: BUILD }).pipe(
+        Effect.orDie,
+      ),
+    );
+    const error = refusalOf(response);
+    expect(tagOf(error)).toBe("GovernanceUnsatisfiedError");
+    expect(allStrings(error)).toContain("Approval");
+    expect(missing.calls).toEqual([]);
+
+    // NEGATIVE CONTROL: with Approval provided, the same call runs.
+    const approved = makeMutatingCatalog();
+    const ok = await run(
+      Agent.dispatch(approved.catalog)({ tool: "deleteList", args: ["inbox"], buildId: BUILD }).pipe(
+        Effect.provide(Layer.succeed(Agent.Approval, { require: () => Effect.void })),
+        Effect.orDie,
+      ),
+    );
+    expect(ok.ok).toBe(true);
+    expect(approved.calls).toEqual(["inbox"]);
+  });
+
+  it("an audited catalog refuses a mutation when no AuditLog is provided, unless it opted to proceed", async () => {
+    const calls: Array<string> = [];
+    const Rename = Portable.code({
+      id: "list.rename",
+      buildId: BUILD,
+      captures: Schema.Struct({}),
+      run: (_c, name: string) => Effect.sync(() => void calls.push(name)),
+    });
+    const entries = {
+      rename: Agent.exposeMutation(Rename, {
+        description: "Rename a list",
+        args: Schema.Tuple([Schema.String]),
+        success: Schema.Void,
+        access: { agent: true },
+      }),
+    };
+    const request = { tool: "rename", args: ["groceries"], buildId: BUILD };
+
+    // Refuse is the default: no sink is treated like a failed write.
+    const refused = await runFail(Agent.dispatch(Agent.audited(Agent.catalog(entries)))(request));
+    expect(tagOf(refused)).toBe("GovernanceUnsatisfiedError");
+    expect(allStrings(refused)).toContain("AuditLog");
+    expect(calls).toEqual([]);
+
+    // The explicit opt-out still runs.
+    const proceeded = await run(
+      Agent.dispatch(Agent.audited(Agent.catalog(entries), { onFailure: "proceed" }))(request).pipe(
+        Effect.orDie,
+      ),
+    );
+    expect(proceeded.ok).toBe(true);
+    expect(calls).toEqual(["groceries"]);
+  });
+
+  it("the HTTP single-flight handler only reaches entries that declare access.http", async () => {
+    const calls: Array<string> = [];
+    const code = (id: string) =>
+      Portable.code({
+        id,
+        buildId: BUILD,
+        captures: Schema.Struct({}),
+        run: (_c, value: string) => Effect.sync(() => {
+          calls.push(`${id}:${value}`);
+          return value;
+        }),
+      });
+    const c = Agent.catalog({
+      agentOnly: Agent.expose(code("agent.only"), {
+        description: "Agent-only tool",
+        args: Schema.Tuple([Schema.String]),
+        success: Schema.String,
+        access: { agent: true },
+      }),
+      overHttp: Agent.expose(code("over.http"), {
+        description: "HTTP tool",
+        args: Schema.Tuple([Schema.String]),
+        success: Schema.String,
+        access: { http: true },
+      }),
+    });
+
+    const hidden = await run(
+      Agent.singleFlightHandler(c)({ tool: "agentOnly", args: ["x"], buildId: BUILD }).pipe(Effect.orDie),
+    );
+    expect(tagOf(refusalOf(hidden))).toBe("AgentToolNotFoundError");
+    expect(calls).toEqual([]);
+
+    const exposed = await run(
+      Agent.singleFlightHandler(c)({ tool: "overHttp", args: ["y"], buildId: BUILD }).pipe(Effect.orDie),
+    );
+    expect(exposed.ok).toBe(true);
+    // In-process dispatch is not a surface: it still reaches every entry.
+    const inProcess = await run(
+      Agent.dispatch(c)({ tool: "agentOnly", args: ["z"], buildId: BUILD }).pipe(Effect.orDie),
+    );
+    expect(inProcess.ok).toBe(true);
+    expect(calls).toEqual(["over.http:y", "agent.only:z"]);
+  });
 });

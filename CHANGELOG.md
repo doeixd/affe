@@ -2,6 +2,21 @@
 
 ## Unreleased (Redesign Track)
 
+### Agent governance fails closed
+
+- **Breaking:** plain `Agent.dispatch` refuses an entry that declares
+  `access.approval` when no `Approval` service is provided, with
+  `GovernanceUnsatisfiedError` (`missing: "Approval"`). It used to skip the
+  approval step and run the action.
+- **Breaking:** an `Agent.audited` catalog refuses a mutation when no
+  `AuditLog` service is provided (`missing: "AuditLog"`), as it already did
+  when the sink failed. `audited(catalog, { onFailure: "proceed" })` opts out.
+- **Breaking:** `Agent.singleFlightHandler` only reaches entries that declare
+  `access.http: true`; others answer `AgentToolNotFoundError`. In-process
+  `Agent.dispatch` still reaches every entry.
+- `effect` is now only a peer (and dev) dependency, pinned to
+  `4.0.0-beta.102`, so an app never installs a second copy.
+
 ### Renamed to Affe (`@doeixd/affe`)
 
 - **Package rename** (docs/RENAME_AFFE.md). `effect-atom-jsx` is now Affe,
