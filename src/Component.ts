@@ -600,10 +600,12 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
     const [platform, setPlatform] = createSignal<View.PlatformService | undefined>(undefined);
     const [diagnosticsReporter, setDiagnosticsReporter] = createSignal<DiagnosticsReporterService | undefined>(undefined);
 
-    // The instance's own owner: `withLayer` publishes the services it builds
-    // here, and the view evaluates under an owner that carries this owner's
-    // context so descendants created by the view inherit it.
-    const componentOwner = getOwner();
+    // The instance's own owner, a child of the caller's: `withLayer`
+    // publishes the services it builds here — not on the caller's owner,
+    // which the instance's siblings share — and the view evaluates under an
+    // owner that carries this owner's context so its descendants inherit it.
+    const callerOwner = getOwner();
+    const componentOwner = callerOwner === null ? null : new Owner(callerOwner);
     const setup = withSetupOwner(
       componentOwner,
       () => runComponentSetup(out, internal, props),
@@ -751,15 +753,33 @@ function withSetupOwner<A>(owner: Owner | null, f: () => A): A {
  * `withLayer` services. Views are evaluated lazily at the insertion site, not
  * under the instance owner, so without this descendants would never see them.
  */
+/**
+ * Every context entry visible from `owner` (nearest wins). Views are often
+ * evaluated under a different owner than the one the component was called
+ * under, so they carry the call site's whole context, not just the entries
+ * set directly on the instance.
+ */
+function effectiveContext(owner: Owner | null): Map<symbol, unknown> {
+  const entries = new Map<symbol, unknown>();
+  for (let current = owner; current !== null; current = current.parent) {
+    const map = contextMap.get(current);
+    if (map === undefined) continue;
+    for (const [key, value] of map) {
+      if (!entries.has(key)) entries.set(key, value);
+    }
+  }
+  return entries;
+}
+
 function runInComponentViewOwner<A>(
   componentOwner: Owner | null,
   instanceScope: Scope.Closeable | null,
   f: () => A,
 ): A {
-  const entries = componentOwner === null ? undefined : contextMap.get(componentOwner);
+  const entries = effectiveContext(componentOwner);
   const current = getOwner();
   if (current === null) return f();
-  if ((entries === undefined || entries.size === 0) && instanceScope === null) return f();
+  if (entries.size === 0 && instanceScope === null) return f();
   const viewOwner = new Owner(current);
   const viewEntries = new Map(entries);
   if (instanceScope !== null) viewEntries.set(ComponentScopeContext.id, instanceScope);
