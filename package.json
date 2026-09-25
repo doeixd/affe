@@ -10,9 +10,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "af-ui": "./dist/cli.js",
-    "af-ui-doctor": "./dist/cli.js",
-    "create-af-ui": "./scripts/create-af-ui.mjs"
+    "affe": "./dist/cli.js",
+    "affe-doctor": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -203,6 +202,10 @@
       "import": "./dist/compiler/resume-extract-vite.js",
       "types": "./dist/compiler/resume-extract-vite.d.ts"
     },
+    "./vite": {
+      "import": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
+    },
     "./package.json": {
       "default": "./package.json"
     }
@@ -213,7 +216,6 @@
     "!src/__tests__",
     "!src/__bench__",
     "!src/type-tests",
-    "scripts/create-af-ui.mjs",
     "README.md",
     "LICENSE",
     "llms.txt"
@@ -299,6 +301,24 @@
     "vitest": "^5.0.2"
   },
   "peerDependencies": {
-    "effect": "4.0.0-rc.117"
+    "effect": "4.0.0-rc.117",
+    "vite": ">=6",
+    "@babel/core": "^7.20.0",
+    "@babel/preset-typescript": "^7.20.0",
+    "babel-plugin-jsx-dom-expressions": ">=0.39.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "@babel/core": {
+      "optional": true
+    },
+    "@babel/preset-typescript": {
+      "optional": true
+    },
+    "babel-plugin-jsx-dom-expressions": {
+      "optional": true
+    }
   }
 }

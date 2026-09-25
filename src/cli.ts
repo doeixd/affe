@@ -13,8 +13,8 @@ interface DoctorCliOptions {
 function usage(): string {
   return [
     "Usage:",
-    "  af-ui doctor <module> [--export name] [--json] [--fail-on-warnings]",
-    "  af-ui-doctor <module> [--export name] [--json] [--fail-on-warnings]",
+    "  affe doctor <module> [--export name] [--json] [--fail-on-warnings]",
+    "  affe-doctor <module> [--export name] [--json] [--fail-on-warnings]",
     "",
     "The module may export route trees, server route arrays, diagnostics arrays,",
     "or objects with a diagnostics array.",

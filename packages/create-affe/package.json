@@ -1,0 +1,23 @@
+{
+  "name": "@doeixd/create-affe",
+  "version": "0.6.0",
+  "description": "Create an Affe app: Vite, TypeScript and a working component in one command (npm create @doeixd/affe).",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "create-affe": "./index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/doeixd/affe.git",
+    "directory": "packages/create-affe"
+  },
+  "keywords": ["affe", "effect", "create", "scaffold", "vite"]
+}

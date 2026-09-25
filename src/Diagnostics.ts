@@ -142,7 +142,7 @@ export function report(diagnostics: readonly Diagnostic[]): Effect.Effect<readon
   });
 }
 
-/** Summary produced by `doctor` and the `af-ui doctor` CLI. */
+/** Summary produced by `doctor` and the `affe doctor` CLI. */
 export interface DoctorReport {
   readonly diagnostics: readonly Diagnostic[];
   readonly ok: boolean;
