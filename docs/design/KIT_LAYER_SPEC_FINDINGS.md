@@ -2,8 +2,8 @@
 
 Date: 2026-07-30
 Source: writing and then auditing `future/components/*.spec.ts` (54 specs,
-19 green / 35 red) against `docs/COMPONENT_KIT_PLAN.md`, the Affe contract,
-`docs/kit-research/`, and the real source.
+19 green / 35 red) against `docs/design/COMPONENT_KIT_PLAN.md`, the Affe contract,
+`docs/design/kit-research/`, and the real source.
 
 Status: findings record. Decisions ratified from this live in
 [`COMPONENT_KIT_PLAN.md`](COMPONENT_KIT_PLAN.md) (kit phases) and

@@ -2,7 +2,7 @@
 
 Date: 2026-07-30
 Status: **researched — K3 entry gate satisfied (Tooltip)**
-Template: KR 9-section widget template (`docs/COMPONENT_KIT_PLAN.md`, KR phase),
+Template: KR 9-section widget template (`docs/design/COMPONENT_KIT_PLAN.md`, KR phase),
 following `widgets/combobox.md` as the exemplar.
 Downstream: gates K3's Tooltip; shares its floating-layer floor with
 `widgets/popover.md` (read together — `popover`/anchor-positioning/
@@ -19,8 +19,8 @@ Tooltip/`TooltipProvider`, react-aria `Tooltip`/`useTooltipTrigger`/
 `@floating-ui/dom` positioning, `@stylextras/ui` popover/anchor notes, CSS-Tags
 rung-zero contract. Local: `src/A11y.ts` `TooltipSlots`/`Tooltip` pattern
 (L144–149, catalog L197 `tier:"stateless"`), `src/Element.ts` capability lattice,
-`docs/kit-research/behaviors/{hover,anchor-position,dismissable-layer,
-live-announce}.md`, `docs/kit-research/widgets/popover.md` (shared floor).
+`docs/design/kit-research/behaviors/{hover,anchor-position,dismissable-layer,
+live-announce}.md`, `docs/design/kit-research/widgets/popover.md` (shared floor).
 
 Scope decision up front: **Tooltip is a describe-only, non-interactive overlay
 and nothing else.** The moment content must be hovered into, focused, or

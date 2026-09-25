@@ -1,7 +1,7 @@
 /**
  * Roving tabindex — one tab stop; arrows move among collection items.
  *
- * @see docs/kit-research/behaviors/roving-tabindex.md
+ * @see docs/design/kit-research/behaviors/roving-tabindex.md
  */
 import { Effect, Schema } from "effect";
 import * as Atom from "../Atom.js";

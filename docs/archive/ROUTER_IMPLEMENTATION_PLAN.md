@@ -226,7 +226,7 @@ Acceptance:
 Files:
 - `docs/API.md`
 - `README.md`
-- `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
+- `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
 - `CHANGELOG.md`
 - `examples/router-basic/*` (new)
 - `examples/router-typed-links/*` (new)

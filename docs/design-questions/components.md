@@ -1,8 +1,8 @@
 # Components lane — triaged design questions (`DQ-050`–`DQ-079`)
 
 Slots, views, styles, behaviors, kit. Triaged 2026-07-30 from
-`docs/KIT_LAYER_SPEC_FINDINGS.md` §2/§2.14/§4, `docs/COMPONENT_KIT_PLAN.md`
-"Open questions" 7–11, `docs/DESIGN_IMPROVEMENT_NOTES.md` items 11–21, and the
+`docs/design/KIT_LAYER_SPEC_FINDINGS.md` §2/§2.14/§4, `docs/design/COMPONENT_KIT_PLAN.md`
+"Open questions" 7–11, `docs/design/DESIGN_IMPROVEMENT_NOTES.md` items 11–21, and the
 `unbuilt(...)` calls in `future/components/*.spec.ts`.
 
 Ordered by severity. `§1` defects from the findings file are **not** duplicated
@@ -57,7 +57,7 @@ still resolves. The decision and its rejected alternatives live in the plan.
 ## DQ-056 — What subscribes to a binding-conditional style, and at what granularity does it restyle?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` (findings §5 sequencing step 5)
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` (findings §5 sequencing step 5)
 - **Raised:** 2026-07-30, from findings §1.4 — the defect is clear, the design is not
 
 **What I was doing.** Separating the defect ("`whenBinding` is not reactive")
@@ -128,7 +128,7 @@ resumability lane for dormancy semantics, findings §1.4.
 > **RATIFIED 2026-08-12** — option 1 per the status update below: last-wins truth types (`MergeAll` over a variadic tuple), `behavior:provides-override` diagnostic via the DQ-058 reporter channel, deps stay intersection, pipe already landed. Decision row in the Decided table; implementation is the K0b compose-types slice.
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` K0b
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` K0b
 - **Raised:** 2026-07-30, from findings §2.10 and §4
 
 **What I was doing.** Checking `Behavior.compose` against the plan's REPLACE
@@ -213,7 +213,7 @@ landed work; a firm recommendation for the rest.**
 ## DQ-058 — Is double-attach a type error, a runtime diagnostic, or legal?
 
 - **Severity:** deferrable — **RESOLVED (verified 2026-08-12): option 1 is implemented and tested.** `Component.withBehavior` records behaviour identity + selected elements per instance (`recordBehaviorAttachment`, `src/Component.ts`) and a repeat attach of the same behaviour to the same elements emits `component:duplicate-attachment` through the opt-in diagnostics reporter — reported, never de-duplicated. Pinned by `src/__tests__/lifecycle-disposal.test.ts` (fires on repeat, silent when clean). The row moved to the Decided table.
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` "Open questions" 10
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` "Open questions" 10
 - **Raised:** 2026-07-30, from findings §2.12
 - **Blocks specs:** `future/components/lifecycle-disposal.spec.ts:243`
   (`unbuilt("double-attach detection", …)` — should be re-pointed at `DQ-058`)
@@ -435,7 +435,7 @@ defect, already recorded in DIN-18, and worth doing regardless of this decision.
 > 2026-07-30 ratification; row moved to the Decided table.
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` K1 (the `mergeRecipes` *signature* was ratified 2026-07-30; widening was not)
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` K1 (the `mergeRecipes` *signature* was ratified 2026-07-30; widening was not)
 - **Raised:** 2026-07-30, triaging the `unbuilt` in `recipe-merge.spec.ts`
 - **Blocks specs:** `future/components/recipe-merge.spec.ts:180`
   (`unbuilt("recipe slot widening", …)` — should be re-pointed at `DQ-062`)
@@ -487,7 +487,7 @@ this cannot be type-tested by a consumer today), findings §2.1.
 ## DQ-063 — CSS-Tags: absorb as `@doeixd/affe-css` or depend on it externally?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` "Open questions" 8 (carried from rung zero)
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` "Open questions" 8 (carried from rung zero)
 - **Raised:** 2026-07-30, triaging the `unbuilt` in `recipe-merge.spec.ts`
 - **Blocks specs:** `future/components/recipe-merge.spec.ts:284`
   (`unbuilt("CSS-Tags foundation stylesheet", …)` — re-point at `DQ-063`)
@@ -533,7 +533,7 @@ trap.
 ## DQ-064 — How does static CSS extraction survive a `Style.compose` chain spanning two packages?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` "Open questions" 9
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` "Open questions" 9
 - **Raised:** 2026-07-30, triaging the `unbuilt` in `recipe-merge.spec.ts`
 - **Blocks specs:** `future/components/recipe-merge.spec.ts:277`
   (`unbuilt("static style extraction pass", …)` — re-point at `DQ-064`)
@@ -587,7 +587,7 @@ OQ-9.
 > **RATIFIED 2026-08-12** — option 1 confirmed and its precondition discharged (all five factories fixed first). `Mixin` proceeds per the plan's K0c design, extracted from the working factory shape; it must collapse the three repetitions listed in the status update and desugar to Schema+Behavior — never a second runtime.
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` "Open questions" 7
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` "Open questions" 7
 - **Raised:** 2026-07-30, triaging the `unbuilt` in `behavior-catalog.spec.ts`
 - **Blocks specs:** `future/components/behavior-catalog.spec.ts:412`
   (`unbuilt("Mixin.create/toBehavior fragment merge", …)` — the plan owns this
@@ -652,7 +652,7 @@ ratification, not a decision.
 ## DQ-066 — Where does interruptible behaviour timing come from?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` K0b
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` K0b
 - **Raised:** 2026-07-30, from findings §4
 
 **What I was doing.** Checking `press`'s click-suppression window against the
@@ -713,7 +713,7 @@ determinism).
 ## DQ-067 — What is `collection`'s invalidation granularity?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` K0b
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` K0b
 - **Raised:** 2026-07-30, from findings §4
 
 **What I was doing.** Reading `collection`, the plan's "most load-bearing
@@ -824,7 +824,7 @@ that is the part that makes existing specs mean something, and it is cheap.
 ## DQ-069 — Batch: three closed-union / exhaustiveness tightenings
 
 - **Severity:** cosmetic
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` §4-derived items
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` §4-derived items
 - **Raised:** 2026-07-30, batching findings §4's small typing items
 
 **What I was doing.** Triaging the small items so they are not twelve entries.
@@ -977,7 +977,7 @@ questions.
 > **RATIFIED 2026-08-12** — option 1 (the provisional pick): `ReducedMotion` Context service + `PresenceOptions` Schema; `isPresent`/`phase` bindings; `root` listener.
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` K0b mandated coverage items 6 and 9
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` K0b mandated coverage items 6 and 9
 - **Raised:** 2026-08-12, triaging the last red in `future/components/presence.spec.ts`
 - **Blocks specs:** `future/components/presence.spec.ts` "catalog packaging"
   (`unbuilt("behaviors/presence as a Schema-option catalog behavior…", "K0b")`)
@@ -1033,7 +1033,7 @@ provision. Ratifying option 1 means: `ReducedMotion` service with a
 > **RATIFIED 2026-08-12** — option 1 (the provisional pick): one `announce(message, politeness?)` method; timeout policy on the Layer maker.
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` K0b mandated coverage item 5
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` K0b mandated coverage item 5
 - **Raised:** 2026-08-12, researching the `unbuilt` in `services-and-determinism.spec.ts`
 - **Blocks specs:** `future/components/services-and-determinism.spec.ts`
   (`unbuilt("behaviors/live-announce: the LiveAnnouncer service…", "K0b")`)
@@ -1067,7 +1067,7 @@ house rule, `live-announce.md`.
 
 - **Status:** decided and implemented (2026-09-25), option 2; see Resolution below.
 - **Severity:** blocking (for any release that advertises slot-attached styles and behaviors)
-- **Owning plan:** `docs/COMPONENT_KIT_PLAN.md` (slot contracts); `docs/archive/AF_UI_CONTRACT.md`
+- **Owning plan:** `docs/design/COMPONENT_KIT_PLAN.md` (slot contracts); `docs/archive/AF_UI_CONTRACT.md`
 - **Raised:** 2026-09-25, during the pre-release audit
 
 **What I was doing.** Verifying end to end that `Style.attachToSlots` and

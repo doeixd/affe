@@ -15,7 +15,7 @@ import * as formControlModule from "../behaviors/form-control.js";
  * K1 / K4 — the no-fork guarantee, written as the "hostile customization"
  * suite the plan demands.
  *
- * Owning doc: `docs/COMPONENT_KIT_PLAN.md`, "Gap 3 — Distribution: one package,
+ * Owning doc: `docs/design/COMPONENT_KIT_PLAN.md`, "Gap 3 — Distribution: one package,
  * and the no-fork guarantee": *if a reasonable customization can only be
  * achieved by forking widget source, that is a missing external axis — a kit
  * API bug.* Each widget ships its layers (anatomy, machine, behavior, recipe,

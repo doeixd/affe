@@ -20,7 +20,7 @@
  * state those constraints so an M11.5 change that breaks either one fails here
  * rather than silently invalidating the decision.
  *
- * Owner: docs/ROUTER_CONSOLIDATION_PLAN.md § R6, closing finding F7 (`DQ-034`).
+ * Owner: docs/design/ROUTER_CONSOLIDATION_PLAN.md § R6, closing finding F7 (`DQ-034`).
  */
 import { describe, expect, it } from "vitest";
 import { Effect } from "effect";

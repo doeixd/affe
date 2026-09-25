@@ -3,7 +3,7 @@
  * Promoted from `future/resumability/hardening.spec.ts` (all green
  * 2026-08-12), retyped.
  *
- * Owning plan: `docs/RESUMABILITY_M8C_PLAN.md` 8c.6.
+ * Owning plan: `docs/design/RESUMABILITY_M8C_PLAN.md` 8c.6.
  *
  * Exit criterion being specified: "every failure is either a typed install
  * error, a named diagnostic, or a documented activation fallback — never a

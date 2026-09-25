@@ -137,7 +137,7 @@ This repository is `@doeixd/affe`, a runtime JSX and Effect-based reactive UI li
 Use these documents first:
 
 - [`docs/archive/AF_UI_CONTRACT.md`](docs/archive/AF_UI_CONTRACT.md) — canonical Affe architecture contract.
-- [`docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`](docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md) — current implementation status and backlog.
+- [`docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`](docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md) — current implementation status and backlog.
 - [`docs/archive/SLOT_CONTRACT_UNIFICATION_PLAN.md`](docs/archive/SLOT_CONTRACT_UNIFICATION_PLAN.md) — current slot unification record; `View.Slots` is the canonical authored slot contract.
 - [`docs/archive/PROPS_BINDINGS_SLOTS.md`](docs/archive/PROPS_BINDINGS_SLOTS.md) — ownership model for caller props, setup bindings, and public slots.
 - [`docs/archive/BINDINGS_ASYNC_COMMIT_BOUNDARY.md`](docs/archive/BINDINGS_ASYNC_COMMIT_BOUNDARY.md) — bindings as the component-level async commit boundary.

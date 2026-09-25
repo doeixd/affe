@@ -15,7 +15,7 @@ import * as liveAnnounceModule from "../behaviors/live-announce.js";
 /**
  * Kit services: swappable wholesale, isolated per subtree, deterministic.
  *
- * Owning docs: `docs/COMPONENT_KIT_PLAN.md` "Services & layers (`R`)" —
+ * Owning docs: `docs/design/COMPONENT_KIT_PLAN.md` "Services & layers (`R`)" —
  * *"Anything two widgets share, and anything a test must control, is a
  * `Context.Service` provided by a `Layer` — never a module global … Provision is
  * per-subtree (`Component.withLayer`), so two themed regions or two isolated
@@ -95,7 +95,7 @@ describe("services swap wholesale in tests", () => {
 
     // …and the whole thing ran with no document at all. This is the concrete
     // content of "no DOM in unit tests required if service-injected"
-    // (`docs/kit-research/behaviors/live-announce.md` §3–9).
+    // (`docs/design/kit-research/behaviors/live-announce.md` §3–9).
     expect(typeof (globalThis as any).document).toBe("undefined");
 
     Effect.runSync(Scope.close(scope, Exit.void));

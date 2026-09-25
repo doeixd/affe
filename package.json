@@ -1,7 +1,7 @@
 {
   "name": "@doeixd/affe",
   "version": "0.6.0",
-  "description": "Effect-native fine-grained reactive JSX runtime with Layer-powered service injection, async atoms, and optimistic actions.",
+  "description": "Effect-native UI: fine-grained atoms, components with typed slot contracts, a schema-first router with single-flight mutations, SSR and resumability.",
   "author": "Patrick G",
   "license": "MIT",
   "sideEffects": false,
@@ -223,14 +223,17 @@
   "keywords": [
     "effect",
     "effect-ts",
-    "signals",
-    "reactivity",
+    "ui",
+    "framework",
     "jsx",
-    "dom-expressions",
+    "signals",
+    "fine-grained",
+    "reactivity",
     "atoms",
-    "todomvc",
-    "typescript",
-    "optimistic-ui"
+    "router",
+    "ssr",
+    "resumability",
+    "typescript"
   ],
   "repository": {
     "type": "git",

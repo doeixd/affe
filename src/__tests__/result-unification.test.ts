@@ -3,7 +3,7 @@
  * Promoted from `future/result/unification.spec.ts` (all green 2026-08-12,
  * after Slices 4–5 deleted the fetch model), retyped.
  *
- * These are `docs/RESULT_UNIFICATION_PLAN.md`'s own acceptance criteria 1, 2
+ * These are `docs/design/RESULT_UNIFICATION_PLAN.md`'s own acceptance criteria 1, 2
  * and 5 written as assertions. Two of them read source text, which normally
  * violates "assert behaviour, not implementation" — but here the ABSENCE of a
  * second model and of a second copy of the mapping IS the deliverable, and no

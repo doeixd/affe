@@ -14,7 +14,7 @@
  * updates optimistically, forks the navigation, and rolls back on failure with
  * the error observable.
  *
- * Owner: docs/ROUTER_CONSOLIDATION_PLAN.md § R4 (`DQ-031`).
+ * Owner: docs/design/ROUTER_CONSOLIDATION_PLAN.md § R4 (`DQ-031`).
  */
 import { describe, expect, it } from "vitest";
 import { Deferred, Effect, Exit, Layer, Schema } from "effect";

@@ -10,7 +10,7 @@
  * no markup-bearing node kind at all — raw HTML is rejected at the schema
  * boundary because it is unrepresentable, not because a validator caught
  * it. The lowering targets json-render v0.20.0 semantics
- * (`docs/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`).
+ * (`docs/design/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md`).
  *
  * Every rejection test carries a NEGATIVE CONTROL, and near-neighbour codes
  * (unknown component vs unknown slot vs unknown node kind; read-only
@@ -446,7 +446,7 @@ describe("AN-5 view-spec IR", () => {
     // `children` explicitly required with `[]` on leaves (models omit it
     // ~1/3 of the time otherwise), and #307 forwards full
     // `{ action, params }` bindings, so params need no side channel.
-    // See docs/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md.
+    // See docs/design/af-ui-json-render/JSON_RENDER_V0.20_UPSTREAM.md.
     const tree = viewTree(
       element("Card", {
         props: { title: "Sprint 3" },

@@ -70,7 +70,7 @@ jobs:
     # Perf thresholds on shared CI runners are noise-prone, so this job tracks
     # the hot-path benchmarks as an uploaded artifact rather than hard-failing
     # on a regression. Promote to a gate once a stable runner + baseline exist
-    # (see docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md, PR3).
+    # (see docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md, PR3).
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4

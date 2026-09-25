@@ -1,5 +1,5 @@
 /**
- * S6 (`docs/PERMISSIVE_PACKAGE_PLAN.md`) — the strict-mode byte-unaffected
+ * S6 (`docs/design/PERMISSIVE_PACKAGE_PLAN.md`) — the strict-mode byte-unaffected
  * proof.
  *
  * The claim being pinned: an app that never opts into the permissive preset

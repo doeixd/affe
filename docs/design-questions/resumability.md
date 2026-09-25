@@ -65,7 +65,7 @@ still resolves. The decision and its rejected alternatives live in the plan.
 ## DQ-013 — What is the fragment handle's observable shape?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11b item 1
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11b item 1
 - **Raised:** 2026-07-30, while writing `future/streaming/server-fragments.spec.ts`
 - **Blocks specs:** `future/streaming/server-fragments.spec.ts` (4 markers, lines
   78, 155, 222, 300) — **4 duplicate `Resume.mountFragment` markers, one question**
@@ -122,7 +122,7 @@ is present, only that if present it reads `true`.
 ## DQ-014 — What is `Resume.fragmentAction`'s signature?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11b item 4
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11b item 4
 - **Raised:** 2026-07-30, while writing `future/streaming/server-fragments.spec.ts`
 - **Blocks specs:** `future/streaming/server-fragments.spec.ts:382`
 
@@ -182,7 +182,7 @@ pairs it with `Resume.mountFragment`.
 ## DQ-015 — How are manifest ids namespaced across installs?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11b item 2
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11b item 2
 - **Raised:** 2026-07-30, while writing `future/streaming/server-fragments.spec.ts`
 - **Blocks specs:** covered by the DQ-013 markers (`server-fragments.spec.ts:155`,
   `:222`)
@@ -236,7 +236,7 @@ marker spelling; the fragment namespacing specs sit behind
 ## DQ-016 — Should a per-binding codec be retained client-side, or is "classified diagnostic + last-good DOM + recovery" the contract?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 9 item 3
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 9 item 3
 - **Raised:** 2026-07-30, while writing `future/resumability/adapter-spi.spec.ts`
 - **Blocks specs:** none — the spec proceeded on a provisional contract
   (`future/resumability/adapter-spi.spec.ts:141-158`)
@@ -304,7 +304,7 @@ comment at `:144-148`. If option 2 is chosen, that assertion changes from
 ## DQ-017 — What is the streaming navigation entry point on `Route`?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11 item 4
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Milestone 11 item 4
 - **Raised:** 2026-07-30, while writing `future/streaming/parallel-loaders.spec.ts`
 - **Blocks specs:** `future/streaming/parallel-loaders.spec.ts` (3 markers, lines
   27, 104, 156) — **3 duplicate markers, one question**
@@ -371,7 +371,7 @@ same loader-forking implementation. Specs promoted to
 ## DQ-018 — What is the exact typed error union for code loading, manifest lookup, capture decode, and build mismatch?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 2
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 2
 - **Raised:** carried forward from the plan; still genuinely open as of 2026-07-30
 
 **What is undecided.** The plan's Open Question 2, verbatim, is still open. The
@@ -416,7 +416,7 @@ than inventing a tag.
 ## DQ-019 — Is build mismatch always a hard failure, or may an adapter request hydration fallback?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 3
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 3
 - **Raised:** carried forward; still open
 
 **What is undecided.** The plan's Open Question 3. Current behavior is hard
@@ -458,7 +458,7 @@ mismatch (option 3) contradicts Architectural Decision 13.
 ## DQ-020 — What explicit render services/options should render-from-bindings accept?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 4
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 4
 - **Raised:** carried forward; still open
 
 **What is undecided.** Open Question 4 verbatim: which services/options
@@ -487,7 +487,7 @@ has to override. Revisit with DQ-011.
 ## DQ-021 — Can `deps` become an optional assertion once SSR read-capture is trusted?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_M8_FINE_GRAINED_DESIGN.md` §Open questions 1
+- **Owning plan:** `docs/design/RESUMABILITY_M8_FINE_GRAINED_DESIGN.md` §Open questions 1
   (with `RESUMABILITY_IMPLEMENTATION_PLAN.md` M10 item 5, `deps.auto`)
 - **Raised:** carried forward; still open
 - **Status update (2026-08-12):** M10 item 5 closed with its other two
@@ -527,7 +527,7 @@ documented as detecting spurious edges, never proving completeness.
 ## DQ-022 — Does `SafeHtml` output need an on-wire sanitizer contract?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_M8_FINE_GRAINED_DESIGN.md` §Open questions 4
+- **Owning plan:** `docs/design/RESUMABILITY_M8_FINE_GRAINED_DESIGN.md` §Open questions 4
 - **Raised:** carried forward; still open
 
 **What is undecided.** Whether `SafeHtml` expression output (design-doc Phase 3)
@@ -559,7 +559,7 @@ this unless a concrete use case forces it.
 ## DQ-023 — `activate` vs `resume` racing one boundary: documented first-wins, or a mode-conflict diagnostic?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §M0-7 Test Audit
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §M0-7 Test Audit
   Findings item 3 (`:1539-1541`), pin result at `:1615-1617`
 - **Raised:** carried forward; still open
 
@@ -600,7 +600,7 @@ failing the loser of a timing race punishes correct code.
 ## DQ-024 — What is the one event-claim policy for marker chains?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §M0-7 Test Audit
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §M0-7 Test Audit
   Findings item 4 (`:1542-1546`), pin results at `:1618-1622`
 - **Raised:** carried forward; still open
 
@@ -650,7 +650,7 @@ principled fallback — but it should be adopted deliberately, not inherited.
 ## DQ-025 — What is the no-instrumentation performance budget?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 8
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 8
 - **Raised:** carried forward; **partially answered**, remainder open
 
 **What is undecided.** Open Question 8 asks for "the first acceptable
@@ -687,7 +687,7 @@ so the remaining scope is unambiguous.
 ## DQ-026 — Which handle kind after state justifies a public restoration constructor?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 10
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 10
 - **Raised:** carried forward; still open
 
 **What is undecided.** Open Question 10 verbatim. State and query handles have
@@ -715,7 +715,7 @@ the 8c.1 retention gates make speculative surface expensive.
 ## DQ-027 — Do advanced APIs also export from the root package after stabilization?
 
 - **Severity:** cosmetic
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 1
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 1
 
 **What is undecided.** Whether the advanced API is exported only from `Resume`
 and `advanced`, or also from the root package after stabilization.
@@ -735,7 +735,7 @@ Deciding it separately is how the two answers end up disagreeing.
 ## DQ-028 — Should repeated descriptors for one code id be dictionary-compressed?
 
 - **Severity:** cosmetic
-- **Owning plan:** `docs/RESUMABILITY_M8_FINE_GRAINED_DESIGN.md` §8 (noted as an
+- **Owning plan:** `docs/design/RESUMABILITY_M8_FINE_GRAINED_DESIGN.md` §8 (noted as an
   open question alongside size attribution and the list fence)
 
 **What is undecided.** Whether the manifest should dictionary-compress repeated
@@ -765,7 +765,7 @@ the measurement as its answer.
 ## DQ-029 — Closeable: three plan Open Questions the shipped code already answers
 
 - **Severity:** cosmetic (bookkeeping; no design work outstanding)
-- **Owning plan:** `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 5, 6, 7
+- **Owning plan:** `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` §Open Questions 5, 6, 7
 
 These are listed as open but are decided elsewhere. Recorded as one closeable
 entry so a ratification pass can strike them the way Open Question 9 was struck.
@@ -824,7 +824,7 @@ are already marked decided and ratified in place; no entry resurrects them.
 > item. Recommendations (1) and (3) are unchanged.
 
 - **Severity:** blocking (M8d cannot start without it) — **resolved**
-- **Owning plan:** `docs/RESUMABILITY_M8C_PLAN.md` §DQ-010 → Milestone 8d
+- **Owning plan:** `docs/design/RESUMABILITY_M8C_PLAN.md` §DQ-010 → Milestone 8d
 - **Raised:** 2026-08-11, after closing the M8.6 keyed-reconciliation
   prerequisite and finding the two remaining structural specs still `unbuilt`
 - **Blocks specs:** `future/resumability/fences.spec.ts` — "[M8.6] resumes a

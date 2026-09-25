@@ -4,7 +4,7 @@
  * Runtime-only (no snapshot of element handles). DOM/order source is the
  * collection handle; metadata (disabled) is held beside it.
  *
- * @see docs/kit-research/behaviors/collection.md
+ * @see docs/design/kit-research/behaviors/collection.md
  */
 import { Effect, Schema } from "effect";
 import * as Atom from "../Atom.js";

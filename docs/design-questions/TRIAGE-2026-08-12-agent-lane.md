@@ -4,7 +4,7 @@ Scope: the 71 red specs across `future/agent/` (57) and `future/security/`
 (14), graded before construction begins. Sources: `AGENT_NATIVE_NOTES.md`
 (§10 ratified DQ-080–090 and declares **"AN-1 is unblocked"**), the
 `DQ-091–098` entries in `platform.md`, the ratified `DQ-096` naming set, the
-`docs/af-ui-json-render/` reference plan, and a per-test inventory of every
+`docs/design/af-ui-json-render/` reference plan, and a per-test inventory of every
 `fromSrc` requirement in the specs.
 
 ## Verdict in one line

@@ -3,9 +3,9 @@
 Scope: the agent-facing catalog (`AGENT_NATIVE_NOTES.md`), result/serialization
 unification, identity families, and genuinely cross-cutting decisions.
 
-Triaged 2026-07-30 from `docs/AGENT_NATIVE_NOTES.md` §8/§9,
-`docs/RESULT_UNIFICATION_PLAN.md`, `docs/DESIGN_IMPROVEMENT_NOTES.md` item 2,
-`docs/af-ui-json-render/`, and the `unbuilt(...)` calls in `future/agent/*` and
+Triaged 2026-07-30 from `docs/design/AGENT_NATIVE_NOTES.md` §8/§9,
+`docs/design/RESULT_UNIFICATION_PLAN.md`, `docs/design/DESIGN_IMPROVEMENT_NOTES.md` item 2,
+`docs/design/af-ui-json-render/`, and the `unbuilt(...)` calls in `future/agent/*` and
 `future/result/*`.
 
 ## Summary
@@ -79,7 +79,7 @@ still resolves. The decision and its rejected alternatives live in
 ## DQ-091 — What validates the single-flight boundary, and do the loader and mutation channels share one projection?
 
 - **Severity:** deferrable (blocking for the Decision 6 follow-up slice)
-- **Owning plan:** `docs/RESULT_UNIFICATION_PLAN.md` Decision 6, Risk 7
+- **Owning plan:** `docs/design/RESULT_UNIFICATION_PLAN.md` Decision 6, Risk 7
 - **Raised:** 2026-07-30, triage
 
 **What I was doing.** Separating the proven defect from the design question
@@ -147,7 +147,7 @@ stays deferrable.
 ## DQ-092 — What must `Idle` mean, so the free `Initial{waiting:false}` slot is not accidentally consumed?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESULT_UNIFICATION_PLAN.md` §2.5
+- **Owning plan:** `docs/design/RESULT_UNIFICATION_PLAN.md` §2.5
 - **Raised:** 2026-07-30, triage
 - **Blocks specs:** `future/result/wire-mapping.spec.ts:259`
   (`unbuilt("Result.idle / Result.isIdle …")`)
@@ -205,7 +205,7 @@ the wire-versioned change Decision 7 explicitly sanctions. §2.5's
 ## DQ-093 — Is `ResultErrorOf`'s `Exclude<E, { defect: string }>` dead once the fetch model is deleted?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/RESULT_UNIFICATION_PLAN.md` Risk 5
+- **Owning plan:** `docs/design/RESULT_UNIFICATION_PLAN.md` Risk 5
 - **Raised:** 2026-07-30, triage
 
 **What I was doing.** Triaging the plan's own named risks for questions rather
@@ -254,8 +254,8 @@ inference (including a defect-carrying core error type) is pinned in
 ## DQ-094 — Resequence the json-render phases, or restate AN-5's dependency?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/AGENT_NATIVE_NOTES.md` §9 item 8 /
-  `docs/af-ui-json-render/gen-ui-implementation-plan.md`
+- **Owning plan:** `docs/design/AGENT_NATIVE_NOTES.md` §9 item 8 /
+  `docs/design/af-ui-json-render/gen-ui-implementation-plan.md`
 - **Raised:** 2026-07-30, triage
 
 **What I was doing.** Checking AN-5's stated dependency against the json-render
@@ -306,7 +306,7 @@ than as AN-5's literal dependency is the accurate framing.
 **Related.** `DQ-090`, `DQ-096`.
 
 **RATIFIED 2026-08-17** (user-delegated via TRIAGE-2026-08-17-ratification.md):
-option 1 executed (§7 item 5 restated; `docs/af-ui-json-render/` demoted to
+option 1 executed (§7 item 5 restated; `docs/design/af-ui-json-render/` demoted to
 reference input) with option 3 as AN-5's build shape — the repo-native slice
 `future/agent/generative-view-spec.spec.ts` pins. The naming DQ-096 deferred
 is closed by the same decision: `src/ViewSpec.ts` (core namespace module) and
@@ -317,7 +317,7 @@ is closed by the same decision: `src/ViewSpec.ts` (core namespace module) and
 ## DQ-095 — Do pending approvals survive a server restart, and is the pending-approval queue itself a standard loader/query?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/AGENT_NATIVE_NOTES.md` §8 open question 3
+- **Owning plan:** `docs/design/AGENT_NATIVE_NOTES.md` §8 open question 3
 - **Raised:** 2026-07-30, triage
 - **Blocks specs:** `future/agent/governance.spec.ts:417`
   (`unbuilt("pending-approval queue as a standard query + approval durability across restart")`)
@@ -373,7 +373,7 @@ swap.
 ## DQ-096 — Ratify (or replace) the provisional module and export names invented while spec-writing
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/AGENT_NATIVE_NOTES.md` §9 item 10
+- **Owning plan:** `docs/design/AGENT_NATIVE_NOTES.md` §9 item 10
 - **Raised:** 2026-07-30, triage
 - **Blocks specs:** all of `future/agent/*.spec.ts` and
   `future/result/identity-families.spec.ts` import from these paths
@@ -445,7 +445,7 @@ and `src/reactivity-push.ts` adopted as-is with their listed exports;
 ## DQ-097 — Do kit widgets ship *suggested* catalog entries, and who owns their exposure defaults?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/AGENT_NATIVE_NOTES.md` §8 open question 2
+- **Owning plan:** `docs/design/AGENT_NATIVE_NOTES.md` §8 open question 2
 - **Raised:** 2026-07-30, triage
 - **Blocks specs:** `future/agent/result-rendering.spec.ts:203`
   (`unbuilt("kit-shipped suggested catalog entries and who owns their exposure defaults")`)
@@ -496,7 +496,7 @@ default was rejected as a hope, not a guarantee.
 ## DQ-098 — Is A2A / `ask-agent` library scope, adapter scope, or userland?
 
 - **Severity:** deferrable
-- **Owning plan:** `docs/AGENT_NATIVE_NOTES.md` §8 open question 5
+- **Owning plan:** `docs/design/AGENT_NATIVE_NOTES.md` §8 open question 5
 - **Raised:** 2026-07-30, triage
 - **Blocks specs:** `future/agent/mcp-projection.spec.ts:214`
   (`unbuilt("A2A / ask-agent bridge surface (in @doeixd/affe-ui-agent or out of scope)")`)

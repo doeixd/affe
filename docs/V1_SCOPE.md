@@ -112,13 +112,13 @@ Everything here is implemented today or is tracked release-blocking work.
 ### Added after ratification (2026-07 to 2026-09)
 
 These lanes landed after this scope was ratified. Each is complete per
-`docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`, with its own guide:
+`docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`, with its own guide:
 
 - **Resumability** (`Resume`, `Portable`, the `extract`/`expr` compiler
   markers and Vite plugin, streaming fragments) — `docs/RESUMABILITY_GUIDE.md`.
 - **Agent surface** (`Agent` catalog and dispatch, `ViewSpec` generative-UI
   IR, reactivity push) — `docs/AGENT_SURFACE_GUIDE.md`.
-- **Component kit** (`src/kit/`, `src/behaviors/`) — `docs/COMPONENT_KIT_PLAN.md`.
+- **Component kit** (`src/kit/`, `src/behaviors/`) — `docs/design/COMPONENT_KIT_PLAN.md`.
 - **Workspace packages** `@doeixd/affe-ui-agent` (MCP adapter),
   `@doeixd/affe-css` (CSS foundation) and `@doeixd/affe-permissive`
   (seroval preset). They are private (unpublished) today, so the core still

@@ -297,4 +297,4 @@ This plan translates `docs/style.md` into a staged, shippable implementation for
 - `npm run typecheck` green.
 - Full test suite green with new style runtime and type-tests.
 - Build + pack dry-run green.
-- `docs/API.md`, `README.md`, `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`, and `CHANGELOG.md` aligned with shipped APIs.
+- `docs/API.md`, `README.md`, `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`, and `CHANGELOG.md` aligned with shipped APIs.

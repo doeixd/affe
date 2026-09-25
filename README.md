@@ -1,5 +1,9 @@
 # Affe
 
+[![npm](https://img.shields.io/npm/v/@doeixd/affe)](https://www.npmjs.com/package/@doeixd/affe)
+[![CI](https://github.com/doeixd/affe/actions/workflows/ci.yml/badge.svg)](https://github.com/doeixd/affe/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Effect-native reactive state and inside-out UI. One algebra from a counter
 atom to a full-stack, schema-validated, single-flight application.
 
@@ -527,11 +531,11 @@ What you don't give up: incremental adoption inside an existing app, and SSR
 - [`docs/TESTING.md`](docs/TESTING.md) — DOM-free test harness, layer swapping
 - [`docs/API.md`](docs/API.md) — API reference
 - [`docs/afui.md`](docs/afui.md) — the full narrative: inside-out model, runtime, routing
-- `docs/RESUMABILITY_GUIDE.md` — resumability: markers, manifests, strict vs permissive
-- `docs/AGENT_SURFACE_GUIDE.md` — the agent catalog, governance services, MCP, ViewSpec
-- `docs/V1_SCOPE.md` — what v1 ships and what is deliberately deferred
-- `examples/` — router golden path, single flight (custom + fetch transport),
-  styled combobox, optimistic counter, SSR hydration
+- [`docs/RESUMABILITY_GUIDE.md`](docs/RESUMABILITY_GUIDE.md) — resumability: markers, manifests, strict vs permissive
+- [`docs/AGENT_SURFACE_GUIDE.md`](docs/AGENT_SURFACE_GUIDE.md) — the agent catalog, governance services, MCP, ViewSpec
+- [`docs/V1_SCOPE.md`](docs/V1_SCOPE.md) — what v1 ships and what is deliberately deferred
+- [`examples/`](examples) — twenty examples: TodoMVC, routing, single flight,
+  styled components, SSR and resumability (`npm run examples` serves them all)
 
 ## Size
 

@@ -1,5 +1,5 @@
 /**
- * S5 (`docs/PERMISSIVE_PACKAGE_PLAN.md`) — the Qwik-parity acceptance run.
+ * S5 (`docs/design/PERMISSIVE_PACKAGE_PLAN.md`) — the Qwik-parity acceptance run.
  *
  * The page was built entirely through the `@doeixd/affe-permissive` preset: the
  * `extract.auto` one-liner handler (captures inferred, no schema at the call

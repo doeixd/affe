@@ -82,7 +82,7 @@ noted:
 - **Docs identity.** "AF-UI" wording migrated to "Affe" outside
   `docs/archive/`; `docs/archive/AF_UI_CONTRACT.md` keeps its filename and
   wording with a rename note. File names such as `docs/afui.md` and
-  `docs/af-ui-json-render/` are unchanged.
+  `docs/design/af-ui-json-render/` are unchanged.
 - **CLIs** (0.6.0): `af-ui` / `af-ui-doctor` became `affe` / `affe-doctor`,
   and the `create-af-ui` stub became the `@doeixd/create-affe` package
   (`npm create @doeixd/affe`), which scaffolds a working Vite project.

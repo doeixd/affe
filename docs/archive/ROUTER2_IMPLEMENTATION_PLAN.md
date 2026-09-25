@@ -232,7 +232,7 @@ Files:
 - `examples/router-loaders/*` (new)
 - `examples/router-streaming/*` (new)
 - `docs/API.md`
-- `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
+- `docs/design/CURRENT_STATUS_IN_REDESIGN_PLAN.md`
 - `CHANGELOG.md`
 
 Work:

@@ -4,10 +4,10 @@
  * Promoted from future/components/lifecycle-disposal.spec.ts (all green
  * 2026-08-12), retyped.
  *
- * Owning docs: `docs/COMPONENT_KIT_PLAN.md` ("Scope is the lifecycle currency
+ * Owning docs: `docs/design/COMPONENT_KIT_PLAN.md` ("Scope is the lifecycle currency
  * of the whole kit" — house rule 4: *every* widget/machine test asserts
  * exact-once disposal and no-op double-dispose),
- * `docs/DESIGN_IMPROVEMENT_NOTES.md` item 3 (attachScoped `Exclude<Req, Scope>`).
+ * `docs/design/DESIGN_IMPROVEMENT_NOTES.md` item 3 (attachScoped `Exclude<Req, Scope>`).
  *
  * These are the negative guarantees the kit sells: nothing survives disposal,
  * every finalizer runs exactly once, and a re-attached (resumed) widget is

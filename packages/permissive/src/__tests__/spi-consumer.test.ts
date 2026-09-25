@@ -1,5 +1,5 @@
 /**
- * S2 (`docs/PERMISSIVE_PACKAGE_PLAN.md`) — the workspace scaffold's two
+ * S2 (`docs/design/PERMISSIVE_PACKAGE_PLAN.md`) — the workspace scaffold's two
  * contracts:
  *
  *  1. this package is a genuine external-style SPI consumer: it resolves the

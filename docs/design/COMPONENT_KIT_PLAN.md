@@ -476,7 +476,7 @@ in `src/behaviors/` owe:
 
 1. **Catalog convention**: each behavior exports `*Options` Schema +
    `function name(config?) => Behavior`; document options + function props
-   in `docs/kit-research/behaviors/`.
+   in `docs/design/kit-research/behaviors/`.
 2. **Pilot load-bearing five** that way (no closed `make` without options
    when knobs exist).
 3. **Type tests**: options decode; compose binding merge; attach to slot
@@ -1324,7 +1324,7 @@ double-dispose is a no-op. Note (2026-07-30) that `Element.Handle.on()`
 does **not** yet honour this — it registers removal on the reactive owner,
 not the ambient Scope, so listeners leak under `attachScoped` and
 `setupEffect`; see the correction in advantage 3 below and
-[`docs/DESIGN_IMPROVEMENT_NOTES.md`](DESIGN_IMPROVEMENT_NOTES.md).
+[`docs/design/DESIGN_IMPROVEMENT_NOTES.md`](DESIGN_IMPROVEMENT_NOTES.md).
 
 **`pipe()` as the assembly language.** Components are pipeable; a kit
 widget's definition *is* its layer diagram, readable top to bottom:
@@ -1398,7 +1398,7 @@ These are the specific mechanisms, not vibes:
    under `Component.setupEffect` there is no owner, and listeners survive
    both `dispose` and `Scope.close`. This is a **requirement with a known
    defect**, not a proven invariant; the library-level fix direction is
-   being recorded in [`docs/DESIGN_IMPROVEMENT_NOTES.md`](DESIGN_IMPROVEMENT_NOTES.md)
+   being recorded in [`docs/design/DESIGN_IMPROVEMENT_NOTES.md`](DESIGN_IMPROVEMENT_NOTES.md)
    and is not duplicated here. The reassuring half is verified sound:
    `Effect.acquireRelease` releases, `forkScoped` fibers are interrupted on
    scope close, double-dispose is a no-op, and `attachScoped`'s
@@ -1649,13 +1649,13 @@ The value lives in different places per source:
   tests** before API freeze. Optional recipe-kind Mixin. See style
   foundation.
 - **KR — Research matrix** (runs parallel with K0/K1). Two tracks under
-  `docs/kit-research/` (see that README):
+  `docs/design/kit-research/` (see that README):
 
-  1. **Behaviors / machines** — `docs/kit-research/behaviors/<name>.md`
+  1. **Behaviors / machines** — `docs/design/kit-research/behaviors/<name>.md`
      using `behaviors/_TEMPLATE.md`. **Required before implementing a
      catalog behavior.** Initial pass (2026-07-29) covers the full T1–T7
      catalog + seeds; load-bearing five are fully decided.
-  2. **Widgets** — `docs/kit-research/widgets/<component>.md` for **every
+  2. **Widgets** — `docs/design/kit-research/widgets/<component>.md` for **every
      component** in the target catalog. Research across Zag.js, Ark UI,
      Radix, Base UI, shadcn/ui, react-aria, @stylextras/ui, CSS-Tags using
      this template:
@@ -1692,7 +1692,7 @@ The value lives in different places per source:
   Research docs are decision records, not surveys — every section ends in
   a choice. This work parallelizes well (one component per agent/session);
   the Combobox research doc is the K2 entry gate and the template's proof.
-  **Gate satisfied (2026-07-29)**: [`docs/kit-research/widgets/combobox.md`](kit-research/widgets/combobox.md)
+  **Gate satisfied (2026-07-29)**: [`docs/design/kit-research/widgets/combobox.md`](kit-research/widgets/combobox.md)
   is researched, so K2 is unblocked and the widget template is proven.
   purpose — it exercises machine + anatomy + keyboard nav + recipes +
   a11y). Headless export + styled default + Chromium keyboard test +
@@ -1718,14 +1718,14 @@ acceptance criteria for the phase named, drawn from the research docs' own
 
 1. **`collection` — currently zero coverage anywhere**, despite this plan
    calling it "the most load-bearing invisible piece". Per
-   [`docs/kit-research/behaviors/collection.md`](kit-research/behaviors/collection.md) §9:
+   [`docs/design/kit-research/behaviors/collection.md`](kit-research/behaviors/collection.md) §9:
    register three items → order matches DOM order; dispose the middle one →
    indices recompact; nested collections stay isolated; unregister runs
    **exact-once** on Scope close; plus an integration test feeding
    `rovingTabindex` / `listNavigation`. This is the single biggest gap in
    the kit today.
 2. **RTL horizontal navigation.** Per
-   [`docs/kit-research/behaviors/roving-tabindex.md`](kit-research/behaviors/roving-tabindex.md) §9:
+   [`docs/design/kit-research/behaviors/roving-tabindex.md`](kit-research/behaviors/roving-tabindex.md) §9:
    under `dir="rtl"` with `orientation: "horizontal"`, ArrowLeft/ArrowRight
    reverse. (This is also the first cell of the a11y matrix below.)
 3. **Regression tests for the two broken factories** — `press()` and
@@ -1839,7 +1839,7 @@ against the live primitives:
   recipe/merge tests — runtime; `src/type-tests/*` for options decode and
   recipe merge types (copy `Equal`/`Expect` from
   `src/type-tests/resume-query.ts`).
-- `docs/kit-research/` — behavior + widget research docs (list Schema
+- `docs/design/kit-research/` — behavior + widget research docs (list Schema
   options + function props per behavior, not “hooks surfaces”).
 - Do NOT add package.json export entries without checking the existing
   exports map style, and never edit the `test:browser` script line.

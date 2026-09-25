@@ -12,7 +12,7 @@
  * channel, never smuggled through the elements record, which is
  * capability-checked and must contain elements only).
  *
- * @see docs/kit-research/behaviors/README.md (formControl tier)
+ * @see docs/design/kit-research/behaviors/README.md (formControl tier)
  */
 import { Effect, Schema } from "effect";
 import * as Atom from "../Atom.js";

@@ -12,7 +12,7 @@
  * defect; one transport-resolution order with no process-global transport; one
  * path-matching engine shared by `Route` and `ServerRoute`.
  *
- * Owner: docs/ROUTER_CONSOLIDATION_PLAN.md § R5.
+ * Owner: docs/design/ROUTER_CONSOLIDATION_PLAN.md § R5.
  */
 import { describe, expect, it } from "vitest";
 import { Cause, Effect, Exit, Layer, Option, Schema } from "effect";

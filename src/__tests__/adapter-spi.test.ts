@@ -3,9 +3,9 @@
  * Promoted from `future/resumability/adapter-spi.spec.ts` (all green
  * 2026-08-12, permissive-package plan S0/S1), retyped to direct imports.
  *
- * Owning plan: `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md` Milestone 9, plus
+ * Owning plan: `docs/design/RESUMABILITY_IMPLEMENTATION_PLAN.md` Milestone 9, plus
  * the "Manifest byte-ceiling attribution" item in the 2026-07-28 design
- * review and `docs/PERMISSIVE_PACKAGE_PLAN.md` S1 (the published SPI).
+ * review and `docs/design/PERMISSIVE_PACKAGE_PLAN.md` S1 (the published SPI).
  *
  * Claims:
  *  1. the adapter escape hatches behave as an SPI (encoded writes bypass the

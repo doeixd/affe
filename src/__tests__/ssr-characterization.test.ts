@@ -9,7 +9,7 @@
  *
  * Do not "fix" a failure here by relaxing an assertion. Either the change was
  * intended — in which case update the pinned sequence and
- * `docs/RESUMABILITY_SSR_CONTRACT.md` together — or it is a regression.
+ * `docs/design/RESUMABILITY_SSR_CONTRACT.md` together — or it is a regression.
  */
 import { Effect, Exit, Schema, Scope } from "effect";
 import { describe, expect, it } from "vitest";

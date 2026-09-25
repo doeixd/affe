@@ -2,8 +2,8 @@
  * K0b — controlled / uncontrolled collapse (`Component.bindable`).
  * Promoted from `future/components/bindable.spec.ts` (all green 2026-08-12).
  *
- * Owning docs: `docs/COMPONENT_KIT_PLAN.md` K0b.4 and
- * `docs/kit-research/behaviors/controlled-uncontrolled.md` ("Snapshot only
+ * Owning docs: `docs/design/COMPONENT_KIT_PLAN.md` K0b.4 and
+ * `docs/design/kit-research/behaviors/controlled-uncontrolled.md` ("Snapshot only
  * for setup-owned state"). The two directions are a differential pair: the
  * SAME call site must adopt a caller's atom without overwriting it, and own
  * (and snapshot) state when there is none.

@@ -2,7 +2,7 @@
 
 Date: 2026-07-29
 Status: **researched — K2 entry gate satisfied**
-Template: KR 9-section widget template (`docs/COMPONENT_KIT_PLAN.md`, KR phase)
+Template: KR 9-section widget template (`docs/design/COMPONENT_KIT_PLAN.md`, KR phase)
 Downstream: gates K2 (`Combobox` implementation); this doc is the template all
 other widget research docs copy.
 

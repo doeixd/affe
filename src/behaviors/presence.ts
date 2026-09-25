@@ -9,7 +9,7 @@
  * Reopening mid-exit cancels the exit, and a stale `animationend` from the
  * cancelled exit does not tear down freshly reopened content.
  *
- * @see docs/kit-research/behaviors/presence.md
+ * @see docs/design/kit-research/behaviors/presence.md
  */
 import { Effect, Schema, Scope } from "effect";
 import * as Behavior from "../Behavior.js";

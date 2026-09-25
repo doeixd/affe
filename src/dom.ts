@@ -637,7 +637,7 @@ export function style(
  * The ordinary mutation helper is called *inside* the resumable path, so there
  * is no second DOM-mutation implementation that could drift from the ordinary
  * one on nullish removal or coercion (Decision 7 of
- * `docs/RESUMABILITY_M8C_PLAN.md`). Registration is delegated to the single
+ * `docs/design/RESUMABILITY_M8C_PLAN.md`). Registration is delegated to the single
  * `observeRenderedExpressionTarget` registrar, which owns target validation and
  * installation-marker accumulation.
  */

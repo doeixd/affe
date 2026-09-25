@@ -28,7 +28,7 @@ export const ExpressionStructuralModeTypeId: unique symbol = /*#__PURE__*/ Symbo
  * `null` and `undefined` both mean **absence**: during SSR nothing is written,
  * and during a client patch the attribute/class/style property is removed. This
  * matches the ordinary null-safe DOM helpers exactly (see
- * `docs/RESUMABILITY_M8C_PLAN.md`, `DQ-002`). The empty string is a *value*, not
+ * `docs/design/RESUMABILITY_M8C_PLAN.md`, `DQ-002`). The empty string is a *value*, not
  * an absence.
  *
  * An expression's output never crosses the wire — the dormant client loads the

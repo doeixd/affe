@@ -1,7 +1,7 @@
 /**
  * K1 / typed-view foundations — `SafeHtml` branding.
  *
- * Owning doc: `docs/COMPONENT_KIT_PLAN.md`: *"Any widget that emits raw markup
+ * Owning doc: `docs/design/COMPONENT_KIT_PLAN.md`: *"Any widget that emits raw markup
  * (rich tooltip content, markdown rendering) must do so through `SafeHtml`'s
  * branding — unbranded strings render as text, never as HTML, by
  * construction."* The plan itself flags this as claimed but **exercised

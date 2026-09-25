@@ -1,7 +1,7 @@
 /**
  * K1 --- recipe data + merge precedence + `@layer` order + token resolution.
  *
- * Owning doc: `docs/COMPONENT_KIT_PLAN.md`, "Foundation: styles and recipes"
+ * Owning doc: `docs/design/COMPONENT_KIT_PLAN.md`, "Foundation: styles and recipes"
  * (Gap 2, phase K1) and "Rung zero: CSS-Tags as the styling floor" (`@layer`
  * order *is* the recipe merge contract).
  *

@@ -1665,7 +1665,7 @@ export function isStateHandle(value: unknown): value is Atom.WritableAtom<unknow
 
 /**
  * Controlled/uncontrolled collapse: one mechanism, no `value`/`defaultValue`
- * split (`docs/kit-research/behaviors/controlled-uncontrolled.md`).
+ * split (`docs/design/kit-research/behaviors/controlled-uncontrolled.md`).
  *
  * Given a caller's writable atom, ADOPT it: the widget reads and writes the
  * caller's value directly, never overwrites it on spawn, and — because the
