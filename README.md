@@ -80,10 +80,14 @@ For `tsc` to type-check your JSX, set these in `tsconfig.json`:
 {
   "compilerOptions": {
     "jsx": "preserve",
-    "jsxImportSource": "@doeixd/affe"
+    "jsxImportSource": "@doeixd/affe",
+    "lib": ["ESNext", "DOM"]
   }
 }
 ```
+
+`lib` needs `ESNext` (or at least `ESNext.Disposable`) because Effect's own
+types use `Disposable`.
 
 Mount an app with `render` (SSR uses `renderToString` / `hydrateRoot`):
 

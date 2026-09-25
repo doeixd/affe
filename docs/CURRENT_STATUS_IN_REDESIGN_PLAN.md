@@ -30,7 +30,16 @@ specs; no open design question in any lane)
     `future/` suite.
   - The README covers resumability and the agent surface, and states that slot
     handles are not yet bound to rendered DOM elements (see below).
-- **Known gap: slot handles are not bound to the DOM.** `View.Slots` handles
+- **Release audit (2026-09-25).** Five subsystem audits found 47 bugs
+  (router 8, reactive core 10, rendering/SSR/components/hydration 14,
+  resumability 10 plus one found while fixing, styles/themes/elements 5);
+  all are fixed with regression tests (`*-audit-fixes.test.ts`,
+  `reactive-core-fixes.test.ts`). A packed-tarball consumer check (all 47
+  subpaths import; strict typecheck under `bundler` and `nodenext`; Babel JSX
+  + SSR; the `create-af-ui` scaffold compiles) found three more: comment
+  placeholders crashed SSR, stale `Style.forSlots` in the scaffold and docs,
+  and source maps pointing at unshipped files.
+- **Known gap: slot handles are not bound to the DOM.** Now DQ-073. `View.Slots` handles
   are in-memory (`Element.handleFor`), and `View.fromSlots` never associates
   one with the element its slot names, so slot-attached styles and behavior
   listeners do not reach the rendered page. Compile-time contract checks and

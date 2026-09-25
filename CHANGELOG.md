@@ -2,6 +2,39 @@
 
 ## Unreleased (Redesign Track)
 
+### Release audit: 47 bugs fixed
+
+A pre-release audit of every core subsystem found 47 bugs; each fix has a
+regression test that fails on the previous code. Highlights:
+
+- **Reactive core:** effects and memos stopped updating after a conditional
+  read; query atoms died when their first reader re-ran; refresh and
+  reactivity keys never re-ran query atoms; diamond glitches.
+- **Rendering/SSR:** a `Component.make` component used as a JSX child or root
+  rendered its own source text; top-level strings were emitted unescaped
+  during SSR (XSS); components created after the first render had no Scope;
+  `withLayer` released resources early and did not reach children; the
+  server template parser mangled comment placeholders and entities.
+- **Router/server:** single-flight revalidation served stale, cross-request
+  cached data; malformed URLs crashed matching; guard refusals left the URL
+  bar on the refused page; `submit` did not really cancel navigation.
+- **Resumability:** the compiler hoisted code that wrote outer variables;
+  overlapping fragment activation ran setup twice; streaming installs did not
+  claim their root.
+- **Styles:** the Theme service was ignored at runtime; static CSS emitted
+  unitless lengths; collection behaviors kept writing to removed items.
+
+**Behaviour changes to note:**
+
+- A component view that returns a plain markup *string* now renders it as
+  escaped text on the server too (it already did on the client). Return
+  `SafeHtml.make(...)` or JSX for markup.
+- `Hydration.hydrate` / `hydrateFamilies` in strict mode now throw a
+  `HydrationError` (as documented), and the Effect variants fail with it
+  instead of dying. Strict hydration validates before writing anything.
+- Known gap, unchanged: slot handles are not yet bound to rendered DOM
+  elements (`docs/design-questions/components.md`, DQ-073).
+
 ### Dependencies updated to their latest versions
 
 - **Effect `4.0.0-beta.102` → `4.0.0-rc.117`** (exact peer). The only API
