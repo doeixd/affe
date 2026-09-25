@@ -44,7 +44,7 @@ Verified against source by exploration agents; line anchors approximate (heavy c
 
 ## 4. Styles / theme
 
-`Style.Property` tokens; StyleValue is a 17-piece union (SlotPiece, ConditionalPiece, BindingConditionalPiece, States/Responsive/Animation/Nest/Vars/Media/Supports/Container/Pseudo/Grid/Layer/Global/Extend...). `ComposedStyle<S, Bindings>` carries a `_bindings` witness so `Style.whenBinding(binding, predicate, piece)` is checked against component bindings. Authored path: `Style.forSlots(Slots)({...})`, attach via `Style.attachToSlots`. Theme: `Theme.define(tokens)` → ThemeService {tokens, mode atom, resolve}; two-level lookup (`color.X`/short names); `Theme.layer(tokens)`.
+`Style.Property` tokens; StyleValue is a 17-piece union (SlotPiece, ConditionalPiece, BindingConditionalPiece, States/Responsive/Animation/Nest/Vars/Media/Supports/Container/Pseudo/Grid/Layer/Global/Extend...). `ComposedStyle<S, Bindings>` carries a `_bindings` witness so `Style.whenBinding(binding, predicate, piece)` is checked against component bindings. Authored path: `Style.make(Slots, {...})`, attach via `Style.attachToSlots`. Theme: `Theme.define(tokens)` → ThemeService {tokens, mode atom, resolve}; two-level lookup (`color.X`/short names); `Theme.layer(tokens)`.
 
 ## 5. Actions / mutations
 

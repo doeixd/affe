@@ -65,7 +65,7 @@ const Field = Component.make(
 ).pipe(Component.withSlots(FieldSlots));
 
 const Styled = Field.pipe(
-  Style.attachToSlots(Style.forSlots(FieldSlots)({ input: Style.slot({ padding: "sm" }) }), FieldSlots),
+  Style.attachToSlots(Style.make(FieldSlots, { input: Style.slot({ padding: "sm" }) }), FieldSlots),
 );
 
 // Mount (one composition root feeds both worlds)

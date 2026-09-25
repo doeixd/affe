@@ -746,7 +746,7 @@ Typed style composition that treats CSS as data. Styles are assembled as structu
 **Style maps and attachment:**
 
 - `Style.make` — create a style map (slot name → style)
-- `Style.forSlots(slots)` — create an authored style map over a `View.Slots` contract
+- `Style.make(slots, map)` — create an authored style map over a `View.Slots` contract (`Style.forSlots` was removed in DQ-054)
 - `Style.attachToSlots(style, slots)` — attach authored styles to the same slot contract
 - `Style.attachBySlotContract(style, map)` — typed remapping through slot contracts
 - `Style.attach` / `Style.attachByView` — **low-level/general** attach for components **without** a published `View.Slots` contract (`attach` targets setup `bindings.slots`; `attachByView` targets the rendered `View`). Prefer `attachToSlots` (authored) / `attachBySlotContract` (typed remap) / `attachBySlots` (dynamic string map) when a contract exists; those are typed sugar over these general forms.

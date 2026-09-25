@@ -99,7 +99,7 @@ const Field = Component.make(
 );
 
 // 3. Define the Style (appearance), keyed by the same slot contract
-const FieldStyle = Style.forSlots(FieldSlots)({
+const FieldStyle = Style.make(FieldSlots, {
   root: Style.slot({ display: "grid", gap: "sm" }),
   label: Style.slot({ fontWeight: 600 }),
   input: Style.slot({ padding: "sm" }),

@@ -234,7 +234,7 @@ const Field = Component.make(
 ).pipe(Component.withSlots(FieldSlots));
 
 // Appearance, from outside — token paths are type-checked against the theme.
-const FieldStyle = Style.forSlots(FieldSlots)({
+const FieldStyle = Style.make(FieldSlots, {
   root:  Style.slot({ display: "grid", gap: "sm" }),
   label: Style.slot({ fontWeight: 600 }),
   input: Style.slot({ padding: "sm" }),

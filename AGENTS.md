@@ -174,7 +174,7 @@ Important boundaries:
 - `Component.SlotContractOf<T>` is the authored slot contract metadata axis.
 - `Component.withSlots(...)` publishes a `View.Slots` contract on a component.
 - Styles and behaviors attach from outside the component.
-- Slot-contract APIs are the authored path: `Style.forSlots(...)`, `Style.attachToSlots(...)`, `Behavior.forSlots(...)`, `Behavior.attachToSlots(...)`.
+- Slot-contract APIs are the authored path: `Style.make(slots, ...)`, `Style.attachToSlots(...)`, `Behavior.forSlots(...)`, `Behavior.attachToSlots(...)`.
 - String slot maps are dynamic/generated APIs.
 - Requirement and error types should bubble through components, behaviors, routes, and local layers.
 - Web is the concrete runtime today, but component/style/behavior types should avoid DOM-only coupling.

@@ -37,7 +37,7 @@ const Field = Component.makeWithSlots(FieldSlots, {
 });
 
 // 3. Appearance and interaction attach from outside, keyed by the contract.
-const FieldStyle = Style.forSlots(FieldSlots)({
+const FieldStyle = Style.make(FieldSlots, {
   root: Style.slot({ display: "grid", gap: "sm" }),
   label: Style.slot({ fontWeight: 600 }),
   input: Style.slot({ padding: "sm" }),
@@ -124,7 +124,7 @@ authored surface. Typed-tree extraction from JSX is planned for v1.x (see
   `View.element(...)` builders are the typed-tree/generated layer.
 - `Component.SlotContractOf<typeof Field>` returns the authored contract.
 - `Component.SlotsOf<typeof Field>` returns the handle-map projection.
-- `Style.forSlots(...)` / `Behavior.forSlots(...)` are the authored
+- `Style.make(slots, ...)` / `Behavior.forSlots(...)` are the authored
   attachment constructors; `Style.attachToSlots(...)` /
   `Behavior.attachToSlots(...)` attach to the same contract.
 - `attachBySlotContract(...)` is the typed remapping form;

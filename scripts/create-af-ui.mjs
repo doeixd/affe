@@ -52,7 +52,7 @@ export const ${name} = Component.make(
     )),
 ).pipe(Component.withSlots(${name}Slots));
 
-export const ${name}Style = Style.forSlots(${name}Slots)({
+export const ${name}Style = Style.make(${name}Slots, {
   root: Style.slot({ display: "grid", gap: "sm" }),
   label: Style.slot({ fontWeight: 600 }),
   input: Style.slot({ padding: "sm" }),

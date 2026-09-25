@@ -44,7 +44,7 @@ The broad `API.md` reference also covers the smaller exported modules:
 - Components: `Component.make(...)` with setup as `Effect`, plus
   `Component.withSlots(...)` for slot-bearing components.
 - Views: `View.Slots.define(...)` plus `View.fromSlots(...)`.
-- Styles: `Style.forSlots(slots)(...)` plus `Style.attachToSlots(...)`.
+- Styles: `Style.make(slots, ...)` plus `Style.attachToSlots(...)`.
 - Behaviors: `Behavior.forSlots(slots)(...)` plus
   `Behavior.attachToSlots(...)`.
 - Routing: `Route.page(...)`, `Route.layout(...)`, `Route.index(...)`,

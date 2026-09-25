@@ -32,7 +32,7 @@ const Card = Component.make(
     )),
 ).pipe(Component.withSlots(CardSlots));
 
-const CardStyle = Style.forSlots(CardSlots)({
+const CardStyle = Style.make(CardSlots, {
   root: Style.compose(
     Style.slot({ display: "grid", gap: "md", padding: "lg" }),
     Style.pseudo({ ":focus-within": { outlineColor: "accent.default" } }),
@@ -103,7 +103,7 @@ import { Behavior, Style } from "@doeixd/affe";
 
 const IsOpen = Behavior.binding<"isOpen", boolean>("isOpen");
 
-const DisclosureStyle = Style.forSlots(DisclosureSlots)({
+const DisclosureStyle = Style.make(DisclosureSlots, {
   panel: Style.compose(
     Style.slot({ opacity: 0 }),
     Style.whenBinding(IsOpen, true, Style.slot({ opacity: 1 })),

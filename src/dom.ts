@@ -1271,6 +1271,16 @@ class ServerDocumentFragment extends ServerNode {
   }
 }
 
+/** A comment node for SSR: an empty text node that serializes as a comment. */
+function createServerComment(text: string): ServerTextNode {
+  const n = new ServerTextNode("");
+  n.nodeName = "#comment";
+  (n as unknown as Record<string, string>)._commentText = text;
+  n.cloneNode = () => createServerComment(text);
+  n.toHTML = () => `<!--${text}-->`;
+  return n;
+}
+
 /** Simple HTML parser — turns an HTML string into ServerElement nodes. */
 function parseHTML(html: string): ServerNode[] {
   const nodes: ServerNode[] = [];
@@ -1287,6 +1297,22 @@ function parseHTML(html: string): ServerNode[] {
         if (html[pos + 1] === "/") {
           // Closing tag — handled by caller via stop
           return result;
+        }
+        if (html[pos + 1] === "!") {
+          // `<!-- text -->`, or the compiler's bare `<!>` placeholder: both
+          // are comments (markers for dynamic insertion), never elements.
+          if (html.startsWith("<!--", pos)) {
+            const end = html.indexOf("-->", pos + 4);
+            const text = end === -1 ? html.slice(pos + 4) : html.slice(pos + 4, end);
+            pos = end === -1 ? html.length : end + 3;
+            result.push(createServerComment(text));
+          } else {
+            const end = html.indexOf(">", pos + 2);
+            const text = end === -1 ? html.slice(pos + 2) : html.slice(pos + 2, end);
+            pos = end === -1 ? html.length : end + 1;
+            result.push(createServerComment(text));
+          }
+          continue;
         }
         const el = parseElement();
         if (el) result.push(el);
@@ -1393,12 +1419,7 @@ export function createServerDocument(): unknown {
     querySelector(): null { return null; },
     querySelectorAll(): never[] { return []; },
     createComment(text: string): ServerTextNode {
-      // Approximate comments as empty text nodes (they act as markers)
-      const n = new ServerTextNode("");
-      n.nodeName = "#comment";
-      (n as unknown as Record<string, string>)._commentText = text;
-      n.toHTML = () => `<!--${text}-->`;
-      return n;
+      return createServerComment(text);
     },
   };
   return doc;

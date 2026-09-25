@@ -209,6 +209,10 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/type-tests",
     "scripts/create-af-ui.mjs",
     "README.md",
     "LICENSE",

@@ -509,7 +509,7 @@ and validating with Schema where useful; stack pieces with
 | Pieces | slots, conditionals, binding-conditionals, states, responsive, media/supports/container, vars, animation, nesting |
 | Horizontal stack | `Style.compose` — pieces as data across modules |
 | Recipes | `Style.recipe({ base, variants, defaults })` → selection → slot→style map |
-| Attach | `Style.forSlots` / `attachToSlots` |
+| Attach | `Style.make(slots, …)` / `attachToSlots` |
 | Tokens | `Theme.define` / `defineTokens` as Effect layers |
 
 ### Customization levels
@@ -1047,7 +1047,7 @@ The kit is closer to assembly than greenfield:
 | Widget anatomy (Zag "anatomy", Radix "parts") | `View.Slots.define` — named, typed, capability-carrying slot contracts |
 | Headless interaction logic | `Behavior.make/forSlots/compose` + the `behaviors.ts` catalog: disclosure, selection, searchFilter, keyboardNav, pagination, focusTrap, combobox |
 | ARIA pattern conformance | `A11y.pattern` contracts + `A11y.validate` diagnostics, with slot anatomies already defined for Dialog, Tooltip, Popover, Tabs, Slider, Calendar, DragAndDrop |
-| Styling system | `Style` pieces: slots, conditionals, binding-conditionals, states, responsive, media/supports/container queries, vars, animation, nesting — Panda-class expressiveness, attached via `Style.forSlots/attachToSlots` |
+| Styling system | `Style` pieces: slots, conditionals, binding-conditionals, states, responsive, media/supports/container queries, vars, animation, nesting — Panda-class expressiveness, attached via `Style.make(slots, …)`/`attachToSlots` |
 | Design tokens | `Theme.define/defineTokens` typed token schemas provided as Effect layers (`ThemeLight`, swappable per subtree) |
 | Composition | `Component.withSlots` + behavior/style attachment preserving all five type axes |
 | Interactivity without JS payload | `Behavior.portable` + `Resume.*` — kit widgets can ship dormant |

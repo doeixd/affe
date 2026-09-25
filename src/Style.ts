@@ -407,8 +407,9 @@ export function transition(value: Record<string, unknown>): AnimationPiece {
 /**
  * Build a composed style from a slot-to-style map.
  *
- * Prefer `Style.forSlots(Slots)(...)` for authored component APIs because it
- * restricts the keys to the published `View.Slots` contract.
+ * Pass the component's `View.Slots` contract as the first argument
+ * (`Style.make(Slots, {...})`) for authored component APIs: it restricts the
+ * keys to the published contract and keeps binding inference.
  */
 export function make<
   const W extends SlotContractInput,
@@ -1492,8 +1493,7 @@ export type RecipeSelection<D extends RecipeDef<any>> = D["variants"] extends Re
 /**
  * Define a multi-slot recipe with variants.
  *
- * Recipes return a slot-to-style map that can be passed to `Style.make` or a
- * contract-specific `Style.forSlots(...)` builder.
+ * Recipes return a slot-to-style map that can be passed to `Style.make`.
  */
 export function recipe<Slots extends string, D extends RecipeDef<Slots>>(def: D) {
   const fn = (selection?: RecipeSelection<D>): Record<Slots, StyleValue> => {
