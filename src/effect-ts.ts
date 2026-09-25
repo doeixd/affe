@@ -787,13 +787,13 @@ export function useServices<T extends Record<string, Context.Key<any, any>>>(
  * Testing seam: short-circuit an async result accessor without running the
  * underlying Effect. Used by `testing.resolveQuery` / `resolveAction`.
  */
-const resultControllers = new WeakMap<
+const resultControllers = /*#__PURE__*/ (() => new WeakMap<
   Accessor<Result<any, any>>,
   {
     readonly set: (result: Result<any, any>) => void;
     readonly interrupt: () => void;
   }
->();
+>())();
 
 /** @internal Drive a query/action/mutation result for tests. */
 export function setResultForTest<A, E>(
@@ -958,7 +958,7 @@ function resultValueToEffect<A, E>(
   return resultAccessorToEffect(() => state);
 }
 
-const queryGet: QueryGet = /*#__PURE__*/ Object.assign(
+const queryGet: QueryGet = /*#__PURE__*/ (() => Object.assign(
   (<A>(atom: AtomTypes.ReadonlyAtom<A, any, any>): A => atom()),
   {
     get<A>(atom: AtomTypes.ReadonlyAtom<A, any, any>): A {
@@ -968,7 +968,7 @@ const queryGet: QueryGet = /*#__PURE__*/ Object.assign(
       return resultValueToEffect(atom());
     },
   },
-);
+))();
 
 /**
  * Primary Effect-native query API with optional typed invalidation keys.

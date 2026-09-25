@@ -182,9 +182,9 @@ export function resolveLoaderCacheStore(store?: LoaderCacheStore): LoaderCacheSt
  * the ambient store, then the default store. Never adds a requirement, so
  * loader plumbing keeps its `R = never` signatures.
  */
-export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = /*#__PURE__*/ Effect.serviceOption(LoaderCacheTag).pipe(
+export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = /*#__PURE__*/ (() => Effect.serviceOption(LoaderCacheTag).pipe(
   Effect.map((option) => (option._tag === "Some" ? option.value : resolveLoaderCacheStore())),
-);
+))();
 
 // When each reactivity key was last invalidated, per store, on one monotonic
 // sequence. A loader run compares it with the sequence at its start: an
@@ -393,12 +393,12 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
  * Schema-tagged like the resumability layer's errors: a real `Error` with a
  * stack, carrying which route and against which budget.
  */
-export class RouteLoaderTimeoutError extends /*#__PURE__*/ Schema.TaggedError<RouteLoaderTimeoutError>(
+export class RouteLoaderTimeoutError extends /*#__PURE__*/ (() => Schema.TaggedError<RouteLoaderTimeoutError>(
   "affe/RouteLoaderTimeoutError",
 )("RouteLoaderTimeoutError", {
   routeId: Schema.String,
   timeoutMs: Schema.Number,
-}) {}
+}))() {}
 
 export function runCachedLoader<A, E>(
   routeId: string,

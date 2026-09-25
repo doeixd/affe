@@ -36,6 +36,7 @@ import {
   type ReactivityKeysInput as RuntimeReactivityKeysInput,
 } from "./reactivity-runtime.js";
 import { SingleFlightTransportTag, type SingleFlightTransportService } from "./SingleFlightTransport.js";
+import { decodeSingleFlightResponse, fetchSingleFlight, hydrateSingleFlightResult } from "./single-flight-wire.js";
 
 const TypeId = "~affe/Atom" as const;
 const WritableTypeId = "~affe/Atom/Writable" as const;
@@ -69,7 +70,7 @@ type DeepWiden<T> =
 type WithFallbackValue<A, Fallback> = Exclude<A, null | undefined> | Fallback;
 
 const refreshMap = /*#__PURE__*/ new WeakMap<ReadonlyAtom<any, any, any>, RefreshRef>();
-const selfWriteMap = /*#__PURE__*/ new WeakMap<Writable<any, any>, (value: any) => void>();
+const selfWriteMap = /*#__PURE__*/ (() => new WeakMap<Writable<any, any>, (value: any) => void>())();
 
 function ensureRefresh<A>(atom: ReadonlyAtom<A, any, any>): RefreshRef {
   const existing = refreshMap.get(atom);
@@ -428,7 +429,7 @@ function evaluate<A>(atom: ReadonlyAtom<A, any, any>, ctx: Context): A {
   return impl.read(ctx);
 }
 
-const defaultContext: Context = /*#__PURE__*/ Object.assign(
+const defaultContext: Context = /*#__PURE__*/ (() => Object.assign(
   ((atom: ReadonlyAtom<any>) => evaluate(atom, defaultContext)) as Context,
   {
     get<A>(atom: ReadonlyAtom<A, any, any>): A {
@@ -450,7 +451,7 @@ const defaultContext: Context = /*#__PURE__*/ Object.assign(
       onCleanup(finalizer);
     },
   },
-);
+))();
 
 function makeWriteContext<A>(self: Writable<A, any>): WriteContext<A> {
   return {
@@ -1238,7 +1239,6 @@ function runSingleFlightWithTransport<Input, A>(
 ): Effect.Effect<A, ResultDefectError, any> {
   return Effect.gen(function* () {
     const config = options === false ? undefined : options;
-    const Route = yield* Effect.promise(() => import("./single-flight-client.js"));
     const response = yield* transport.execute(
       {
         name: mutationName,
@@ -1257,20 +1257,17 @@ function runSingleFlightWithTransport<Input, A>(
     // One wire contract for every transport: the envelope is schema-validated
     // and loader results rehydrate through the canonical Result projection,
     // exactly as `invokeSingleFlight` does (R5.1).
-    const payload = yield* Route.decodeSingleFlightResponse<A>(response).pipe(
+    const payload = yield* decodeSingleFlightResponse<A>(response).pipe(
       Effect.mapError((error) => ({
         _tag: "ResultDefectError",
         defect: error.message,
       } as const)),
     );
     if (config?.hydrate !== false) {
-      const source = yield* Route.resolveRouteSource(config?.app as import("./Route.js").RouteSource | undefined);
-      if (source !== undefined) {
-        yield* Route.hydrateSingleFlightPayload(
-          payload as import("./Route.js").SingleFlightPayload<unknown>,
-          source,
-        );
-      }
+      yield* hydrateSingleFlightResult(
+        payload as import("./Route.js").SingleFlightPayload<unknown>,
+        config?.app as import("./Route.js").RouteSource | undefined,
+      );
     }
     return payload.mutation;
   });
@@ -1292,20 +1289,20 @@ function runSingleFlightWithDirectFetch<Input, A>(
 ): Effect.Effect<A, ResultDefectError> {
   return Effect.tryPromise({
     try: async () => {
-      const Route = await import("./single-flight-client.js");
-      const payload = await Effect.runPromise(Route.invokeSingleFlight<[Input], A>(
-        options.endpoint ?? mutationName ?? "",
-        {
-          name: mutationName,
-          args: [input],
-          url: resolveSingleFlightUrl(input, options.url),
-        },
-        {
-          fetch: options.fetch,
-          hydrate: options.hydrate,
-          app: options.app as import("./Route.js").RouteSource | undefined,
-        },
-      ));
+      const payload = await Effect.runPromise(
+        fetchSingleFlight<[Input], A>(
+          options.endpoint ?? mutationName ?? "",
+          { name: mutationName, args: [input], url: resolveSingleFlightUrl(input, options.url) },
+          options.fetch,
+        ).pipe(
+          Effect.tap((result) => options.hydrate === false
+            ? Effect.void
+            : hydrateSingleFlightResult(
+              result as import("./Route.js").SingleFlightPayload<unknown>,
+              options.app as import("./Route.js").RouteSource | undefined,
+            )),
+        ),
+      );
       return payload.mutation;
     },
     catch: (error) => ({
@@ -1420,7 +1417,7 @@ export const runtime: {
   addGlobalLayer<R, E>(layer: Layer.Layer<R, E, never>): void;
   /** Clear previously registered global runtime Layers. */
   clearGlobalLayers(): void;
-} = Object.assign(runtimeImpl, {
+} = /*#__PURE__*/ Object.assign(runtimeImpl, {
   addGlobalLayer<R, E>(layer: Layer.Layer<R, E, never>): void {
     globalRuntimeLayers = [...globalRuntimeLayers, layer as unknown as Layer.Layer<any, any, never>];
   },

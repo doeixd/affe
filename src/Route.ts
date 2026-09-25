@@ -2,6 +2,17 @@ import { Cause, Context, Effect, Fiber, Layer, Option, Schema, Stream } from "ef
 import * as Atom from "./Atom.js";
 import { createComponent } from "./dom.js";
 import { currentDocument, getRequestEvent, insert, renderToString, setRequestEvent } from "./dom.js";
+import {
+  SingleFlightDecodeError,
+  SingleFlightInvokeError,
+  SingleFlightResponseSchema,
+  decodeSingleFlightResponse,
+  encodeSingleFlightPayload,
+  fetchSingleFlight,
+  registerSingleFlightHydrator,
+  singleFlightWireVersion,
+  type SingleFlightWireResponse,
+} from "./single-flight-wire.js";
 import { createEffect, createMemo, createSignal, untrack, useContext, type Accessor } from "./api.js";
 import {
   ManagedRuntimeContext,
@@ -79,14 +90,14 @@ export interface RouteContext<P = unknown, Q = unknown, H = unknown> {
 
 export const RouteContextTag = /*#__PURE__*/ Context.Service<RouteContext<any, any, any>>("RouteContext");
 export const ServerRequestTag = /*#__PURE__*/ Context.Service<{ readonly request: Request; readonly url: URL }>("ServerRequest");
-export const ServerResponseTag = /*#__PURE__*/ Context.Service<{
+export const ServerResponseTag = /*#__PURE__*/ (() => Context.Service<{
   readonly setStatus: (status: number) => void;
   readonly setHeader: (name: string, value: string) => void;
   readonly appendHeader: (name: string, value: string) => void;
   readonly redirect: (location: string, status?: number) => void;
   readonly notFound: () => void;
   readonly snapshot: () => { readonly status: number; readonly headers: ReadonlyMap<string, ReadonlyArray<string>> };
-}>("ServerResponse");
+}>("ServerResponse"))();
 
 export const RouteMetaSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/RouteMeta");
 export const RouteLoaderMetaSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/RouteLoaderMeta");
@@ -470,142 +481,17 @@ export type SingleFlightResponse<A, E = unknown> =
 // core `Result`. Values travel through the sparse rich-value tree, so a `Date`
 // a loader produced on the server is a `Date` again in the client cache.
 
-/** The transport failed: network, endpoint, or the action itself. */
-export class SingleFlightInvokeError extends /*#__PURE__*/ Schema.TaggedError<SingleFlightInvokeError>(
-  "affe/SingleFlightInvokeError",
-)("SingleFlightInvokeError", {
-  message: Schema.String,
-  cause: Schema.optional(Schema.Unknown),
-}) {}
-
-/**
- * The transport succeeded but the response failed schema validation.
- *
- * Distinct from {@link SingleFlightInvokeError} because the remedies differ:
- * a malformed payload is deploy skew or tampering, a failed transport is a
- * retry.
- */
-export class SingleFlightDecodeError extends /*#__PURE__*/ Schema.TaggedError<SingleFlightDecodeError>(
-  "affe/SingleFlightDecodeError",
-)("SingleFlightDecodeError", {
-  message: Schema.String,
-}) {}
-
-export const SingleFlightWireLoaderEntrySchema = /*#__PURE__*/ Schema.Struct({
-  routeId: Schema.String,
-  result: Serialization.ResultWire,
-});
-
-export const SingleFlightWirePayloadSchema = /*#__PURE__*/ Schema.Struct({
-  // `undefined` mutation values (void actions) are dropped by JSON, so the
-  // field is optional on the wire.
-  mutation: Schema.optional(Schema.Unknown),
-  url: Schema.String,
-  loaders: Schema.Array(SingleFlightWireLoaderEntrySchema),
-});
-
-/**
- * Wire version of the single-flight envelope (`DQ-091`, closed 2026-08-17).
- * Bump on any envelope-shape change. The version rides on the ENVELOPE, not
- * the payload, so a client from build N talking to a server from build N+1
- * fails closed with a decode error instead of misreading the shape — the
- * same rule the loader handoff already follows.
- */
-export const singleFlightWireVersion = 1 as const;
-
-export const SingleFlightResponseSchema = /*#__PURE__*/ Schema.Union([
-  Schema.Struct({
-    version: Schema.Literal(singleFlightWireVersion),
-    ok: Schema.Literal(true),
-    payload: SingleFlightWirePayloadSchema,
-  }),
-  Schema.Struct({
-    version: Schema.Literal(singleFlightWireVersion),
-    ok: Schema.Literal(false),
-    error: Schema.Unknown,
-  }),
-]);
-
-/** The schema-validated response shape a single-flight handler emits. */
-export type SingleFlightWireResponse = typeof SingleFlightResponseSchema.Type;
-
-/** Project one in-memory payload onto the validated wire envelope. */
-export function encodeSingleFlightPayload(
-  payload: SingleFlightPayload<unknown>,
-): typeof SingleFlightWirePayloadSchema.Type {
-  return {
-    mutation: Serialization.encodeWireValue(payload.mutation),
-    url: payload.url,
-    loaders: payload.loaders.map((entry) => ({
-      routeId: entry.routeId,
-      result: Serialization.resultToWire(entry.result),
-    })),
-  };
-}
-
-/**
- * Validate one raw single-flight response at the trust boundary and rehydrate
- * its payload.
- *
- * Validation goes through the injected `Serialization` service when present
- * (falling back to the schema codec), so a transport with a richer wire format
- * can swap the decoder without touching call sites. A structurally invalid
- * response is a typed {@link SingleFlightDecodeError} — never a defect — and
- * nothing is hydrated from it.
- */
-export function decodeSingleFlightResponse<A>(
-  raw: unknown,
-): Effect.Effect<
-  SingleFlightPayload<A>,
-  SingleFlightInvokeError | SingleFlightDecodeError
-> {
-  return Effect.gen(function* () {
-    // DQ-080 decided EXACTLY two arms. An envelope carrying both (`ok: true`
-    // plus an `error`, or `ok: false` plus a `payload`) is internally
-    // inconsistent — tampering or a broken proxy — and must fail closed
-    // rather than having the surplus arm silently stripped by the schema
-    // and the remaining one believed.
-    if (typeof raw === "object" && raw !== null) {
-      const record = raw as { readonly error?: unknown; readonly payload?: unknown };
-      if (record.error !== undefined && record.payload !== undefined) {
-        return yield* new SingleFlightDecodeError({
-          message:
-            "Single-flight response carries both envelope arms; the two-arm contract admits exactly one.",
-        });
-      }
-    }
-    const serialization = yield* Effect.serviceOption(Serialization.Tag);
-    const decoded = yield* (serialization._tag === "Some"
-      ? serialization.value.deserialize(
-          SingleFlightResponseSchema,
-          JSON.stringify(raw),
-        )
-      : Schema.decodeUnknownEffect(SingleFlightResponseSchema)(raw)
-    ).pipe(
-      Effect.catchTag("SchemaError", (error) =>
-        Effect.fail(
-          new SingleFlightDecodeError({
-            message: `Single-flight response failed wire validation: ${String(error)}`,
-          }),
-        ),
-      ),
-    );
-    if (!decoded.ok) {
-      return yield* new SingleFlightInvokeError({
-        message: "Single-flight action failed",
-        cause: decoded.error,
-      });
-    }
-    return {
-      mutation: Serialization.decodeWireValue(decoded.payload.mutation) as A,
-      url: decoded.payload.url,
-      loaders: decoded.payload.loaders.map((entry) => ({
-        routeId: entry.routeId,
-        result: Serialization.resultFromWire(entry.result),
-      })),
-    };
-  });
-}
+export {
+  SingleFlightDecodeError,
+  SingleFlightInvokeError,
+  SingleFlightResponseSchema,
+  SingleFlightWireLoaderEntrySchema,
+  SingleFlightWirePayloadSchema,
+  decodeSingleFlightResponse,
+  encodeSingleFlightPayload,
+  singleFlightWireVersion,
+  type SingleFlightWireResponse,
+} from "./single-flight-wire.js";
 
 /** Runtime integration point for transparent single-flight transport support. */
 export { SingleFlightTransportError, SingleFlightTransportTag, type SingleFlightTransportService };
@@ -737,6 +623,7 @@ function makeUnifiedRoute<C, P, Q, H, LD = void, LE = never>(
   component: C,
   internals: UnifiedRouteInternals<P, Q, H, LD, LE>,
 ): Route<C, P, Q, H, LD, LE> {
+  ensureSingleFlightHydrator();
   const route = {
     [UnifiedRouteSymbol]: internals,
     component,
@@ -801,6 +688,7 @@ export function stampSelfRoute(
   component: object,
   meta: RouteMeta<any, any, any>,
 ): void {
+  ensureSingleFlightHydrator();
   const routed = component as RouteDecoratedComponent<any, any, any, any, any> & Record<PropertyKey, unknown>;
   routed[UnifiedRouteSymbol] = {
     kind: "path",
@@ -1028,6 +916,7 @@ function materializeNode<P, Q, H, C extends ComponentType<any, any, any, any, an
   // existing cache, so a standalone materialization before Route.define is
   // replaced by the tree's joined identity — and never replaces it back.
   if (node.state.materialized) {
+  ensureSingleFlightHydrator();
     const cachedPath = node.state.materializedPath;
     if (cachedPath === fullPath || parentFullPath === "") {
       return node.state.materialized as MaterializedAppRoute<P, Q, H, C, A, LE>;
@@ -1139,6 +1028,7 @@ export const RouteSourceTag = /*#__PURE__*/ Context.Service<RouteSourceService>(
 
 /** Provide the app's route source to router layers and preloads. */
 export function routeSourceLayer(source: RouteSource): Layer.Layer<RouteSourceService> {
+  ensureSingleFlightHydrator();
   return Layer.succeed(RouteSourceTag, { source });
 }
 
@@ -1166,6 +1056,7 @@ export function isRouteRegistry(value: unknown): value is RouteRegistry {
 export function registry(
   components: Iterable<ComponentType<any, any, any, any, any>>,
 ): RouteRegistry {
+  ensureSingleFlightHydrator();
   const entries: Array<RegisteredRoute> = [];
   for (const component of components) {
     const meta = getRouteMeta(asRouteComponent(component));
@@ -1270,9 +1161,9 @@ export function resolveRouteHeadStore(store?: RouteHeadStore): RouteHeadStore {
  * Resolve the head store inside an Effect: provided service, then ambient, then
  * the client store. Adds no requirement.
  */
-export const currentRouteHeadStore: Effect.Effect<RouteHeadStore> = /*#__PURE__*/ Effect.serviceOption(RouteHeadTag).pipe(
+export const currentRouteHeadStore: Effect.Effect<RouteHeadStore> = /*#__PURE__*/ (() => Effect.serviceOption(RouteHeadTag).pipe(
   Effect.map((option) => (option._tag === "Some" ? option.value : resolveRouteHeadStore())),
-);
+))();
 
 function tagIdentity(tag: Readonly<Record<string, string | null | undefined>>): string {
   return String(tag.name ?? tag.property ?? tag.rel ?? tag.httpEquiv ?? tag.charset ?? JSON.stringify(tag));
@@ -1546,6 +1437,7 @@ export function index(component?: ComponentType<any, any, any, any, any>) {
  * to tooling and keeps inference stable around the root.
  */
 export function define<T extends AppRouteNode<any, any, any, any, any, any>>(root: T): T {
+  ensureSingleFlightHydrator();
   materializeTree(root);
   return root;
 }
@@ -2636,7 +2528,7 @@ export type RouteLink<P, Q> = ((paramsValue: P, options?: { readonly query?: Par
 export const serverRequest = /*#__PURE__*/ Effect.service(ServerRequestTag);
 
 /** Access just the current request URL inside SSR/server handlers. */
-export const serverUrl = /*#__PURE__*/ Effect.service(ServerRequestTag).pipe(Effect.map((value) => value.url));
+export const serverUrl = /*#__PURE__*/ (() => Effect.map(/*#__PURE__*/ Effect.service(ServerRequestTag), (value) => value.url))();
 
 /** Set the current server response status. */
 export const setStatus = (status: number) =>
@@ -2680,25 +2572,25 @@ export function matchPattern(pattern: string, pathname: string, exact?: boolean)
   return matchPatternSegments(pattern, pathname, exact === true);
 }
 
-export const params = /*#__PURE__*/ Effect.gen(function* () {
+export const params = /*#__PURE__*/ (() => Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.params();
-});
+}))();
 
-export const query = /*#__PURE__*/ Effect.gen(function* () {
+export const query = /*#__PURE__*/ (() => Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.query();
-});
+}))();
 
-export const hash = /*#__PURE__*/ Effect.gen(function* () {
+export const hash = /*#__PURE__*/ (() => Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.hash();
-});
+}))();
 
-export const prefix = /*#__PURE__*/ Effect.gen(function* () {
+export const prefix = /*#__PURE__*/ (() => Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.prefix();
-});
+}))();
 
 /**
  * Read the current route loader data atom from route context.
@@ -3030,7 +2922,7 @@ export function loaderError(
   };
 }
 
-export const reload: Effect.Effect<void, never, RouterService> = /*#__PURE__*/ Effect.gen(function* () {
+export const reload: Effect.Effect<void, never, RouterService> = /*#__PURE__*/ (() => Effect.gen(function* () {
   const router = yield* RouterTag;
   const current = router.url();
   yield* router.navigate(current.pathname + current.search + current.hash, { replace: true }).pipe(
@@ -3040,7 +2932,7 @@ export const reload: Effect.Effect<void, never, RouterService> = /*#__PURE__*/ E
         : router.onNavigationError(error)
     ),
   );
-});
+}))();
 
 /** Prefetch the loaders a link target would run, against an explicit source. */
 export function prefetch<P, Q>(
@@ -3426,6 +3318,7 @@ export function FetchSingleFlightTransport(options?: {
   readonly endpoint?: string | ((request: SingleFlightRequest<ReadonlyArray<unknown>>) => string | undefined);
   readonly fetch?: (input: string, init?: { readonly method?: string; readonly headers?: Record<string, string>; readonly body?: string }) => Promise<{ readonly json: () => Promise<unknown> }>;
 }): Layer.Layer<SingleFlightTransportService> {
+  ensureSingleFlightHydrator();
   return Layer.succeed(SingleFlightTransportTag, {
     execute: (
       request: { readonly name?: string; readonly args: ReadonlyArray<unknown>; readonly url: string },
@@ -3499,33 +3392,10 @@ export function invokeSingleFlight<Args extends ReadonlyArray<unknown>, A>(
   SingleFlightInvokeError | SingleFlightDecodeError,
   never
 > {
-  return Effect.tryPromise({
-    try: async () => {
-      const fetchImpl = options?.fetch ?? ((input: string, init?: { readonly method?: string; readonly headers?: Record<string, string>; readonly body?: string }) =>
-        fetch(input, init as RequestInit) as Promise<{ readonly json: () => Promise<unknown> }>);
-      const response = await fetchImpl(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(request),
-      });
-      return await response.json();
-    },
-    catch: (cause) =>
-      new SingleFlightInvokeError({
-        message: "Failed to invoke single-flight endpoint",
-        cause,
-      }),
-  }).pipe(
-    // Validation before hydration: a malformed response is a typed decode
-    // failure and seeds nothing into the loader cache.
-    Effect.flatMap((raw) => decodeSingleFlightResponse<A>(raw)),
+  return fetchSingleFlight<Args, A>(endpoint, request, options?.fetch).pipe(
     Effect.tap((payload) => options?.hydrate === false
       ? Effect.void
-      : resolveRouteSource(options?.app).pipe(
-        Effect.flatMap((source) => source === undefined
-          ? Effect.void
-          : hydrateSingleFlightPayload(payload as SingleFlightPayload<unknown>, source)),
-      )),
+      : hydrateFromRouteSource(payload as SingleFlightPayload<unknown>, options?.app)),
   );
 }
 
@@ -3836,17 +3706,17 @@ export const loaderEntryScriptAttribute = "data-af-loader" as const;
  * the client caches under the same identity the server used), and the canonical
  * result wire shape.
  */
-export const LoaderHandoffEntry = /*#__PURE__*/ Schema.Struct({
+export const LoaderHandoffEntry = /*#__PURE__*/ (() => Schema.Struct({
   routeId: Schema.String,
   params: Schema.Record(Schema.String, Schema.String),
   result: Serialization.ResultWire,
-});
+}))();
 
 /** The versioned envelope accumulated on `window[loaderHandoffGlobalKey]`. */
-export const LoaderHandoff = /*#__PURE__*/ Schema.Struct({
+export const LoaderHandoff = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(loaderHandoffVersion),
   entries: Schema.Array(LoaderHandoffEntry),
-});
+}))();
 
 export type LoaderHandoffEntryValue = {
   readonly routeId: string;
@@ -4233,9 +4103,9 @@ export function browser(options: BrowserRouterOptions = {}): Layer.Layer<RouterS
 /** The browser router at the site root. Same as `browser()`. */
 export const Browser: Layer.Layer<RouterService> = /*#__PURE__*/ browser();
 
-export const Hash: Layer.Layer<RouterService> = /*#__PURE__*/ Layer.effect(
+export const Hash: Layer.Layer<RouterService> = /*#__PURE__*/ (() => Layer.effect(
   RouterTag,
-  Effect.gen(function* () {
+  /*#__PURE__*/ Effect.gen(function* () {
     const read = () => new URL(window.location.hash.slice(1) || "/", window.location.origin);
     const url = makeWritableUrlAtom(read());
     const onHash = () => {
@@ -4255,7 +4125,7 @@ export const Hash: Layer.Layer<RouterService> = /*#__PURE__*/ Layer.effect(
       preload: (to) => preloadUrl(to, window.location.origin),
     } as RouterService;
   }),
-);
+))();
 
 export function Server(request: { readonly url: string }): Layer.Layer<RouterService> {
   const url = makeWritableUrlAtom(new URL(request.url));
@@ -4396,3 +4266,21 @@ export const Route = {
   matchPattern,
   extractParams,
 } as const;
+
+function hydrateFromRouteSource(payload: SingleFlightPayload<unknown>, app: RouteSource | undefined): Effect.Effect<void> {
+  return resolveRouteSource(app).pipe(
+    Effect.flatMap((source) => source === undefined ? Effect.void : hydrateSingleFlightPayload(payload, source)),
+  );
+}
+
+/**
+ * Give Atom's single-flight client the loader hydrator (see
+ * single-flight-wire.ts). Called wherever a route source comes into being —
+ * route constructors, registries, trees, `routeSourceLayer`, the fetch
+ * transport — rather than at module load: a top-level call would keep the
+ * whole route tree machinery in every app that merely touches `Route`, such
+ * as every app with a component.
+ */
+function ensureSingleFlightHydrator(): void {
+  registerSingleFlightHydrator(hydrateFromRouteSource);
+}

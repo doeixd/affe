@@ -977,7 +977,7 @@ export function render(
   return dispose;
 }
 
-const containerMounts = /*#__PURE__*/ new WeakMap<Element, () => void>();
+const containerMounts = /*#__PURE__*/ (() => new WeakMap<Element, () => void>())();
 
 export interface ViteHotContext {
   readonly data: Record<string, unknown>;

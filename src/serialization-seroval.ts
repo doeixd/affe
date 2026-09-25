@@ -439,9 +439,9 @@ export function seroval(options: SerovalOptions = {}): Layer.Layer<Serialization
  * `Serialization.ts` re-export each other, so the Tag must be read at layer
  * BUILD time, after both module bodies have evaluated.
  */
-export const serovalLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.suspend(
+export const serovalLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ (() => Layer.suspend(
   () => seroval(),
-);
+))();
 
 /**
  * The seroval ASYNC JSON-tree codec (M10.6): like {@link serovalLayer}, plus
@@ -451,7 +451,7 @@ export const serovalLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ Lay
  * with requirements, not a value, and crosses the boundary as a descriptor
  * or a typed `R` requirement instead.
  */
-export const serovalAsyncLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.suspend(
+export const serovalAsyncLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ (() => Layer.suspend(
   () =>
     Layer.effect(
       Tag,
@@ -461,7 +461,7 @@ export const serovalAsyncLayer: Layer.Layer<SerializationService> = /*#__PURE__*
         ),
       ),
     ),
-);
+))();
 
 /**
  * seroval's EVAL-STRING output mode, deliberately named to carry its cost:
@@ -471,7 +471,7 @@ export const serovalAsyncLayer: Layer.Layer<SerializationService> = /*#__PURE__*
  * JSON layer's, so a manifest produced here can never be decoded by the safe
  * codec by accident (`DQ-012`'s gate).
  */
-export const serovalUnsafeEval: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.suspend(() => Layer.effect(
+export const serovalUnsafeEval: Layer.Layer<SerializationService> = /*#__PURE__*/ (() => Layer.suspend(() => Layer.effect(
   Tag,
   Effect.promise(() => import("seroval")).pipe(
     Effect.map((module) => {
@@ -521,4 +521,4 @@ export const serovalUnsafeEval: Layer.Layer<SerializationService> = /*#__PURE__*
       return codec;
     }),
   ),
-));
+)))();

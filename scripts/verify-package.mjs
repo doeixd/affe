@@ -113,11 +113,11 @@ export const html = () => renderToString(() => <p>{count()} {doubled()}</p>);
   console.log("✓ create-affe app installs, type-checks and builds");
 
   // 4. Size budget for that app (Effect included). It was ~76 kB gzipped
-  //    before a dynamic `import("./Route.js")` stopped defeating tree-shaking;
-  //    a jump back past the budget means something reachable pulls in a whole
+  //    before tree-shaking was fixed (scripts/size.mjs has per-feature
+  //    budgets); a jump past this means something reachable pulls in a whole
   //    module again.
   const gzipped = built.reduce((total, file) => total + zlib.gzipSync(fs.readFileSync(path.join(assets, file))).length, 0);
-  const budget = 68 * 1024;
+  const budget = 35 * 1024;
   if (gzipped > budget) {
     throw new Error(`create-affe app is ${(gzipped / 1024).toFixed(1)} kB gzipped, over the ${budget / 1024} kB budget`);
   }

@@ -23,6 +23,7 @@ Run these before opening a pull request; CI runs the same ones.
 | `npm run typecheck:all` | Library, tests, examples and browser specs type-check. |
 | `npm test` | Unit and integration tests (Vitest), plus the permissive package. |
 | `npm run verify:package` | The packed tarball: every subpath imports, strict consumer types, a `create-affe` app installs and builds within its size budget. |
+| `npm run size` | Gzipped bundle size per feature (atoms, component, router…); `-- --check` enforces budgets, `-- --modules <case>` shows what a case keeps. |
 | `npm run test:browser` | Playwright: every example driven in Chromium, plus the resumability demos. |
 | `npm run bench` | Benchmarks (tracked, not a gate). |
 
@@ -56,3 +57,18 @@ Run these before opening a pull request; CI runs the same ones.
 Open an issue with the Affe and Effect versions, a minimal reproduction, and
 what you expected. Security issues go through [`SECURITY.md`](SECURITY.md),
 not public issues.
+
+## Keeping bundles small
+
+Every module is meant to tree-shake. Two rules keep it that way:
+
+- **No module-level work a bundler must keep.** A top-level `const x = f(...)`
+  is kept unless marked pure: write `/*#__PURE__*/ (() => ...)()` for
+  anything more than one call (including `class X extends
+  /*#__PURE__*/ (() => Schema.TaggedError<X>(...)(...))()`), and never
+  register or mutate at module load.
+- **No `import()` of a large module.** Bundlers keep every dynamic-import
+  target and all it exports. Break cycles with a small module instead.
+
+`npm run size -- --check` fails when a feature grows past its budget.
+

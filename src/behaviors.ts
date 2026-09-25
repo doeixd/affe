@@ -10,7 +10,7 @@ type KeyLikeEvent = {
   readonly preventDefault?: () => void;
 };
 
-export const disclosure = Behavior.make<{
+export const disclosure = /*#__PURE__*/ (() => Behavior.make<{
   readonly trigger: Element.Interactive;
   readonly content: Element.Container;
 }, {
@@ -30,7 +30,7 @@ export const disclosure = Behavior.make<{
     yield* elements.content.setAttr("aria-hidden", () => !bindings.isOpen());
 
     return bindings;
-  }));
+  })))();
 
 function createDisclosureBindings() {
   return Effect.gen(function* () {

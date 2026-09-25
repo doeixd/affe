@@ -40,6 +40,8 @@ jobs:
       # Installs the packed tarball into a throwaway project: every subpath
       # must import and a golden-path file must type-check strictly.
       - run: npm run verify:package
+      # Per-feature bundle budgets (atoms, render, component, router).
+      - run: npm run size -- --check
 
   browser:
     name: Browser tests (Playwright)

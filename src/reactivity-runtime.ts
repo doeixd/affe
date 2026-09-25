@@ -89,9 +89,9 @@ export type ReactivityKeysInput =
 export type NormalizedReactivityKey = string;
 
 let installedService: ReactivityService | null = null;
-const installListeners = /*#__PURE__*/ new Set<(service: ReactivityService | null) => void>();
-const invalidationListeners = /*#__PURE__*/ new Set<(keys: ReadonlyArray<NormalizedReactivityKey>) => void>();
-const keyUnsubscribers = /*#__PURE__*/ new Map<NormalizedReactivityKey, () => void>();
+const installListeners = /*#__PURE__*/ (() => new Set<(service: ReactivityService | null) => void>())();
+const invalidationListeners = /*#__PURE__*/ (() => new Set<(keys: ReadonlyArray<NormalizedReactivityKey>) => void>())();
+const keyUnsubscribers = /*#__PURE__*/ (() => new Map<NormalizedReactivityKey, () => void>())();
 const readCaptureStack: Array<Set<NormalizedReactivityKey>> = [];
 const invalidationCaptureStack: Array<Set<NormalizedReactivityKey>> = [];
 
@@ -132,7 +132,7 @@ export function onReactivityInvalidation(listener: (keys: ReadonlyArray<Normaliz
 }
 
 const reactivityVersionMap = /*#__PURE__*/ new Map<NormalizedReactivityKey, Accessor<number>>();
-const reactivityBumpMap = /*#__PURE__*/ new Map<NormalizedReactivityKey, () => void>();
+const reactivityBumpMap = /*#__PURE__*/ (() => new Map<NormalizedReactivityKey, () => void>())();
 
 /**
  * Normalize AUTHORED reactivity keys — the single choke point every

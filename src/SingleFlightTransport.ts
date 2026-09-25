@@ -1,12 +1,12 @@
 import { Effect, Context, Schema } from "effect";
 
 /** The transport failed to move the envelope at all (network, endpoint). */
-export class SingleFlightTransportError extends /*#__PURE__*/ Schema.TaggedError<SingleFlightTransportError>(
+export class SingleFlightTransportError extends /*#__PURE__*/ (() => Schema.TaggedError<SingleFlightTransportError>(
   "affe/SingleFlightTransportError",
 )("SingleFlightTransportError", {
   message: Schema.String,
   cause: Schema.optional(Schema.Unknown),
-}) {}
+}))() {}
 
 /**
  * Pluggable transport contract for transparent single-flight mutations.

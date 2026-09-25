@@ -9,3 +9,4 @@ bench-results/resumability/
 reactively-upstream/
 test-results/
 playwright-report/
+.size-*/

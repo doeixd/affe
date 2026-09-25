@@ -11,12 +11,12 @@ export type EventInvocation =
   | typeof DeferredNoArgs
   | typeof ActivationProjection;
 
-export const EventTargetKey = /*#__PURE__*/ Schema.String.check(
+export const EventTargetKey = /*#__PURE__*/ (() => Schema.String.check(
   Schema.isPattern(/^[A-Za-z][A-Za-z0-9_.:-]*$/),
-);
+))();
 export type EventTargetKey = typeof EventTargetKey.Type;
 
-export const MouseEventProjectionSchema = /*#__PURE__*/ Schema.Struct({
+export const MouseEventProjectionSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("mouse-v1"),
   altKey: Schema.Boolean,
   button: Schema.Finite,
@@ -26,7 +26,7 @@ export const MouseEventProjectionSchema = /*#__PURE__*/ Schema.Struct({
   ctrlKey: Schema.Boolean,
   metaKey: Schema.Boolean,
   shiftKey: Schema.Boolean,
-});
+}))();
 export type MouseEventProjection = typeof MouseEventProjectionSchema.Type;
 
 export interface EventProjection<Id extends string, Value> {
@@ -78,7 +78,7 @@ const mouseProjectionEventTypes = /*#__PURE__*/ new Set([
 export const MouseEventProjection: EventProjection<
   "mouse-v1",
   MouseEventProjection
-> = Object.freeze({
+> = /*#__PURE__*/ (() => Object.freeze({
   id: "mouse-v1",
   schema: MouseEventProjectionSchema,
   supportsEventType: (eventType: string) =>
@@ -102,7 +102,7 @@ export const MouseEventProjection: EventProjection<
       shiftKey: Boolean(mouse.shiftKey),
     });
   },
-});
+}))();
 
 export type AnyEventProjection = typeof MouseEventProjection;
 export type ActivationProjectionValue = MouseEventProjection;
@@ -216,7 +216,7 @@ export function inspectEventHandler(
   return undefined;
 }
 
-const activationTargets = new WeakMap<
+const activationTargets = /*#__PURE__*/ new WeakMap<
   object,
   Map<string, Map<EventTargetKey, EventHandler>>
 >();

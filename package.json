@@ -281,7 +281,8 @@
     "typecheck:all": "npm run typecheck && npm run typecheck:tests && npm run typecheck:examples && npm run typecheck:browser && npm run typecheck:permissive && npm run typecheck:agent && npm run typecheck:css && npm run typecheck:effect",
     "check": "npm run typecheck:all && npm run test",
     "prepack": "npm run build",
-    "verify:package": "node scripts/verify-package.mjs"
+    "verify:package": "node scripts/verify-package.mjs",
+    "size": "node scripts/size.mjs"
   },
   "dependencies": {
     "@typeonce/effect-machine": "0.38.1",

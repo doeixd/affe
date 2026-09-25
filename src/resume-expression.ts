@@ -203,12 +203,12 @@ export interface ExpressionContext {
   readonly values: ReadonlyArray<unknown>;
 }
 
-export class ExpressionDependencyDecodeError extends /*#__PURE__*/ Schema.TaggedError<ExpressionDependencyDecodeError>(
+export class ExpressionDependencyDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ExpressionDependencyDecodeError>(
   "affe/ExpressionDependencyDecodeError",
 )("ExpressionDependencyDecodeError", {
   codeId: Portable.CodeId,
   message: Schema.String,
-}) {}
+}))() {}
 
 export interface ExpressionCode<
   Captures,
@@ -276,9 +276,9 @@ export interface ResumableExpression<A extends ExpressionOutput = ExpressionOutp
   readonly [ExpressionTypeId]: () => ExpressionInspection<A>;
 }
 
-const creationObservers = new Set<
+const creationObservers = /*#__PURE__*/ (() => new Set<
   (expression: ResumableExpression) => void
->();
+>())();
 
 function decodeExpressionDependencies<
   Dependencies extends ReadonlyArray<unknown>,

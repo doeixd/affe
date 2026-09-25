@@ -47,12 +47,27 @@ Chromium found:
   for apps that accept cross-site form posts.
 - `SECURITY.md`, `CONTRIBUTING.md`, and a guides-first `docs/README.md`.
 
-### Smaller bundles
+### Smaller bundles: you pay only for what you import
 
-- About 12 kB gzipped less in any app with a component: a dynamic
-  `import("./Route.js")` made bundlers keep every Route export. The
-  `create-affe` template is ~64 kB gzipped with Effect included, and
-  `verify:package` holds it to a 68 kB budget.
+Imports were not tree-shaking: an app that only used atoms shipped 38 kB
+gzipped, and any component pulled in the router, the loader cache and Effect
+`Schema`. Measured with Vite 8, gzipped, Effect included:
+
+| App | Before | After |
+|---|---|---|
+| Atoms only | 37.9 kB | 5.0 kB |
+| `render` + atoms | 47.9 kB | 20.1 kB |
+| One component | 70.4 kB | 25.1 kB |
+| The `create-affe` template | 75.8 kB | 31.5 kB |
+| Routing | 74.7 kB | ~50 kB |
+
+The causes, all fixed: a dynamic `import("./Route.js")` (bundlers keep
+every dynamic-import target, and everything it re-exports); module-level
+calls the bundler had to assume were side effects (`Object.assign` on
+`Atom.runtime`, schema and layer constants, and chained
+`Schema.TaggedError(...)(...)` class heritages); and a single-flight
+hydrator registered at module load. `npm run size` reports per-feature
+sizes, and CI enforces budgets for each.
 
 ### `Route.Switch` and `WithLayer` work as documented
 

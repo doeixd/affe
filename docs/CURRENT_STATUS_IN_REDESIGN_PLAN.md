@@ -32,7 +32,7 @@ specs; no open design question in any lane)
     handles are not yet bound to rendered DOM elements (see below).
 - **Launch readiness (2026-09-25).** `@doeixd/affe/vite` and
   `@doeixd/create-affe` give a working first run; `verify:package` installs
-  and builds a scaffolded app under a 68 kB gzip budget. Every served example
+  and builds a scaffolded app under a 35 kB gzip budget, and `npm run size` holds per-feature budgets (atoms 5 kB, one component 25 kB). Every served example
   now runs in Playwright (`browser-tests/examples.spec.ts`), which found:
   control-flow components frozen in JSX, a broken `Route.Link`, mounted pages
   ignoring new loader data, actions without context, `renderToString`

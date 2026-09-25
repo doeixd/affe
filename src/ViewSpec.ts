@@ -41,20 +41,20 @@ export type NodeKind = (typeof NodeKinds)[number];
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class ViewSpecDecodeError extends /*#__PURE__*/ Schema.TaggedError<ViewSpecDecodeError>(
+export class ViewSpecDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ViewSpecDecodeError>(
   "affe/ViewSpecDecodeError",
 )("ViewSpecDecodeError", {
   /** Structural description only — never echoes field contents. */
   message: Schema.String,
   path: Schema.String,
-}) {}
+}))() {}
 
-export class ViewSpecInvalidError extends /*#__PURE__*/ Schema.TaggedError<ViewSpecInvalidError>(
+export class ViewSpecInvalidError extends /*#__PURE__*/ (() => Schema.TaggedError<ViewSpecInvalidError>(
   "affe/ViewSpecInvalidError",
 )("ViewSpecInvalidError", {
   message: Schema.String,
   codes: Schema.Array(Schema.String),
-}) {}
+}))() {}
 
 // ─── State model ─────────────────────────────────────────────────────────────
 

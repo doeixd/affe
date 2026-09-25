@@ -22,81 +22,81 @@ export const ExecutableInspectionTypeId: unique symbol = /*#__PURE__*/ Symbol.fo
 );
 
 /** Stable logical code identity. This is an address, never executable source. */
-export const CodeId = /*#__PURE__*/ Schema.String.check(Schema.isNonEmpty()).pipe(
+export const CodeId = /*#__PURE__*/ (() => Schema.String.check(Schema.isNonEmpty()).pipe(
   Schema.brand("affe/Portable/CodeId"),
-);
+))();
 export type CodeId = typeof CodeId.Type;
 
 /** Deployment/build identity used to reject stale manifests. */
-export const BuildId = /*#__PURE__*/ Schema.String.check(Schema.isNonEmpty()).pipe(
+export const BuildId = /*#__PURE__*/ (() => Schema.String.check(Schema.isNonEmpty()).pipe(
   Schema.brand("affe/Portable/BuildId"),
-);
+))();
 export type BuildId = typeof BuildId.Type;
 
-export class PortableCodeNotFoundError extends /*#__PURE__*/ Schema.TaggedError<PortableCodeNotFoundError>(
+export class PortableCodeNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<PortableCodeNotFoundError>(
   "affe/PortableCodeNotFoundError",
 )("PortableCodeNotFoundError", {
   id: CodeId,
   reason: Schema.String,
-}) {
+}))() {
   override get message(): string {
     return this.reason;
   }
 }
 
-export class PortableCodeLoadError extends /*#__PURE__*/ Schema.TaggedError<PortableCodeLoadError>(
+export class PortableCodeLoadError extends /*#__PURE__*/ (() => Schema.TaggedError<PortableCodeLoadError>(
   "affe/PortableCodeLoadError",
 )("PortableCodeLoadError", {
   id: CodeId,
   reason: Schema.String,
-}) {
+}))() {
   override get message(): string {
     return this.reason;
   }
 }
 
-export class PortableCodeIdentityMismatchError extends /*#__PURE__*/ Schema.TaggedError<PortableCodeIdentityMismatchError>(
+export class PortableCodeIdentityMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<PortableCodeIdentityMismatchError>(
   "affe/PortableCodeIdentityMismatchError",
 )("PortableCodeIdentityMismatchError", {
   requested: CodeId,
   loaded: CodeId,
   reason: Schema.String,
-}) {
+}))() {
   override get message(): string {
     return this.reason;
   }
 }
 
-export class PortableBuildMismatchError extends /*#__PURE__*/ Schema.TaggedError<PortableBuildMismatchError>(
+export class PortableBuildMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<PortableBuildMismatchError>(
   "affe/PortableBuildMismatchError",
 )("PortableBuildMismatchError", {
   id: CodeId,
   expected: BuildId,
   actual: BuildId,
   reason: Schema.String,
-}) {
+}))() {
   override get message(): string {
     return this.reason;
   }
 }
 
-export class PortableCaptureEncodeError extends /*#__PURE__*/ Schema.TaggedError<PortableCaptureEncodeError>(
+export class PortableCaptureEncodeError extends /*#__PURE__*/ (() => Schema.TaggedError<PortableCaptureEncodeError>(
   "affe/PortableCaptureEncodeError",
 )("PortableCaptureEncodeError", {
   id: CodeId,
   reason: Schema.String,
-}) {
+}))() {
   override get message(): string {
     return this.reason;
   }
 }
 
-export class PortableCaptureDecodeError extends /*#__PURE__*/ Schema.TaggedError<PortableCaptureDecodeError>(
+export class PortableCaptureDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<PortableCaptureDecodeError>(
   "affe/PortableCaptureDecodeError",
 )("PortableCaptureDecodeError", {
   id: CodeId,
   reason: Schema.String,
-}) {
+}))() {
   override get message(): string {
     return this.reason;
   }
@@ -322,13 +322,13 @@ export function inspectExecutable(
   return { kind: "opaque" };
 }
 
-export const DescriptorSchema = /*#__PURE__*/ Schema.Struct({
+export const DescriptorSchema = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(1),
   kind: Schema.Literal("portable.code"),
   id: CodeId,
   buildId: BuildId,
   captures: Schema.Unknown,
-});
+}))();
 
 type DescriptorValue = typeof DescriptorSchema.Type;
 

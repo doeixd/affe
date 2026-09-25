@@ -1331,7 +1331,7 @@ let activeSlotInstance:
  * so `Slot.ref` calls made later by lazily rendered children (`Show`, `For`,
  * reactive inserts) still resolve to their component instance's handles.
  */
-const slotInstancesByOwner = new WeakMap<
+const slotInstancesByOwner = /*#__PURE__*/ new WeakMap<
   Owner,
   { readonly contract: object; readonly handles: Record<string, unknown> }
 >();

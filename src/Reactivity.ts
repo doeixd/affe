@@ -183,12 +183,12 @@ function makeLive(options?: { readonly autoFlush?: boolean; readonly captureLast
   };
 }
 
-export const live: Layer.Layer<ReactivityService> = /*#__PURE__*/ Layer.succeed(ReactivityTag, makeLive({ autoFlush: true }));
+export const live: Layer.Layer<ReactivityService> = /*#__PURE__*/ (() => Layer.succeed(ReactivityTag, makeLive({ autoFlush: true })))();
 
-export const test: Layer.Layer<ReactivityService> = /*#__PURE__*/ Layer.succeed(
+export const test: Layer.Layer<ReactivityService> = /*#__PURE__*/ (() => Layer.succeed(
   ReactivityTag,
   makeLive({ autoFlush: false, captureLastInvalidated: true }),
-);
+))();
 
 export const Reactivity = {
   Tag: ReactivityTag,

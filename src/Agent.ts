@@ -44,56 +44,56 @@ import * as ViewSpec from "./ViewSpec.js";
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class AgentToolNotFoundError extends /*#__PURE__*/ Schema.TaggedError<AgentToolNotFoundError>(
+export class AgentToolNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentToolNotFoundError>(
   "affe/AgentToolNotFoundError",
 )("AgentToolNotFoundError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentArgsDecodeError extends /*#__PURE__*/ Schema.TaggedError<AgentArgsDecodeError>(
+export class AgentArgsDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentArgsDecodeError>(
   "affe/AgentArgsDecodeError",
 )("AgentArgsDecodeError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentErrorEncodeError extends /*#__PURE__*/ Schema.TaggedError<AgentErrorEncodeError>(
+export class AgentErrorEncodeError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentErrorEncodeError>(
   "affe/AgentErrorEncodeError",
 )("AgentErrorEncodeError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentBuildIdMissingError extends /*#__PURE__*/ Schema.TaggedError<AgentBuildIdMissingError>(
+export class AgentBuildIdMissingError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentBuildIdMissingError>(
   "affe/AgentBuildIdMissingError",
 )("AgentBuildIdMissingError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class GovernanceUnsatisfiedError extends /*#__PURE__*/ Schema.TaggedError<GovernanceUnsatisfiedError>(
+export class GovernanceUnsatisfiedError extends /*#__PURE__*/ (() => Schema.TaggedError<GovernanceUnsatisfiedError>(
   "affe/GovernanceUnsatisfiedError",
 )("GovernanceUnsatisfiedError", {
   tool: Schema.String,
   /** The missing service's name — what "fail closed" makes actionable. */
   missing: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ApprovalDeniedError extends /*#__PURE__*/ Schema.TaggedError<ApprovalDeniedError>(
+export class ApprovalDeniedError extends /*#__PURE__*/ (() => Schema.TaggedError<ApprovalDeniedError>(
   "affe/ApprovalDeniedError",
 )("ApprovalDeniedError", {
   summary: Schema.String,
   reason: Schema.String,
-}) {}
+}))() {}
 
-export class AuthorizationDeniedError extends /*#__PURE__*/ Schema.TaggedError<AuthorizationDeniedError>(
+export class AuthorizationDeniedError extends /*#__PURE__*/ (() => Schema.TaggedError<AuthorizationDeniedError>(
   "affe/AuthorizationDeniedError",
 )("AuthorizationDeniedError", {
   tool: Schema.String,
   reason: Schema.String,
-}) {}
+}))() {}
 
 // ─── Governance services ─────────────────────────────────────────────────────
 
@@ -117,12 +117,12 @@ export const Approval = /*#__PURE__*/ Context.Service<ApprovalService>(
 
 // ─── ApprovalStore (DQ-095) ──────────────────────────────────────────────────
 
-export class ApprovalNotFoundError extends /*#__PURE__*/ Schema.TaggedError<ApprovalNotFoundError>(
+export class ApprovalNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<ApprovalNotFoundError>(
   "affe/ApprovalNotFoundError",
 )("ApprovalNotFoundError", {
   id: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 /** One queued approval: plain wire data any component can render. */
 export interface PendingApproval {
@@ -1116,26 +1116,26 @@ export function makeDispatcher<Provided, LE>(
 
 // ─── Result rendering (AN-4) ─────────────────────────────────────────────────
 
-export class AgentRenderTargetMissingError extends /*#__PURE__*/ Schema.TaggedError<AgentRenderTargetMissingError>(
+export class AgentRenderTargetMissingError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentRenderTargetMissingError>(
   "affe/AgentRenderTargetMissingError",
 )("AgentRenderTargetMissingError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentRenderPropsError extends /*#__PURE__*/ Schema.TaggedError<AgentRenderPropsError>(
+export class AgentRenderPropsError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentRenderPropsError>(
   "affe/AgentRenderPropsError",
 )("AgentRenderPropsError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentRenderError extends /*#__PURE__*/ Schema.TaggedError<AgentRenderError>(
+export class AgentRenderError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentRenderError>(
   "affe/AgentRenderError",
 )("AgentRenderError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 export interface RenderedResult {
   readonly html: string;

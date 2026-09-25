@@ -519,19 +519,22 @@ What you don't give up: incremental adoption inside an existing app, and SSR
 
 ## Size
 
-Measured with Vite 8, minified and gzipped, **Effect included**:
+Measured with Vite 8, minified and gzipped, **Effect included**
+(`npm run size` reproduces these; CI fails if one grows past its budget):
 
 | App | Initial JavaScript |
 |---|---|
-| Atoms only | ~38 kB |
-| One component, `render` | ~58 kB |
-| The `create-affe` template | ~64 kB |
-| `examples/router-basic` (routing, loaders) | ~63 kB |
+| Atoms only | ~5 kB |
+| `render` + atoms | ~20 kB |
+| One component | ~25 kB |
+| Component + style + behavior | ~30 kB |
+| The `create-affe` template | ~32 kB |
+| Routing (`examples/router-basic`) | ~50 kB |
 
-Most of that is Effect's runtime, which an Effect app ships anyway (the
-runtime plus `Layer` and `Schema` alone is ~23 kB). Affe is not the choice
-for a page where every kilobyte counts; `verify:package` holds the template
-app to a 68 kB budget so the number does not creep.
+You pay for what you import: every module is tree-shakeable, so an app that
+never routes ships no router, and one that never resumes ships no
+resumability runtime. Routing costs the most because params and loaders
+decode through Effect `Schema`, which a typed app usually carries anyway.
 
 ## Status
 

@@ -769,10 +769,10 @@ function effectiveTokens(service: Theme.ThemeService | undefined): ThemeTokenSch
 }
 
 /** Read the ambient `Theme` service (optional) as the resolution token schema. */
-const currentThemeTokens: Effect.Effect<ThemeTokenSchema> = /*#__PURE__*/ Effect.map(
+const currentThemeTokens: Effect.Effect<ThemeTokenSchema> = /*#__PURE__*/ (() => Effect.map(
   Effect.serviceOption(Theme.Theme),
   (maybeTheme) => effectiveTokens(maybeTheme._tag === "Some" ? maybeTheme.value : undefined),
-);
+))();
 
 /**
  * Theme tokens captured during setup, keyed by the setup bindings object, for
