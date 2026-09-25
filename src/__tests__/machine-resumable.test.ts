@@ -23,20 +23,20 @@ class Opened extends Schema.TaggedClass<Opened>()("Opened", {
 }) {}
 class OpenEvent extends Schema.TaggedClass<OpenEvent>()("OpenEvent", {}) {}
 
-const states = Machine.defineStates({ Closed, Opened });
+const Root = Machine.state({ states: { Closed, Opened } });
+const targets = Machine.targets(Root);
 const definition = Machine.make({
   id: "resumable-disclosure",
-  states: states.states,
-  events: [OpenEvent],
-  initial: () => states.initial.Closed(new Closed()),
+  root: Root,
+  events: Machine.eventsFromSchemas(OpenEvent),
 }).handle({
-  Closed: {
-    on: {
-      OpenEvent: ({ target }: { target: any }) =>
-        Effect.succeed(target.full.Opened(new Opened({ highlighted: null }))),
+  initial: { target: targets.root.Closed },
+  states: {
+    Closed: {
+      on: { OpenEvent: { target: targets.root.Opened, data: { highlighted: null } } },
     },
+    Opened: {},
   },
-  Opened: { on: {} },
 });
 
 const collectWidget = (

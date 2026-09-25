@@ -44,8 +44,20 @@ export function createSignal<T>(
  * Create a reactive side-effect. `fn` runs immediately and re-runs whenever
  * any signal read inside it changes.
  *
- * Cleanup functions returned by `fn` (or registered via `onCleanup`) are
- * called before each re-run and on disposal.
+ * Solid-style previous-value threading: `fn` receives the value it returned
+ * on its previous run (`initialValue` on the first run), and whatever it
+ * returns becomes `prev` for the next run. A returned function is NOT treated
+ * as a cleanup — it is just passed back as `prev`. Register cleanup with
+ * `onCleanup(...)` inside `fn`; those callbacks run before each re-run and on
+ * disposal.
+ *
+ * @example
+ * createEffect((prev) => {
+ *   const next = count();
+ *   console.log(prev, "->", next);
+ *   onCleanup(() => console.log("before next run / on dispose"));
+ *   return next;
+ * }, 0);
  */
 export function createEffect<T>(fn: (prev: T | undefined) => T, initialValue?: T): void {
   let prev: T | undefined = initialValue;
@@ -186,7 +198,7 @@ export interface Context<T> {
   Provider: (props: { value: T; children: unknown }) => unknown;
 }
 
-export const contextMap = new WeakMap<Owner, Map<symbol, unknown>>();
+export const contextMap = /*#__PURE__*/ new WeakMap<Owner, Map<symbol, unknown>>();
 
 function getContextMap(owner: Owner): Map<symbol, unknown> {
   let map = contextMap.get(owner);

@@ -56,7 +56,7 @@ export interface SerializationService {
   ) => Effect.Effect<T, Schema.SchemaError>;
 }
 
-export const Tag = Context.Service<SerializationService>("Serialization");
+export const Tag = /*#__PURE__*/ Context.Service<SerializationService>("Serialization");
 
 /** Identity of the default Effect-`Schema` JSON codec. */
 export const defaultSerializerId = "af.schema-json.v1";

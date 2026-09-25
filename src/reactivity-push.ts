@@ -46,7 +46,7 @@ export interface ReactivityBroadcastPublisher {
   readonly publish: (keys: ReactivityKeysInput) => Effect.Effect<void>;
 }
 
-export const ReactivityBroadcast = Context.Service<ReactivityBroadcastPublisher>(
+export const ReactivityBroadcast = /*#__PURE__*/ Context.Service<ReactivityBroadcastPublisher>(
   "affe/ReactivityPush/Broadcast",
 );
 

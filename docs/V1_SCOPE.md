@@ -10,9 +10,6 @@ include, so the release can converge. When triaging any backlog item, the
 question is "is it in the Ships list?" — if not, it waits, no matter how good
 it is.
 
-Decisions marked `DECIDE:` need an explicit owner call before this doc is
-authoritative.
-
 ## Ships in v1
 
 Everything here is implemented today or is tracked release-blocking work.
@@ -67,7 +64,7 @@ Everything here is implemented today or is tracked release-blocking work.
 - Inference audit: no explicit generics in authored code (Finding 4) —
   release-blocking core done
 - Declared-vs-rendered diagnostics + platform validation; **diagnostics
-  pipeline + `af-ui doctor` CLI + opt-in dev auto-report (P3)** shipped
+  pipeline + `affe doctor` CLI + opt-in dev auto-report (P3)** shipped
 - Test kit on `@doeixd/affe/testing` (P5): `render`, `behaviorDriver`,
   `resolveQuery`/`resolveAction`, story/scene helpers — shipped
 
@@ -112,6 +109,21 @@ Everything here is implemented today or is tracked release-blocking work.
 - Historical docs moved to `docs/archive/` (PR2)
 - Full typecheck/test/build green (existing gates)
 
+### Added after ratification (2026-07 to 2026-09)
+
+These lanes landed after this scope was ratified. Each is complete per
+`docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`, with its own guide:
+
+- **Resumability** (`Resume`, `Portable`, the `extract`/`expr` compiler
+  markers and Vite plugin, streaming fragments) — `docs/RESUMABILITY_GUIDE.md`.
+- **Agent surface** (`Agent` catalog and dispatch, `ViewSpec` generative-UI
+  IR, reactivity push) — `docs/AGENT_SURFACE_GUIDE.md`.
+- **Component kit** (`src/kit/`, `src/behaviors/`) — `docs/COMPONENT_KIT_PLAN.md`.
+- **Workspace packages** `@doeixd/affe-ui-agent` (MCP adapter),
+  `@doeixd/affe-css` (CSS foundation) and `@doeixd/affe-permissive`
+  (seroval preset). They are private (unpublished) today, so the core still
+  ships as one package; see "Package split" below.
+
 ## Pre-Release Readiness Findings (2026-07-07 scrutiny pass)
 
 A skeptical readiness review surfaced concrete blockers beyond the redesign
@@ -129,8 +141,8 @@ findings. Status:
 - **No example typecheck gate** — added `typecheck:examples`.
 
 **Release-blocking for a true 1.0 stable (updated 2026-07-09):**
-- **Effect *beta* dependency only.** `effect ^4.0.0-beta.29` (dep + peer). A
-  1.0 cannot be stable on a beta core. Gated on Effect 4 stable.
+- **Effect *prerelease* dependency only.** `effect 4.0.0-rc.117` (exact peer). A
+  1.0 cannot be stable on a prerelease core. Gated on Effect 4 stable.
 
 **Resolved since the 2026-07-07 scrutiny pass:**
 - `typecheck:tests` and `typecheck:examples` are green and enforced via
@@ -164,13 +176,14 @@ core is the only hard external blocker for cutting `1.0.0`.
   `docs/adr/ADR-005-family-hydration-identity.md`. A non-FIFO eviction
   *policy* (LRU/TTL) remains a v1.x follow-up.
 - **Package split (P7).** **DECIDED 2026-07-06: confirmed** — v1 ships one
-  package. Split re-evaluated post-v1 only.
+  core package. Split re-evaluated post-v1 only. The workspace adapter
+  packages above are private and do not change this.
 - **Depth beyond shipped MVPs (2026-07-09 backlog close):** full WAI-ARIA
   certification theater, browser Devtools panel chrome, Form+single-flight
   demo apps, and Effect-fiber interruption polish. **Shipped in-tree already:**
   P1/P3/P5 cores, P4 decision + schema, P8 catalog MVP, P9 `Form`, P10
   ownership note, P11 Devtools/MCP session MVP, P12 gated stream +
-  `Component.subscription`, P13 inputSchema, D3 `create-af-ui`.
+  `Component.subscription`, P13 inputSchema, D3 `create-affe` (was `create-af-ui`).
 - **`RouterRuntime` cancellation/supersession polish** beyond the current
   guarded in-flight model (deeper fiber interruption) remains optional depth.
 - **Schema-validated action inputs (P13)** boundary subset **shipped**;
@@ -196,7 +209,7 @@ backlog + archive log):
 | 11 | P13 action inputSchema boundary | ✅ optional schema decode before effect / single-flight (2026-07-09) |
 
 Remaining release-blocking work for **1.0 stable** (updated 2026-07-09):
-**`effect` stable release** only (external — pinned to `^4.0.0-beta.29`).
+**`effect` stable release** only (external — pinned to `4.0.0-rc.117`).
 Prerelease is ready when quality gates are green (see
 `docs/RELEASE_CHECKLIST.md`). Do not cut by re-adding deferred features.
 

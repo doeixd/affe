@@ -40,6 +40,8 @@ export type ValidationMode = "off" | "loose" | "strict";
 export interface HydrateOptions {
   /** Legacy toggle: `true` is equivalent to `mode: "loose"`. */
   readonly validate?: boolean;
+  /** Legacy toggle: `true` is equivalent to `mode: "strict"`. */
+  readonly strict?: boolean;
   /** Preferred validation control (ADR-005). Overrides `validate` when set. */
   readonly mode?: ValidationMode;
   readonly onUnknownKey?: (key: string) => void;
@@ -108,7 +110,10 @@ export const toValues = (state: ReadonlyArray<DehydratedAtom>): Array<Dehydrated
  * Restore dehydrated atom values into a Registry on the client.
  *
  * Each entry's `key` is looked up in `resolvers` to find the target atom.
- * Entries with no matching resolver are silently skipped.
+ * Validation follows {@link ValidationMode}: `"off"` skips unmatched entries
+ * silently, `"loose"` reports them, and `"strict"` throws a
+ * {@link HydrationError} — before writing anything, so a mismatched payload
+ * never half-hydrates the registry.
  *
  * @param registry       - The client-side Registry to write values into.
  * @param dehydratedState - Serialized atom entries from `dehydrate`.
@@ -126,9 +131,9 @@ export const hydrate = (
   resolvers: Readonly<Record<string, Atom.Writable<any, any>>>,
   options?: HydrateOptions,
 ): void => {
-  const values = toValues(Array.from(dehydratedState));
-  const matchedResolvers = new Set<string>();
-  const warn = resolveMode(options) !== "off";
+  const mode = resolveMode(options);
+  const plan = planHydration(dehydratedState, resolvers);
+  const warn = mode !== "off";
 
   const reportUnknown = options?.onUnknownKey ?? (warn
     ? (key: string) => {
@@ -142,30 +147,60 @@ export const hydrate = (
     }
     : undefined);
 
-  for (const value of values) {
-    const atom = resolvers[value.key];
-    if (!atom) {
-      reportUnknown?.(value.key);
-      continue;
-    }
-    matchedResolvers.add(value.key);
-    registry.set(atom, value.value);
+  if (reportUnknown !== undefined) for (const key of plan.unknown) reportUnknown(key);
+  if (reportMissing !== undefined) for (const key of plan.missing) reportMissing(key);
+
+  if (mode === "strict") {
+    const error = strictHydrationError(plan.unknown, plan.missing);
+    if (error !== undefined) throw error;
   }
 
-  if (reportMissing !== undefined) {
-    for (const key of Object.keys(resolvers)) {
-      if (!matchedResolvers.has(key)) {
-        reportMissing(key);
-      }
-    }
-  }
+  for (const [atom, value] of plan.writes) registry.set(atom, value);
 };
+
+/** Resolve every dehydrated entry up front; no registry writes happen here. */
+function planHydration(
+  dehydratedState: Iterable<DehydratedAtom>,
+  resolvers: Readonly<Record<string, Atom.Writable<any, any>>>,
+): {
+  readonly writes: ReadonlyArray<readonly [Atom.Writable<any, any>, unknown]>;
+  readonly unknown: ReadonlyArray<string>;
+  readonly missing: ReadonlyArray<string>;
+} {
+  const values = toValues(Array.from(dehydratedState));
+  const matched = new Set<string>();
+  const unknown: Array<string> = [];
+  const writes: Array<readonly [Atom.Writable<any, any>, unknown]> = [];
+  for (const value of values) {
+    const atom = Object.prototype.hasOwnProperty.call(resolvers, value.key)
+      ? resolvers[value.key]
+      : undefined;
+    if (!atom) {
+      unknown.push(value.key);
+      continue;
+    }
+    matched.add(value.key);
+    writes.push([atom, value.value]);
+  }
+  const missing = Object.keys(resolvers).filter((key) => !matched.has(key));
+  return { writes, unknown, missing };
+}
+
+/** The strict-mode failure for a key mismatch, unknown keys reported first. */
+function strictHydrationError(
+  unknown: ReadonlyArray<string>,
+  missing: ReadonlyArray<string>,
+): HydrationError | undefined {
+  if (unknown.length > 0) return { _tag: "HydrationUnknownKeys", keys: unknown };
+  if (missing.length > 0) return { _tag: "HydrationMissingKeys", keys: missing };
+  return undefined;
+}
 
 /**
  * Effect constructor variant of `hydrate`.
  *
- * When `strict` is enabled, unknown/missing resolver keys fail with typed
- * `HydrationError` values.
+ * In strict mode, unknown/missing resolver keys fail with a typed
+ * `HydrationError` (a failure, not a defect) and nothing is written.
  */
 export const hydrateEffect = (
   registry: Registry.Registry,
@@ -173,38 +208,17 @@ export const hydrateEffect = (
   resolvers: Readonly<Record<string, Atom.Writable<any, any>>>,
   options?: HydrateOptions & { readonly strict?: boolean },
 ): Effect.Effect<void, HydrationError> =>
-  Effect.sync(() => {
-    const values = toValues(Array.from(dehydratedState));
-    const matched = new Set<string>();
-    const unknown: Array<string> = [];
-
-    for (const value of values) {
-      const atom = resolvers[value.key];
-      if (!atom) {
-        unknown.push(value.key);
-        options?.onUnknownKey?.(value.key);
-        continue;
-      }
-      matched.add(value.key);
-      registry.set(atom, value.value);
-    }
-
-    const missing = Object.keys(resolvers).filter((key) => !matched.has(key));
-    for (const key of missing) {
-      options?.onMissingKey?.(key);
-    }
-
+  Effect.suspend(() => {
+    const plan = planHydration(dehydratedState, resolvers);
+    for (const key of plan.unknown) options?.onUnknownKey?.(key);
+    for (const key of plan.missing) options?.onMissingKey?.(key);
     if (resolveMode(options) === "strict") {
-      if (unknown.length > 0) {
-        throw { _tag: "HydrationUnknownKeys", keys: unknown } as const;
-      }
-      if (missing.length > 0) {
-        throw { _tag: "HydrationMissingKeys", keys: missing } as const;
-      }
+      const error = strictHydrationError(plan.unknown, plan.missing);
+      if (error !== undefined) return Effect.fail(error);
     }
-  }).pipe(
-    Effect.mapError((error) => error as HydrationError),
-  );
+    for (const [atom, value] of plan.writes) registry.set(atom, value);
+    return Effect.void;
+  });
 
 // ─── Family hydration identity (ADR-005) ────────────────────────────────────
 //
@@ -290,39 +304,71 @@ export const hydrateFamilies = (
   resolvers: Readonly<Record<string, FamilyResolver>>,
   options?: HydrateOptions,
 ): void => {
-  const values = toFamilyValues(Array.from(dehydratedState));
   const mode = resolveMode(options);
-  const seenFamilies = new Set<string>();
+  const plan = planFamilyHydration(dehydratedState, resolvers);
 
-  for (const entry of values) {
-    const family = resolvers[entry.family];
-    if (family === undefined) {
-      const key = familyMemberKey(entry.family, entry.args);
-      options?.onUnknownKey?.(key);
+  for (const entry of plan.unknown) {
+    options?.onUnknownKey?.(entry.key);
+    if (mode === "loose") {
+      console.warn(`[affe] Hydration: family "${entry.family}" has no matching resolver.`);
+    }
+  }
+  if (mode !== "off") {
+    for (const key of plan.missing) {
+      options?.onMissingKey?.(key);
       if (mode === "loose") {
-        console.warn(`[affe] Hydration: family "${entry.family}" has no matching resolver.`);
+        console.warn(`[affe] Hydration: family resolver "${key}" received no dehydrated members.`);
       }
-      if (mode === "strict") {
-        throw { _tag: "HydrationUnknownKeys", keys: [key] } as const;
-      }
+    }
+  }
+
+  if (mode === "strict") {
+    const error = strictHydrationError(
+      plan.unknown.map((entry) => entry.key),
+      plan.missing,
+    );
+    if (error !== undefined) throw error;
+  }
+
+  writeFamilyMembers(registry, plan.writes);
+};
+
+/** Resolve every family entry up front; no registry writes happen here. */
+function planFamilyHydration(
+  dehydratedState: Iterable<DehydratedAtom>,
+  resolvers: Readonly<Record<string, FamilyResolver>>,
+): {
+  readonly writes: ReadonlyArray<readonly [FamilyResolver, DehydratedFamilyValue]>;
+  readonly unknown: ReadonlyArray<{ readonly family: string; readonly key: string }>;
+  readonly missing: ReadonlyArray<string>;
+} {
+  const values = toFamilyValues(Array.from(dehydratedState));
+  const seenFamilies = new Set<string>();
+  const unknown: Array<{ readonly family: string; readonly key: string }> = [];
+  const writes: Array<readonly [FamilyResolver, DehydratedFamilyValue]> = [];
+  for (const entry of values) {
+    const family = Object.prototype.hasOwnProperty.call(resolvers, entry.family)
+      ? resolvers[entry.family]
+      : undefined;
+    if (family === undefined) {
+      unknown.push({ family: entry.family, key: familyMemberKey(entry.family, entry.args) });
       continue;
     }
     seenFamilies.add(entry.family);
-    const member = family(...entry.args);
-    registry.set(member, entry.value);
+    writes.push([family, entry]);
   }
+  const missing = Object.keys(resolvers).filter((key) => !seenFamilies.has(key));
+  return { writes, unknown, missing };
+}
 
-  if (mode !== "off") {
-    for (const key of Object.keys(resolvers)) {
-      if (!seenFamilies.has(key)) {
-        options?.onMissingKey?.(key);
-        if (mode === "loose") {
-          console.warn(`[affe] Hydration: family resolver "${key}" received no dehydrated members.`);
-        }
-      }
-    }
+function writeFamilyMembers(
+  registry: Registry.Registry,
+  writes: ReadonlyArray<readonly [FamilyResolver, DehydratedFamilyValue]>,
+): void {
+  for (const [family, entry] of writes) {
+    registry.set(family(...entry.args), entry.value);
   }
-};
+}
 
 /**
  * Effect variant of {@link hydrateFamilies}. In `"strict"` mode unknown/missing
@@ -334,38 +380,17 @@ export const hydrateFamiliesEffect = (
   resolvers: Readonly<Record<string, FamilyResolver>>,
   options?: HydrateOptions,
 ): Effect.Effect<void, HydrationError> =>
-  Effect.sync(() => {
-    const values = toFamilyValues(Array.from(dehydratedState));
-    const mode = resolveMode(options);
-    const seenFamilies = new Set<string>();
-    const unknown: Array<string> = [];
-
-    for (const entry of values) {
-      const family = resolvers[entry.family];
-      if (family === undefined) {
-        const key = familyMemberKey(entry.family, entry.args);
-        unknown.push(key);
-        options?.onUnknownKey?.(key);
-        continue;
-      }
-      seenFamilies.add(entry.family);
-      const member = family(...entry.args);
-      registry.set(member, entry.value);
+  Effect.suspend(() => {
+    const plan = planFamilyHydration(dehydratedState, resolvers);
+    for (const entry of plan.unknown) options?.onUnknownKey?.(entry.key);
+    for (const key of plan.missing) options?.onMissingKey?.(key);
+    if (resolveMode(options) === "strict") {
+      const error = strictHydrationError(
+        plan.unknown.map((entry) => entry.key),
+        plan.missing,
+      );
+      if (error !== undefined) return Effect.fail(error);
     }
-
-    const missing = Object.keys(resolvers).filter((key) => !seenFamilies.has(key));
-    for (const key of missing) {
-      options?.onMissingKey?.(key);
-    }
-
-    if (mode === "strict") {
-      if (unknown.length > 0) {
-        throw { _tag: "HydrationUnknownKeys", keys: unknown } as const;
-      }
-      if (missing.length > 0) {
-        throw { _tag: "HydrationMissingKeys", keys: missing } as const;
-      }
-    }
-  }).pipe(
-    Effect.mapError((error) => error as HydrationError),
-  );
+    writeFamilyMembers(registry, plan.writes);
+    return Effect.void;
+  });

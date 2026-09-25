@@ -76,7 +76,7 @@ export type AnchorPositionBindings = {
 };
 
 /** Attaching without a measurement seam fails closed with this error. */
-export class AnchorPositionMeasureError extends Schema.TaggedErrorClass<AnchorPositionMeasureError>(
+export class AnchorPositionMeasureError extends Schema.TaggedError<AnchorPositionMeasureError>(
   "affe/AnchorPositionMeasureError",
 )("AnchorPositionMeasureError", {
   message: Schema.String,

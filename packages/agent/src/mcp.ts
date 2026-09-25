@@ -23,7 +23,7 @@ import * as Agent from "@doeixd/affe/Agent";
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class McpUnknownToolError extends Schema.TaggedErrorClass<McpUnknownToolError>(
+export class McpUnknownToolError extends Schema.TaggedError<McpUnknownToolError>(
   "@doeixd/affe-ui-agent/McpUnknownToolError",
 )("McpUnknownToolError", {
   tool: Schema.String,
@@ -35,10 +35,20 @@ export class McpUnknownToolError extends Schema.TaggedErrorClass<McpUnknownToolE
  * flags" and "does not exist" must be distinguishable codes, or a probe
  * cannot be told apart from a typo and a single catch-all satisfies both.
  */
-export class McpToolNotExposedError extends Schema.TaggedErrorClass<McpToolNotExposedError>(
+export class McpToolNotExposedError extends Schema.TaggedError<McpToolNotExposedError>(
   "@doeixd/affe-ui-agent/McpToolNotExposedError",
 )("McpToolNotExposedError", {
   tool: Schema.String,
+  message: Schema.String,
+}) {}
+
+/**
+ * The server requires authentication (the default) but no {@link McpAuth}
+ * service was provided. Refused before the tool name is validated.
+ */
+export class McpAuthenticationRequiredError extends Schema.TaggedError<McpAuthenticationRequiredError>(
+  "@doeixd/affe-ui-agent/McpAuthenticationRequiredError",
+)("McpAuthenticationRequiredError", {
   message: Schema.String,
 }) {}
 
@@ -52,8 +62,10 @@ export class McpToolNotExposedError extends Schema.TaggedErrorClass<McpToolNotEx
  * so an unauthenticated caller learns nothing (the `DQ-086` posture applied
  * to this surface).
  *
- * Absent service = an open adapter: dispatch runs without an adapter-provided
- * `CallerContext`. Production hosts provide `McpAuth`.
+ * Absent service = every call is refused with
+ * {@link McpAuthenticationRequiredError}, unless the server was created with
+ * `{ auth: "none" }` (an explicitly open adapter, e.g. a local stdio tool):
+ * then dispatch runs without an adapter-provided `CallerContext`.
  */
 export interface McpAuthService {
   readonly authenticate: () => Effect.Effect<Agent.CallerContextService, unknown>;
@@ -176,6 +188,12 @@ export interface McpServerOptions {
    * current build; a host proxying stale clients passes their id through.
    */
   readonly buildId?: string;
+  /**
+   * `"required"` (default): calls are refused unless an {@link McpAuth}
+   * service authenticates them. `"none"`: an explicitly open adapter, for
+   * trusted local transports; an `McpAuth` service is still used if present.
+   */
+  readonly auth?: "required" | "none";
 }
 
 /** Lower MCP's named `arguments` object to the core's positional tuple. */
@@ -238,6 +256,14 @@ export function mcpServer(
         //    not even whether the tool name was valid.
         const auth = yield* Effect.serviceOption(McpAuth);
         let identity: Agent.CallerContextService | undefined;
+        if (auth._tag === "None" && (options?.auth ?? "required") === "required") {
+          return refusal(
+            new McpAuthenticationRequiredError({
+              message:
+                "This MCP server requires authentication: provide McpAuth, or create it with { auth: \"none\" } for a trusted local transport.",
+            }),
+          );
+        }
         if (auth._tag === "Some") {
           const authenticated = yield* Effect.exit(auth.value.authenticate());
           if (authenticated._tag === "Failure") {

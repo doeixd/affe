@@ -2,9 +2,10 @@
  * Server component authored with the resume-extract compiler marker.
  *
  * The `extract(...)` call below is rewritten at build time into a hoisted,
- * exported `Portable.code` definition with the generated identity
- * `app/note-button.ts#$0` and a `Portable.bind` call at this site. Nothing in
- * this file hand-writes a code id, buildId, or resolver export.
+ * exported `Portable.code` definition and a `Portable.bind` call at this
+ * site. The marker is not assigned to a const, so its generated identity is
+ * content-hashed: `app/note-button.ts#$<hash>`. Nothing in this file
+ * hand-writes a code id, buildId, or resolver export.
  */
 import { Effect, Exit, Schema, Scope } from "effect";
 import * as Component from "@doeixd/affe/Component";

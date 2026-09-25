@@ -18,14 +18,13 @@ import {
   forkComponentScope,
   withComponentScope,
 } from "./component-scope.js";
+import { makeResumeSession, runInResumeSession } from "./resume-session.js";
 import {
-  makeResumeSession,
   observeDirectEventHandler,
   observeRenderedExpression,
   observeRenderedExpressionTarget,
   observeServerEventTarget,
-  runInResumeSession,
-} from "./resume-session.js";
+} from "./resume-hooks.js";
 import { ServerRenderStateTag, currentServerRenderState } from "./render-state.js";
 import * as SafeHtml from "./SafeHtml.js";
 import { isView, Slot as ViewSlot } from "./View.js";
@@ -114,13 +113,18 @@ export function insert(
       : accessor as ResumableExpression;
     const expressionInsertion = {};
     new Computation(() => {
-      const value = resumableExpression === undefined
-        ? childAccessor()
-        : observeRenderedExpression(
-          resumableExpression,
-          expressionInsertion,
-          childAccessor,
-        ) as Child;
+      // A component (or any accessor) may itself return an accessor: unwrap
+      // inside this tracked computation, as Solid does, so every level's
+      // reads re-run this insertion.
+      const value = resolveChild(
+        resumableExpression === undefined
+          ? childAccessor()
+          : observeRenderedExpression(
+            resumableExpression,
+            expressionInsertion,
+            childAccessor,
+          ),
+      ) as Child;
       currentNodes = insertExpression(parent, value, currentNodes, marker);
     });
     return currentNodes;
@@ -128,10 +132,18 @@ export function insert(
   return insertExpression(parent, accessor as Child, current, marker);
 }
 
+/** Call accessor-valued children until a non-function value is reached. */
+function resolveChild(value: unknown): unknown {
+  while (typeof value === "function" && !SafeHtml.isSafeHtml(value)) {
+    value = (value as () => unknown)();
+  }
+  return value;
+}
+
 function toNode(val: Child): Node | null {
   if (val == null || val === false || val === true) return null;
   if (val instanceof Node) return val;
-  return document.createTextNode(String(val));
+  return currentDocument().createTextNode(String(val));
 }
 
 /**
@@ -175,8 +187,8 @@ function insertExpression(
   // `View.Slot.mountTarget`.
   if (ViewSlot.isProjection(value)) {
     const markers = ViewSlot.regionMarkers(value.slot.name);
-    const start = document.createComment(markers.start);
-    const end = document.createComment(markers.end);
+    const start = currentDocument().createComment(markers.start);
+    const end = currentDocument().createComment(markers.end);
     parent.insertBefore(start, marker);
     parent.insertBefore(end, marker);
     const child = value.children === undefined ? null : value.children();
@@ -193,7 +205,13 @@ function insertExpression(
   }
   if (Array.isArray(value)) {
     const newNodes: Node[] = value.flatMap(flattenChild).filter(Boolean) as Node[];
-    reconcileArrays(parent, current as Node[] | null ?? [], newNodes, marker);
+    // `current` is a single node when this child was previously one value.
+    const oldNodes = Array.isArray(current)
+      ? current
+      : current == null
+      ? []
+      : [current];
+    reconcileArrays(parent, oldNodes, newNodes, marker);
     return newNodes;
   }
 
@@ -243,11 +261,14 @@ function insertExpression(
   return newNode;
 }
 
-function flattenChild(c: Child): Node[] {
+function flattenChild(child: Child): Node[] {
+  const c = resolveChild(child) as Child;
   if (c == null || c === false || c === true) return [];
   if (Array.isArray(c)) return c.flatMap(flattenChild);
   if (c instanceof Node) return [c];
-  return [document.createTextNode(String(c))];
+  if (SafeHtml.isSafeHtml(c)) return safeHtmlChildNodes(c);
+  if (isView(c)) return flattenChild((c as { readonly node: unknown }).node as Child);
+  return [currentDocument().createTextNode(String(c))];
 }
 
 /**
@@ -763,7 +784,7 @@ export type RuntimeEventHandler =
     unknown,
   ];
 
-const delegatedEvents = new WeakMap<Document, Set<string>>();
+const delegatedEvents = /*#__PURE__*/ new WeakMap<Document, Set<string>>();
 
 /**
  * Attach an event through the compiler-facing runtime ABI.
@@ -928,6 +949,11 @@ export function render(
   fn: () => unknown,
   container: Element,
 ): () => void {
+  // A container holds one mount. Rendering into it again supersedes (and
+  // disposes) the previous mount, so disposing that stale mount later can no
+  // longer wipe the new content, and its reactive tree does not leak.
+  containerMounts.get(container)?.();
+
   // Ensure remounts (including HMR) don't duplicate old DOM content.
   while (container.firstChild) {
     container.removeChild(container.firstChild);
@@ -936,16 +962,22 @@ export function render(
   let dispose!: () => void;
   createRoot((d) => {
     onCleanup(() => {
+      if (containerMounts.get(container) === dispose) {
+        containerMounts.delete(container);
+      }
       while (container.firstChild) {
         container.removeChild(container.firstChild);
       }
     });
 
     dispose = d;
+    containerMounts.set(container, dispose);
     insert(container, fn as () => Child);
   });
   return dispose;
 }
+
+const containerMounts = /*#__PURE__*/ (() => new WeakMap<Element, () => void>())();
 
 export interface ViteHotContext {
   readonly data: Record<string, unknown>;
@@ -1007,7 +1039,7 @@ export const isServer: boolean =
 /** Minimal attributes map. */
 type Attrs = Record<string, string>;
 
-const VOID_ELEMENTS = new Set([
+const VOID_ELEMENTS = /*#__PURE__*/ new Set([
   "area", "base", "br", "col", "embed", "hr", "img", "input",
   "link", "meta", "param", "source", "track", "wbr",
 ]);
@@ -1022,13 +1054,65 @@ function escapeHTML(str: string): string {
 }
 
 /**
+ * Named character references decoded when parsing template markup. The
+ * compiler escapes `&`, `<`, and `"` in static template text; anything else
+ * the author wrote literally (`&copy;`, `&nbsp;`, …) must decode once, the way
+ * a browser's parser would, or serialization escapes it a second time.
+ */
+const NAMED_ENTITIES: Readonly<Record<string, string>> = {
+  amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " ",
+  copy: "©", reg: "®", trade: "™", hellip: "…",
+  mdash: "—", ndash: "–", lsquo: "‘", rsquo: "’",
+  sbquo: "‚", ldquo: "“", rdquo: "”", bdquo: "„",
+  laquo: "«", raquo: "»", lsaquo: "‹", rsaquo: "›",
+  middot: "·", bull: "•", times: "×", divide: "÷",
+  deg: "°", plusmn: "±", para: "¶", sect: "§",
+  cent: "¢", pound: "£", euro: "€", yen: "¥",
+  iexcl: "¡", iquest: "¿", shy: "­", ensp: " ",
+  emsp: " ", thinsp: " ", zwnj: "‌", zwj: "‍",
+  larr: "←", uarr: "↑", rarr: "→", darr: "↓",
+  harr: "↔", hearts: "♥", check: "✓", dagger: "†",
+  Dagger: "‡", permil: "‰", prime: "′", Prime: "″",
+  frac12: "½", frac14: "¼", frac34: "¾", sup2: "²",
+  sup3: "³", micro: "µ", ordf: "ª", ordm: "º",
+  not: "¬", macr: "¯", acute: "´", cedil: "¸",
+  uml: "¨", curren: "¤", brvbar: "¦",
+};
+
+/** Decode character references (named + numeric) in parsed template text. */
+function decodeEntities(str: string): string {
+  if (!str.includes("&")) return str;
+  return str.replace(
+    /&(#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);/g,
+    (match, body: string) => {
+      if (body[0] === "#") {
+        const code = body[1] === "x" || body[1] === "X"
+          ? Number.parseInt(body.slice(2), 16)
+          : Number.parseInt(body.slice(1), 10);
+        if (!Number.isFinite(code) || code === 0 || code > 0x10ffff) return "�";
+        if (code >= 0xd800 && code <= 0xdfff) return "�";
+        return String.fromCodePoint(code);
+      }
+      return NAMED_ENTITIES[body] ?? match;
+    },
+  );
+}
+
+/**
+ * A valid attribute name for serialization: anything else could break out of
+ * the attribute position (`{"x onmouseover=alert(1) y": 1}` in a spread).
+ * Browsers' `setAttribute` throws `InvalidCharacterError` for these; the
+ * server element does the same so SSR and client agree.
+ */
+const VALID_ATTRIBUTE_NAME = /^[^\s"'>/=\x00-\x1f\x7f]+$/;
+
+/**
  * Base class for server-side virtual DOM nodes.
  */
 class ServerNode {
   nodeName = "#node";
   childNodes: ServerNode[] = [];
   parentNode: ServerNode | null = null;
-  textContent = "";
   nextSibling: ServerNode | null = null;
 
   get firstChild(): ServerNode | null {
@@ -1037,6 +1121,18 @@ class ServerNode {
 
   get lastChild(): ServerNode | null {
     return this.childNodes[this.childNodes.length - 1] ?? null;
+  }
+
+  /** Concatenated descendant text, as `Node.textContent` reads. */
+  get textContent(): string {
+    return this.childNodes.map((child) => child.textContent).join("");
+  }
+
+  /** Replace every child with one text node (none for the empty string). */
+  set textContent(value: string) {
+    this._replaceChildren(
+      value == null || value === "" ? [] : [new ServerTextNode(String(value))],
+    );
   }
 
   appendChild(child: ServerNode): ServerNode {
@@ -1067,6 +1163,7 @@ class ServerNode {
     if (idx !== -1) {
       this.childNodes.splice(idx, 1);
       child.parentNode = null;
+      child.nextSibling = null;
       this._updateSiblings();
     }
     return child;
@@ -1075,9 +1172,12 @@ class ServerNode {
   replaceChild(newChild: ServerNode, oldChild: ServerNode): ServerNode {
     const idx = this.childNodes.indexOf(oldChild);
     if (idx !== -1) {
+      newChild.parentNode?.removeChild(newChild);
+      const at = this.childNodes.indexOf(oldChild);
       newChild.parentNode = this;
       oldChild.parentNode = null;
-      this.childNodes.splice(idx, 1, newChild);
+      oldChild.nextSibling = null;
+      this.childNodes.splice(at, 1, newChild);
       this._updateSiblings();
     }
     return oldChild;
@@ -1090,7 +1190,6 @@ class ServerNode {
   cloneNode(deep?: boolean): ServerNode {
     const clone = new ServerNode();
     clone.nodeName = this.nodeName;
-    clone.textContent = this.textContent;
     if (deep) {
       for (const child of this.childNodes) {
         clone.appendChild(child.cloneNode(true));
@@ -1104,6 +1203,15 @@ class ServerNode {
     return this.childNodes.map((c) => c.toHTML()).join("");
   }
 
+  protected _replaceChildren(children: ReadonlyArray<ServerNode>): void {
+    for (const child of this.childNodes) {
+      child.parentNode = null;
+      child.nextSibling = null;
+    }
+    this.childNodes = [];
+    for (const child of children) this.appendChild(child);
+  }
+
   private _updateSiblings(): void {
     for (let i = 0; i < this.childNodes.length; i++) {
       this.childNodes[i].nextSibling = this.childNodes[i + 1] ?? null;
@@ -1112,19 +1220,58 @@ class ServerNode {
 }
 
 /**
+ * Boolean DOM properties the compiler writes as `el.prop = value`, and the
+ * attribute each one reflects to on the server.
+ */
+const BOOLEAN_PROPERTIES: Readonly<Record<string, string>> = {
+  checked: "checked",
+  selected: "selected",
+  disabled: "disabled",
+  multiple: "multiple",
+  muted: "muted",
+  readOnly: "readonly",
+  required: "required",
+  hidden: "hidden",
+  open: "open",
+  autofocus: "autofocus",
+  autoplay: "autoplay",
+  controls: "controls",
+  loop: "loop",
+  default: "default",
+  defer: "defer",
+  async: "async",
+  inert: "inert",
+  reversed: "reversed",
+  noValidate: "novalidate",
+  formNoValidate: "formnovalidate",
+  isMap: "ismap",
+  noModule: "nomodule",
+  playsInline: "playsinline",
+  allowFullscreen: "allowfullscreen",
+};
+
+/**
  * Virtual DOM element for SSR.
  */
 class ServerElement extends ServerNode {
   private _attrs: Attrs = {};
   private _style: Record<string, string> = {};
-  private _classList: Set<string> = new Set();
+  /** `select.value` — applied to matching options at serialization. */
+  private _selectValue: string | undefined = undefined;
 
   constructor(public override nodeName: string) {
     super();
   }
 
   setAttribute(name: string, value: string): void {
-    this._attrs[name] = value;
+    if (!VALID_ATTRIBUTE_NAME.test(name)) {
+      const error = new Error(
+        `[affe] '${name}' is not a valid attribute name.`,
+      );
+      error.name = "InvalidCharacterError";
+      throw error;
+    }
+    this._attrs[name] = String(value);
   }
 
   setAttributeNS(_namespace: string, name: string, value: string): void {
@@ -1143,37 +1290,48 @@ class ServerElement extends ServerNode {
     return this._attrs[name] ?? null;
   }
 
+  hasAttribute(name: string): boolean {
+    return name in this._attrs;
+  }
+
   get className(): string {
     return this._attrs["class"] ?? "";
   }
 
   set className(val: string) {
-    if (val) this._attrs["class"] = val;
+    if (val) this._attrs["class"] = String(val);
     else delete this._attrs["class"];
   }
 
+  /**
+   * One class set: the `class` attribute. `className` and `classList` both
+   * read and write it, so a template class can be removed like on the client.
+   */
   get classList() {
     const self = this;
-    return {
-      add(name: string) { self._classList.add(name); self._syncClassList(); },
-      remove(name: string) { self._classList.delete(name); self._syncClassList(); },
-      toggle(name: string, force?: boolean) {
-        if (force === undefined) {
-          if (self._classList.has(name)) self._classList.delete(name);
-          else self._classList.add(name);
-        } else if (force) self._classList.add(name);
-        else self._classList.delete(name);
-        self._syncClassList();
-      },
-      contains(name: string) { return self._classList.has(name); },
+    const read = (): string[] => self.className.split(/\s+/).filter(Boolean);
+    const write = (names: ReadonlyArray<string>): void => {
+      self.className = names.join(" ");
     };
-  }
-
-  private _syncClassList(): void {
-    const existing = this._attrs["class"]?.split(/\s+/).filter(Boolean) ?? [];
-    const merged = new Set([...existing, ...this._classList]);
-    if (merged.size > 0) this._attrs["class"] = [...merged].join(" ");
-    else delete this._attrs["class"];
+    return {
+      add(...names: string[]) {
+        const current = read();
+        for (const name of names) if (!current.includes(name)) current.push(name);
+        write(current);
+      },
+      remove(...names: string[]) {
+        write(read().filter((name) => !names.includes(name)));
+      },
+      toggle(name: string, force?: boolean): boolean {
+        const current = read();
+        const has = current.includes(name);
+        const enable = force === undefined ? !has : force;
+        if (enable && !has) write([...current, name]);
+        else if (!enable && has) write(current.filter((n) => n !== name));
+        return enable;
+      },
+      contains(name: string) { return read().includes(name); },
+    };
   }
 
   get style(): Record<string, unknown> & { cssText: string; setProperty: (k: string, v: string) => void; removeProperty: (k: string) => void } {
@@ -1199,6 +1357,51 @@ class ServerElement extends ServerNode {
     });
   }
 
+  /** Author-chosen raw markup, parsed into children (explicit opt-in). */
+  get innerHTML(): string {
+    return super.toHTML();
+  }
+
+  set innerHTML(markup: string) {
+    this._replaceChildren(
+      markup == null || markup === "" ? [] : parseHTML(String(markup)),
+    );
+  }
+
+  get innerText(): string {
+    return this.textContent;
+  }
+
+  set innerText(value: string) {
+    this.textContent = value;
+  }
+
+  /**
+   * `value` as the server can express it: a `<textarea>` holds it as text,
+   * a `<select>` marks the matching option selected, and every other element
+   * reflects it to the `value` attribute.
+   */
+  get value(): string {
+    const tag = this.nodeName.toLowerCase();
+    if (tag === "textarea") return this.textContent;
+    if (tag === "select") return this._selectValue ?? "";
+    return this._attrs["value"] ?? "";
+  }
+
+  set value(next: unknown) {
+    const tag = this.nodeName.toLowerCase();
+    const text = next == null ? "" : String(next);
+    if (tag === "textarea") {
+      this.textContent = text;
+    } else if (tag === "select") {
+      this._selectValue = next == null ? undefined : text;
+    } else if (next == null) {
+      delete this._attrs["value"];
+    } else {
+      this._attrs["value"] = text;
+    }
+  }
+
   addEventListener(): void { /* no-op on server */ }
   removeEventListener(): void { /* no-op on server */ }
 
@@ -1206,7 +1409,7 @@ class ServerElement extends ServerNode {
     const clone = new ServerElement(this.nodeName);
     clone._attrs = { ...this._attrs };
     clone._style = { ...this._style };
-    clone._classList = new Set(this._classList);
+    clone._selectValue = this._selectValue;
     if (deep) {
       for (const child of this.childNodes) {
         clone.appendChild(child.cloneNode(true));
@@ -1217,6 +1420,9 @@ class ServerElement extends ServerNode {
 
   override toHTML(): string {
     const tag = this.nodeName.toLowerCase();
+    if (tag === "select" && this._selectValue !== undefined) {
+      markSelectedOptions(this, this._selectValue);
+    }
     let attrStr = "";
     // Merge inline style into attrs for serialisation
     const styleStr = Object.entries(this._style).map(([k, v]) => `${k}: ${v}`).join("; ");
@@ -1225,6 +1431,7 @@ class ServerElement extends ServerNode {
     Object.assign(attrs, observeServerEventTarget(this));
 
     for (const [k, v] of Object.entries(attrs)) {
+      if (!VALID_ATTRIBUTE_NAME.test(k)) continue;
       attrStr += ` ${k}="${escapeHTML(v)}"`;
     }
 
@@ -1235,22 +1442,77 @@ class ServerElement extends ServerNode {
   }
 }
 
+for (const [property, attribute] of Object.entries(BOOLEAN_PROPERTIES)) {
+  Object.defineProperty(ServerElement.prototype, property, {
+    configurable: true,
+    enumerable: false,
+    get(this: ServerElement): boolean {
+      return this.hasAttribute(attribute);
+    },
+    set(this: ServerElement, value: unknown) {
+      if (value) this.setAttribute(attribute, "");
+      else this.removeAttribute(attribute);
+    },
+  });
+}
+
+function markSelectedOptions(node: ServerNode, value: string): void {
+  for (const child of node.childNodes) {
+    if (!(child instanceof ServerElement)) continue;
+    if (child.nodeName.toLowerCase() === "option") {
+      const optionValue = child.getAttribute("value") ?? child.textContent;
+      if (optionValue === value) child.setAttribute("selected", "");
+      else child.removeAttribute("selected");
+    } else {
+      markSelectedOptions(child, value);
+    }
+  }
+}
+
 /**
  * Virtual DOM text node for SSR.
  */
 class ServerTextNode extends ServerNode {
   override nodeName = "#text";
+  private _text: string;
 
-  constructor(public override textContent: string) {
+  constructor(text: string) {
     super();
+    this._text = String(text);
+  }
+
+  override get textContent(): string {
+    return this._text;
+  }
+
+  override set textContent(value: string) {
+    this._text = value == null ? "" : String(value);
+  }
+
+  /** `CharacterData.data` — what the compiler writes for static-slot text. */
+  get data(): string {
+    const comment = (this as unknown as { _commentText?: string })._commentText;
+    return comment ?? this._text;
+  }
+
+  set data(value: string) {
+    this.textContent = value;
+  }
+
+  get nodeValue(): string {
+    return this.data;
+  }
+
+  set nodeValue(value: string) {
+    this.data = value;
   }
 
   override cloneNode(): ServerTextNode {
-    return new ServerTextNode(this.textContent);
+    return new ServerTextNode(this._text);
   }
 
   override toHTML(): string {
-    return escapeHTML(this.textContent);
+    return escapeHTML(this._text);
   }
 }
 
@@ -1271,6 +1533,21 @@ class ServerDocumentFragment extends ServerNode {
   }
 }
 
+/** A comment node for SSR: an empty text node that serializes as a comment. */
+function createServerComment(text: string): ServerTextNode {
+  const n = new ServerTextNode("");
+  n.nodeName = "#comment";
+  (n as unknown as Record<string, string>)._commentText = text;
+  n.cloneNode = () => createServerComment(text);
+  n.toHTML = () => `<!--${text}-->`;
+  return n;
+}
+
+/** Parsed markup is not validated upstream: drop unusable attribute names. */
+function setParsedAttribute(el: ServerElement, name: string, value: string): void {
+  if (VALID_ATTRIBUTE_NAME.test(name)) el.setAttribute(name, value);
+}
+
 /** Simple HTML parser — turns an HTML string into ServerElement nodes. */
 function parseHTML(html: string): ServerNode[] {
   const nodes: ServerNode[] = [];
@@ -1288,13 +1565,29 @@ function parseHTML(html: string): ServerNode[] {
           // Closing tag — handled by caller via stop
           return result;
         }
+        if (html[pos + 1] === "!") {
+          // `<!-- text -->`, or the compiler's bare `<!>` placeholder: both
+          // are comments (markers for dynamic insertion), never elements.
+          if (html.startsWith("<!--", pos)) {
+            const end = html.indexOf("-->", pos + 4);
+            const text = end === -1 ? html.slice(pos + 4) : html.slice(pos + 4, end);
+            pos = end === -1 ? html.length : end + 3;
+            result.push(createServerComment(text));
+          } else {
+            const end = html.indexOf(">", pos + 2);
+            const text = end === -1 ? html.slice(pos + 2) : html.slice(pos + 2, end);
+            pos = end === -1 ? html.length : end + 1;
+            result.push(createServerComment(text));
+          }
+          continue;
+        }
         const el = parseElement();
         if (el) result.push(el);
       } else {
         const nextTag = html.indexOf("<", pos);
         const text = nextTag === -1 ? html.slice(pos) : html.slice(pos, nextTag);
         pos = nextTag === -1 ? html.length : nextTag;
-        if (text) result.push(new ServerTextNode(text));
+        if (text) result.push(new ServerTextNode(decodeEntities(text)));
       }
     }
     return result;
@@ -1342,15 +1635,15 @@ function parseHTML(html: string): ServerNode[] {
           const valEnd = html.indexOf(quote, pos);
           const val = valEnd === -1 ? "" : html.slice(pos, valEnd);
           pos = valEnd === -1 ? html.length : valEnd + 1;
-          el.setAttribute(attrName, val);
+          setParsedAttribute(el, attrName, decodeEntities(val));
         } else {
           const valEnd = html.slice(pos).search(/[\s>]/);
           const val = valEnd === -1 ? html.slice(pos) : html.slice(pos, pos + valEnd);
           pos = valEnd === -1 ? html.length : pos + valEnd;
-          el.setAttribute(attrName, val);
+          setParsedAttribute(el, attrName, decodeEntities(val));
         }
       } else {
-        el.setAttribute(attrName, "");
+        setParsedAttribute(el, attrName, "");
       }
     }
 
@@ -1393,12 +1686,7 @@ export function createServerDocument(): unknown {
     querySelector(): null { return null; },
     querySelectorAll(): never[] { return []; },
     createComment(text: string): ServerTextNode {
-      // Approximate comments as empty text nodes (they act as markers)
-      const n = new ServerTextNode("");
-      n.nodeName = "#comment";
-      (n as unknown as Record<string, string>)._commentText = text;
-      n.toHTML = () => `<!--${text}-->`;
-      return n;
+      return createServerComment(text);
     },
   };
   return doc;
@@ -1408,8 +1696,48 @@ export function createServerDocument(): unknown {
 let _ssrMode = false;
 let _serverDoc: unknown = null;
 
+/**
+ * The document nodes are created against: the server document during a
+ * server render, the page's otherwise. Server rendering also installs its
+ * document as `globalThis.document` where it can, but a browser's
+ * `window.document` is read-only — `renderToString` inside a page (previews,
+ * tests, the SSR example) relies on this instead.
+ */
+export function currentDocument(): Document {
+  if (_ssrMode && _serverDoc !== null) return _serverDoc as Document;
+  const ambient = currentServerRenderState()?.document;
+  if (ambient !== undefined) return ambient as unknown as Document;
+  // `undefined` outside any DOM; callers that can run there check for it.
+  return (globalThis as { readonly document?: Document }).document as Document;
+}
+
+/**
+ * Install `doc` as `globalThis.document` for a server-render slice, when the
+ * environment allows it, and return the undo. In a browser the assignment is
+ * refused and nothing changes: runtime code reaches the server document
+ * through {@link currentDocument}.
+ */
+function installGlobalDocument(doc: unknown): () => void {
+  const carrier = globalThis as Record<string, unknown>;
+  const had = "document" in carrier;
+  const previous = carrier.document;
+  try {
+    carrier.document = doc;
+  } catch {
+    return () => {};
+  }
+  if (carrier.document !== doc) return () => {};
+  return () => {
+    if (had) carrier.document = previous;
+    else delete carrier.document;
+  };
+}
+
 /** @internal Serialize a rendered server value; used by Resume async render. */
-export function serverValueToHTML(value: unknown): string {
+export function serverValueToHTML(input: unknown): string {
+  // Accessors (every `Component.make` component returns one) resolve here,
+  // exactly as the client `insert` resolves them.
+  const value = resolveChild(input);
   if (value instanceof ServerNode) {
     return value.toHTML();
   }
@@ -1428,7 +1756,12 @@ export function serverValueToHTML(value: unknown): string {
     const child = value.children === undefined ? null : value.children();
     return `<!--${markers.start}-->${serverValueToHTML(child)}<!--${markers.end}-->`;
   }
-  return value == null ? "" : String(value);
+  // Only the SafeHtml brand is markup; every other scalar is text — escaped
+  // exactly as a text node serializes — and booleans/nullish render nothing,
+  // matching the client insertion path.
+  if (SafeHtml.isSafeHtml(value)) return SafeHtml.unwrap(value);
+  if (value == null || typeof value === "boolean") return "";
+  return escapeHTML(String(value));
 }
 
 /**
@@ -1451,7 +1784,7 @@ export function serverValueToHTML(value: unknown): string {
 export function renderToString(fn: () => unknown): string {
   const prevSSR = _ssrMode;
   const prevDoc = _serverDoc;
-  const origDocument = typeof globalThis.document !== "undefined" ? globalThis.document : undefined;
+  let restoreDocument: () => void = () => {};
   const origNode = typeof globalThis.Node !== "undefined" ? globalThis.Node : undefined;
   let dispose: (() => void) | undefined;
 
@@ -1467,9 +1800,9 @@ export function renderToString(fn: () => unknown): string {
     const serverDoc = ambient?.document ?? createServerDocument();
     _serverDoc = serverDoc;
 
-    // Temporarily install the server document as the global `document` so
-    // that existing functions (template, insert, toNode, etc.) work as-is.
-    (globalThis as Record<string, unknown>).document = serverDoc;
+    // Install the server document as the global `document` where the
+    // environment allows it (Node); runtime code uses `currentDocument()`.
+    restoreDocument = installGlobalDocument(serverDoc);
 
     // Also patch `Node` so that `instanceof Node` checks work with virtual nodes.
     (globalThis as Record<string, unknown>).Node = ServerNode as unknown;
@@ -1479,13 +1812,14 @@ export function renderToString(fn: () => unknown): string {
     // Serialization stays inside the session wrap: event markers are observed
     // while element props are serialized, so ending the session before
     // `serverValueToHTML` would silently drop every event of an async render.
+    // Serializing inside the root also owns whatever resolving a returned
+    // accessor creates (child components), so the root's disposal below
+    // cleans it up.
     const renderBody = (): void => {
-      let result: unknown;
       createRoot((d) => {
         dispose = d;
-        result = fn();
+        html = serverValueToHTML(fn());
       });
-      html = serverValueToHTML(result);
     };
     if (ambient !== undefined) {
       runInResumeSession(ambient.session, renderBody);
@@ -1506,11 +1840,7 @@ export function renderToString(fn: () => unknown): string {
       } else {
         delete (globalThis as Record<string, unknown>).Node;
       }
-      if (origDocument !== undefined) {
-        (globalThis as Record<string, unknown>).document = origDocument;
-      } else {
-        delete (globalThis as Record<string, unknown>).document;
-      }
+      restoreDocument();
     }
   }
 }
@@ -1598,13 +1928,13 @@ function runStreamSliceUnscoped<A>(
 ): A {
   const prevSSR = _ssrMode;
   const prevDoc = _serverDoc;
-  const origDocument = typeof globalThis.document !== "undefined" ? globalThis.document : undefined;
+  let restoreDocument: () => void = () => {};
   const origNode = typeof globalThis.Node !== "undefined" ? globalThis.Node : undefined;
   let dispose: (() => void) | undefined;
   try {
     _ssrMode = true;
     _serverDoc = serverDoc;
-    (globalThis as Record<string, unknown>).document = serverDoc;
+    restoreDocument = installGlobalDocument(serverDoc);
     (globalThis as Record<string, unknown>).Node = ServerNode as unknown;
     let out!: A;
     runInResumeSession(session, () => {
@@ -1625,11 +1955,7 @@ function runStreamSliceUnscoped<A>(
       } else {
         delete (globalThis as Record<string, unknown>).Node;
       }
-      if (origDocument !== undefined) {
-        (globalThis as Record<string, unknown>).document = origDocument;
-      } else {
-        delete (globalThis as Record<string, unknown>).document;
-      }
+      restoreDocument();
     }
   }
 }
@@ -1662,6 +1988,7 @@ function segmentStreamTree(
   segments: Array<StreamSegment>,
   nextRegionOrdinal: { ordinal: number },
 ): void {
+  value = resolveChild(value);
   if (Effect.isEffect(value)) {
     const id = `r${nextRegionOrdinal.ordinal}`;
     nextRegionOrdinal.ordinal += 1;

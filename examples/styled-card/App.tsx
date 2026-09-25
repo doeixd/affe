@@ -60,13 +60,14 @@ const Card = Component.make<CardProps, never, never, CardBindings>(
     const body = yield* Component.slotContainer();
     return { slots: { root, header, title, body } };
   }),
+  // `Element.ref(handle, slot)` binds each slot handle to its element, so the
+  // attached recipe styles render as inline styles (and `data-af-slot`).
   (props, bindings) => (
-    <section>
-      <h3>{props.title}</h3>
-      <p>{props.body}</p>
-      <small>
-        bg={String(bindings.slots.root.getStyle("backgroundColor"))} radius={String(bindings.slots.root.getStyle("borderRadius"))}
-      </small>
+    <section ref={Element.ref(bindings.slots.root, "root")}>
+      <header ref={Element.ref(bindings.slots.header, "header")}>
+        <h3 ref={Element.ref(bindings.slots.title, "title")}>{props.title}</h3>
+      </header>
+      <p ref={Element.ref(bindings.slots.body, "body")}>{props.body}</p>
     </section>
   ),
 ).pipe(

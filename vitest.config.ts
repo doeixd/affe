@@ -4,6 +4,10 @@ import { defineConfig } from "vitest/config";
 const here = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
 
 export default defineConfig({
+  // Vite 8 transforms TypeScript with Oxc, which does not read
+  // `jsxImportSource` from tsconfig; without this, JSX in examples compiles
+  // against react/jsx-dev-runtime.
+  oxc: { jsx: { runtime: "automatic", importSource: "@doeixd/affe" } },
   resolve: {
     // Workspace adapter packages import the PUBLIC core subpaths. Under test
     // those resolve to `src/` (one module identity with the suite — the

@@ -1,4 +1,4 @@
-export const SafeHtmlTypeId: unique symbol = Symbol.for("affe/SafeHtml");
+export const SafeHtmlTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/SafeHtml");
 
 export interface SafeHtml {
   readonly [SafeHtmlTypeId]: true;

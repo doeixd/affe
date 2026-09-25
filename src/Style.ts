@@ -4,8 +4,8 @@ import * as Element from "./Element.js";
 import * as MetadataToken from "./MetadataToken.js";
 import * as Theme from "./Theme.js";
 import * as View from "./View.js";
-import { createContext, useContext } from "./api.js";
-import { mergeMany, resolveTokenValue, tokenPathForProperty } from "./style-runtime.js";
+import { createContext, untrack, useContext } from "./api.js";
+import { cssValueText, mergeMany, resolveTokenValue, tokenPathForProperty } from "./style-runtime.js";
 import type { SlotStyle, ThemeTokenSchema } from "./style-types.js";
 import { defaultThemeTokens } from "./style-types.js";
 import type { TokenPath } from "./style-types.js";
@@ -73,7 +73,7 @@ export interface PlatformService {
   readonly onDiagnostic?: (diagnostic: StyleDiagnostic) => void;
 }
 
-export const PlatformTag = Context.Service<PlatformService>("StylePlatform");
+export const PlatformTag = /*#__PURE__*/ Context.Service<PlatformService>("StylePlatform");
 
 /** Resolved global styles published by `Style.globalLayer`. */
 export interface GlobalStyleSheet {
@@ -87,7 +87,7 @@ export interface GlobalStyleService {
   readonly apply?: (sheet: GlobalStyleSheet) => Effect.Effect<void>;
 }
 
-export const GlobalStyleTag = Context.Service<GlobalStyleService>("StyleGlobal");
+export const GlobalStyleTag = /*#__PURE__*/ Context.Service<GlobalStyleService>("StyleGlobal");
 
 /** Layer returned by `Style.platform`, branded with its metadata for typing. */
 export type PlatformLayer<Metadata extends StylePlatformMetadata = StylePlatformMetadata> =
@@ -407,8 +407,9 @@ export function transition(value: Record<string, unknown>): AnimationPiece {
 /**
  * Build a composed style from a slot-to-style map.
  *
- * Prefer `Style.forSlots(Slots)(...)` for authored component APIs because it
- * restricts the keys to the published `View.Slots` contract.
+ * Pass the component's `View.Slots` contract as the first argument
+ * (`Style.make(Slots, {...})`) for authored component APIs: it restricts the
+ * keys to the published contract and keeps binding inference.
  */
 export function make<
   const W extends SlotContractInput,
@@ -591,7 +592,7 @@ export function layers(names: ReadonlyArray<string>): readonly string[] {
  * enforced by the platform cascade. A closed, branded tuple so a typo like
  * `"compnents"` is a compile error, never a silently-wrong layer.
  */
-export const cssLayerOrder = Object.freeze([
+export const cssLayerOrder = /*#__PURE__*/ Object.freeze([
   "defaults",
   "components",
   "variants",
@@ -609,11 +610,15 @@ export function global(defs: Record<string, SlotStyle | StyleValue>): GlobalPiec
   return { _tag: "GlobalPiece", global: defs };
 }
 
-export function resolveGlobal(globalStyles: GlobalPiece, bindings?: unknown): Readonly<Record<string, SlotStyle>> {
+export function resolveGlobal(
+  globalStyles: GlobalPiece,
+  bindings?: unknown,
+  tokens: ThemeTokenSchema = defaultThemeTokens,
+): Readonly<Record<string, SlotStyle>> {
   const resolved: Record<string, SlotStyle> = {};
   for (const [selector, value] of Object.entries(globalStyles.global)) {
     const slot = isStyleValue(value) ? resolveSlot(value, bindings) : value;
-    resolved[selector] = resolveSlotTokens(slot);
+    resolved[selector] = resolveSlotTokens(slot, tokens);
   }
   return resolved;
 }
@@ -625,9 +630,10 @@ export function globalLayer(
   return Layer.effect(
     GlobalStyleTag,
     Effect.gen(function* () {
+      const tokens = yield* currentThemeTokens;
       const sheet: GlobalStyleSheet = {
         pieces: [globalStyles],
-        resolved: resolveGlobal(globalStyles),
+        resolved: resolveGlobal(globalStyles, undefined, tokens),
       };
       if (options?.apply) {
         yield* options.apply(sheet);
@@ -731,12 +737,77 @@ function resolveSlot(piece: StyleValue, bindings?: unknown): SlotStyle {
   return mergeMany(flattenPiece(piece, bindings));
 }
 
-function resolveSlotTokens(style: SlotStyle): SlotStyle {
+function resolveSlotTokens(style: SlotStyle, tokens: ThemeTokenSchema = defaultThemeTokens): SlotStyle {
   const out: Record<string, unknown> = {};
   for (const [prop, value] of Object.entries(style)) {
-    out[prop] = prop === "_states" || prop.startsWith("__") ? value : resolveTokenValue(value, undefined, prop);
+    out[prop] = prop === "_states" || prop.startsWith("__") ? value : resolveTokenValue(value, tokens, prop);
   }
   return out;
+}
+
+const tokensWithDefaults = /*#__PURE__*/ new WeakMap<object, ThemeTokenSchema>();
+
+/**
+ * The token schema runtime style resolution reads: the provided `Theme`
+ * service's tokens layered over the defaults (so a partial app/kit theme
+ * still resolves the default taxonomy it does not override), or the defaults
+ * when no Theme service is provided.
+ */
+function effectiveTokens(service: Theme.ThemeService | undefined): ThemeTokenSchema {
+  if (service === undefined) return defaultThemeTokens;
+  const provided = service.tokens as object;
+  if (provided === defaultThemeTokens) return defaultThemeTokens;
+  let merged = tokensWithDefaults.get(provided);
+  if (merged === undefined) {
+    merged = Theme.mergeTokenSchemas(
+      defaultThemeTokens as unknown as Record<string, unknown>,
+      provided as Record<string, unknown>,
+    ) as unknown as ThemeTokenSchema;
+    tokensWithDefaults.set(provided, merged);
+  }
+  return merged;
+}
+
+/** Read the ambient `Theme` service (optional) as the resolution token schema. */
+const currentThemeTokens: Effect.Effect<ThemeTokenSchema> = /*#__PURE__*/ (() => Effect.map(
+  Effect.serviceOption(Theme.Theme),
+  (maybeTheme) => effectiveTokens(maybeTheme._tag === "Some" ? maybeTheme.value : undefined),
+))();
+
+/**
+ * Theme tokens captured during setup, keyed by the setup bindings object, for
+ * the view-transform attachment paths (which run synchronously at render
+ * time, outside the Effect context where the Theme service is visible).
+ */
+const themeTokensByBindings = /*#__PURE__*/ new WeakMap<object, ThemeTokenSchema>();
+
+function captureThemeTokens(bindings: unknown): Effect.Effect<void> {
+  return Effect.map(currentThemeTokens, (tokens) => {
+    if (typeof bindings === "object" && bindings !== null) {
+      themeTokensByBindings.set(bindings, tokens);
+    }
+  });
+}
+
+function capturedThemeTokens(bindings: unknown): ThemeTokenSchema {
+  return typeof bindings === "object" && bindings !== null
+    ? themeTokensByBindings.get(bindings) ?? defaultThemeTokens
+    : defaultThemeTokens;
+}
+
+/** View-transform attachment that can see the setup-time Theme service. */
+function withThemedViewTransform(
+  transform: (result: unknown, props: unknown, bindings: unknown, tokens: ThemeTokenSchema) => unknown,
+): (component: any) => any {
+  const capture = Component.tapSetup((bindings: unknown) => captureThemeTokens(bindings));
+  // Untracked: attaching a style reads bindings (e.g. `whenBinding` piece
+  // selection) and must not subscribe the component's RENDER to them — the
+  // per-property reactions own that tracking. A tracked read here re-rendered
+  // the whole view (fresh elements) on every binding change.
+  const view = Component.withViewTransform((result: unknown, props: unknown, bindings: unknown) =>
+    untrack(() => transform(result, props, bindings, capturedThemeTokens(bindings))),
+  );
+  return (component: any) => view(capture(component) as any);
 }
 
 export interface StylePropertyUsage<S extends string = string> {
@@ -790,7 +861,7 @@ export interface StaticExtraction<S extends string = string> {
 }
 
 export interface ExtractStaticOptions {
-  /** Selector for one slot's rule; defaults to `.af-<slot>`. */
+  /** Selector for one slot's rule; defaults to `[data-af-slot="<slot>"]`, the attribute `View.Slot.ref` stamps on bound elements. */
   readonly selector?: (slot: string) => string;
   /** Cascade layer the rules land in; defaults to `"components"`. */
   readonly layer?: CssLayer;
@@ -857,7 +928,9 @@ function staticDeclarationValue(
     if (path !== undefined) return `var(--af-${path.replace(/\./g, "-")})`;
     return value;
   }
-  return String(value);
+  // Numbers are lengths (`padding: 16` → `16px`) unless the property is
+  // unitless — a bare `16` is invalid CSS for a length property.
+  return cssValueText(cssPropertyName(property), value);
 }
 
 function staticDeclarations(
@@ -944,7 +1017,7 @@ function collectSlotParts(piece: StyleValue, parts: SlotCssParts): void {
  *
  * @example
  * const { css, runtimeSlots } = Style.extractStatic(cardStyle)
- * // css → `@layer components { .af-root { display: grid; gap: var(--af-spacing-sm); } }`
+ * // css → `@layer components { [data-af-slot="root"] { display: grid; gap: var(--af-spacing-sm); } }`
  * // runtimeSlots → slots left for `Style.attach*` at runtime
  */
 export function extractStatic<S extends string>(
@@ -952,7 +1025,7 @@ export function extractStatic<S extends string>(
   options?: ExtractStaticOptions,
 ): StaticExtraction<S> {
   const tokens = options?.tokens ?? defaultThemeTokens;
-  const selectorOf = options?.selector ?? ((slot: string) => `.af-${slot}`);
+  const selectorOf = options?.selector ?? ((slot: string) => `[data-af-slot="${slot}"]`);
   const defaultLayer: CssLayer = options?.layer ?? "components";
   const staticSlots: Array<S> = [];
   const runtimeSlots: Array<S> = [];
@@ -1015,13 +1088,17 @@ export function extractStatic<S extends string>(
   return { css: blocks.join("\n"), staticSlots, runtimeSlots };
 }
 
-function applyResolvedStyleToHandle(handle: Element.Handle, styleDef: SlotStyle): Effect.Effect<void> {
+function applyResolvedStyleToHandle(
+  handle: Element.Handle,
+  styleDef: SlotStyle,
+  tokens: ThemeTokenSchema,
+): Effect.Effect<void> {
   return Effect.forEach(Object.entries(styleDef), ([prop, value]) => {
     if (prop === "_states" || prop.startsWith("__")) return handle.setStyleOnce(prop, value);
     if (typeof value === "function") {
-      return handle.setStyle(prop, () => resolveTokenValue((value as () => unknown)(), undefined, prop));
+      return handle.setStyle(prop, () => resolveTokenValue((value as () => unknown)(), tokens, prop));
     }
-    return handle.setStyleOnce(prop, resolveTokenValue(value, undefined, prop));
+    return handle.setStyleOnce(prop, resolveTokenValue(value, tokens, prop));
   }).pipe(Effect.asVoid) as Effect.Effect<void>;
 }
 
@@ -1068,9 +1145,10 @@ function applyStylePieceToHandle(
   handle: Element.Handle,
   piece: StyleValue,
   bindings: unknown,
+  tokens: ThemeTokenSchema,
 ): Effect.Effect<void> {
   if (!pieceHasBindingConditional(piece)) {
-    return applyResolvedStyleToHandle(handle, resolveSlot(piece, bindings));
+    return applyResolvedStyleToHandle(handle, resolveSlot(piece, bindings), tokens);
   }
   return Effect.gen(function* () {
     // Meta keys (states/nest/media/...) come from the attach-time resolution;
@@ -1095,7 +1173,7 @@ function applyStylePieceToHandle(
         const value = typeof current === "function"
           ? (current as () => unknown)()
           : current;
-        const resolved = resolveTokenValue(value, undefined, prop);
+        const resolved = resolveTokenValue(value, tokens, prop);
         // A branch switching OFF unsets the property (the K1 null-unset rule)
         // instead of freezing its last value.
         return resolved === undefined ? null : resolved;
@@ -1105,7 +1183,7 @@ function applyStylePieceToHandle(
 }
 
 type Overrides = Record<string, StyleValue>;
-const OverrideContext = createContext<Overrides>({});
+const OverrideContext = /*#__PURE__*/ createContext<Overrides>({});
 
 export const Provider = (props: { readonly overrides: Overrides; readonly children: unknown }) =>
   OverrideContext.Provider({ value: props.overrides, children: props.children });
@@ -1132,6 +1210,7 @@ function attachToBindingSlotsImpl<S extends string, StyleBindings extends string
       if (maybePlatform._tag === "Some") {
         reportPlatformDiagnostics(style, maybePlatform.value);
       }
+      const tokens = yield* currentThemeTokens;
       const overrides = useContext(OverrideContext);
       for (const [slotName, slotPiece] of Object.entries(style.slots as Record<string, StyleValue>)) {
         const piece = overrides[slotName] ?? slotPiece;
@@ -1140,9 +1219,9 @@ function attachToBindingSlotsImpl<S extends string, StyleBindings extends string
 
         if ((target as Element.Collection<Element.Handle>)._tag === "Collection") {
           const collection = target as Element.Collection<Element.Handle>;
-          yield* collection.observeEach((item) => applyStylePieceToHandle(item, piece, bindings).pipe(Effect.as(() => {})));
+          yield* collection.observeEach((item) => applyStylePieceToHandle(item, piece, bindings, tokens).pipe(Effect.as(() => {})));
         } else {
-          yield* applyStylePieceToHandle(target as Element.Handle, piece, bindings);
+          yield* applyStylePieceToHandle(target as Element.Handle, piece, bindings, tokens);
         }
       }
     })) as any;
@@ -1167,7 +1246,7 @@ function attachByViewImpl<S extends string, StyleBindings extends string>(
     ? StyleBindingCompatible<typeof style, C>
     : never,
 ) => C {
-  return Component.withViewTransform((result, _props, _bindings) => {
+  return withThemedViewTransform((result, _props, _bindings, tokens) => {
     if (!View.isView(result)) return result;
     const overrides = useContext(OverrideContext);
     const slots = result.slots as Record<string, Element.Handle | Element.Collection<Element.Handle>>;
@@ -1177,9 +1256,9 @@ function attachByViewImpl<S extends string, StyleBindings extends string>(
       if (!target) continue;
       if ((target as Element.Collection<Element.Handle>)._tag === "Collection") {
         const collection = target as Element.Collection<Element.Handle>;
-        Effect.runSync(collection.observeEach((item) => applyStylePieceToHandle(item, piece, _bindings).pipe(Effect.as(() => {}))));
+        Effect.runSync(collection.observeEach((item) => applyStylePieceToHandle(item, piece, _bindings, tokens).pipe(Effect.as(() => {}))));
       } else {
-        Effect.runSync(applyStylePieceToHandle(target as Element.Handle, piece, _bindings));
+        Effect.runSync(applyStylePieceToHandle(target as Element.Handle, piece, _bindings, tokens));
       }
     }
     return result;
@@ -1292,7 +1371,7 @@ export function attachToAllWithCapability<C extends View.SlotCapability>(
 >(
   component: Component.Component<Props, Req, E, Bindings, SlotContract>,
 ) => Component.Component<Props, Req, E, Bindings, SlotContract> {
-  return Component.withViewTransform((result, _props, _bindings) => {
+  return withThemedViewTransform((result, _props, _bindings, tokens) => {
     if (!View.isView(result)) return result;
     const slotMetadata = result.slotMetadata as Record<string, View.SlotMetadata> | undefined;
     if (!slotMetadata) return result;
@@ -1307,9 +1386,9 @@ export function attachToAllWithCapability<C extends View.SlotCapability>(
 
       if ((target as Element.Collection<Element.Handle>)._tag === "Collection") {
         const collection = target as Element.Collection<Element.Handle>;
-        Effect.runSync(collection.observeEach((item) => applyStylePieceToHandle(item, style, _bindings).pipe(Effect.as(() => {}))));
+        Effect.runSync(collection.observeEach((item) => applyStylePieceToHandle(item, style, _bindings, tokens).pipe(Effect.as(() => {}))));
       } else {
-        Effect.runSync(applyStylePieceToHandle(target as Element.Handle, style, _bindings));
+        Effect.runSync(applyStylePieceToHandle(target as Element.Handle, style, _bindings, tokens));
       }
     }
     return result;
@@ -1492,8 +1571,7 @@ export type RecipeSelection<D extends RecipeDef<any>> = D["variants"] extends Re
 /**
  * Define a multi-slot recipe with variants.
  *
- * Recipes return a slot-to-style map that can be passed to `Style.make` or a
- * contract-specific `Style.forSlots(...)` builder.
+ * Recipes return a slot-to-style map that can be passed to `Style.make`.
  */
 export function recipe<Slots extends string, D extends RecipeDef<Slots>>(def: D) {
   const fn = (selection?: RecipeSelection<D>): Record<Slots, StyleValue> => {

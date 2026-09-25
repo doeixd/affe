@@ -1,5 +1,8 @@
 # Resumability Guide
 
+> **Experimental.** Resumability works and is tested end to end, but its API may
+> still change in a 0.x minor release. The changelog marks every change.
+
 This guide explains what resumability means in Affe, how it differs from
 hydration, which APIs opt a component into it, and the security and deployment
 rules every adapter must follow. It documents the runtime protocol of
@@ -209,7 +212,11 @@ execution, and tests prove no server service instance survives the boundary.
    `Serialization.escapeJsonForHtml`, so it cannot break out of its
    `<script>` element.
 6. **Duplicate installation is rejected.** One active client installation per
-   root; installers own only their listeners and dispatch fibers.
+   root, whichever door installed it (`installClient`,
+   `installClientStreaming`, or `installClientStreamed` all fail with
+   `ResumeDuplicateClientInstallationError`); the claim is released on
+   dispose or teardown. Installers own only their listeners and dispatch
+   fibers.
 
 ### Pre-ship audit checklist (M9 item 5)
 
@@ -544,7 +551,7 @@ There are **two families**, and the distinction matters when you are debugging:
 
 | Code | Meaning | Usual cause |
 | --- | --- | --- |
-| `unknown-event-marker` | A DOM marker names an event the manifest does not contain. | Stale HTML against a newer manifest, or a tampered marker. Fails closed. |
+| `unknown-event-marker` | A DOM marker names an event the manifest does not contain. | Stale HTML against a newer manifest, or a tampered marker. Fails closed. Also reported by a streaming install at a complete end of stream for each queued interaction whose region never arrived. |
 | `event-type-mismatch` | A marker's event type disagrees with the manifest entry. | Build skew, or tampering. |
 | `dispatch-resolution-failure` | The portable code for an event could not be loaded. | A missing or failed resolver entry; the chunk 404s or throws on import. |
 | `dispatch-execution-failure` | The loaded code ran and failed. | An application-level error inside the action itself. |
@@ -556,7 +563,7 @@ There are **two families**, and the distinction matters when you are debugging:
 | `expression-execution-failure` | An expression ran and failed, or produced an undecodable value. | An application error, or an encoded value the codec rejects. The last good DOM is kept and the next valid write recovers. |
 | `expression-patch-failure` | The value was computed but could not be written to the DOM. | The target element was removed, or ownership was lost between computation and write. |
 | `client-runtime-failure` | An unclassified failure inside the resume runtime. | Should be rare; treat an occurrence as a bug report rather than an expected condition. |
-| `stream-truncated` | A streaming install's record stream ended before its terminal record. | The connection dropped mid-stream; regions already installed keep working, missing ones fall back. |
+| `stream-truncated` | A streaming install's record stream ended before its terminal record, or the terminal record's region set disagrees with what arrived. | The connection dropped mid-stream. The streamed installation fails closed: every root listener is removed and queued interactions are dropped, so no streamed region (including ones already installed) stays interactive; the page is left as static HTML until reinstalled. |
 | `fragment-build-mismatch` | An out-of-band fragment was built by a different deployment than the page. | A deploy landed between page load and fragment fetch. The fragment is refused, the page untouched. |
 
 Failure diagnostics also carry an optional **`errorTag`** field: the `_tag` of

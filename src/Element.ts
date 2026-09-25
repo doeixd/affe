@@ -1,7 +1,9 @@
-import { Effect, Option, Scope } from "effect";
-import { createDisposableEffect, onCleanup } from "./api.js";
+import { Effect, Exit, Option, Scope } from "effect";
+import { createDisposableEffect, createRoot, onCleanup } from "./api.js";
+import { getOwner, runWithOwner, type Owner } from "./owner.js";
 import { parseAttribute, serializeAttribute } from "./attributes.js";
 import * as MetadataToken from "./MetadataToken.js";
+import { cssPropertyNameOf, inlineStyleDeclarations } from "./style-runtime.js";
 
 type EventHandler = (event: unknown) => void;
 
@@ -11,8 +13,10 @@ type Cleanup = () => void;
  * Renderer-neutral element handle.
  *
  * Handles are the runtime objects styles, behaviors, tests, and diagnostics
- * operate on. DOM renderers can adapt these operations to real elements; tests
- * use the same interface without jsdom.
+ * operate on. A handle is in-memory until it is bound to a rendered element
+ * (`View.Slot.ref(...)` / `ref(...)` / `bindElement(...)`); while bound, its
+ * writes and listeners reach that element. Tests use the same interface
+ * without a DOM.
  */
 export interface Handle {
   readonly id: string;
@@ -150,10 +154,184 @@ export function extendsCapability(value: string | Capability.Any, base: string |
 
 type ListenerMap = Map<string, Set<EventHandler>>;
 
+// ── Element binding (DQ-073) ────────────────────────────────────────────────
+
+/**
+ * Minimal element surface a handle binds to: the browser DOM and the server
+ * document (`src/dom.ts`) both satisfy it. Everything is optional so a bind
+ * degrades instead of throwing on a partial host.
+ */
+export interface BindableElement {
+  setAttribute?(name: string, value: string): void;
+  removeAttribute?(name: string): void;
+  addEventListener?(name: string, listener: (event: unknown) => void): void;
+  removeEventListener?(name: string, listener: (event: unknown) => void): void;
+  focus?(): void;
+  blur?(): void;
+  readonly style?: {
+    setProperty?(name: string, value: string): void;
+    removeProperty?(name: string): void;
+  };
+  readonly tagName?: string;
+  readonly nodeName?: string;
+  getAttribute?(name: string): string | null;
+}
+
+/** Attribute stamped on every bound element: `data-af-slot="<slot name>"`. */
+export const SLOT_ATTRIBUTE = "data-af-slot";
+
+interface HandleInternals {
+  bind(element: BindableElement): Cleanup;
+  element(): BindableElement | undefined;
+}
+
+const handleInternals = /*#__PURE__*/ new WeakMap<object, HandleInternals>();
+
+/** CSS property name for a style key: camelCase to kebab-case, custom properties verbatim. */
+export const cssPropertyName = cssPropertyNameOf;
+
+/** Elements whose native activation already turns Enter/Space into `click`. */
+function activatesNatively(element: BindableElement): boolean {
+  const tag = String(element.tagName ?? element.nodeName ?? "").toLowerCase();
+  if (tag === "button" || tag === "select" || tag === "textarea" || tag === "summary") return true;
+  if (tag === "a") return element.getAttribute?.("href") != null;
+  if (tag === "input") {
+    const type = (element.getAttribute?.("type") ?? "text").toLowerCase();
+    return type !== "hidden";
+  }
+  return false;
+}
+
+/**
+ * Bind a handle to the rendered element it names (DQ-073).
+ *
+ * While bound, the handle is element-backed: its current attributes and
+ * styles replay onto `element`, every later `setAttr` / `setStyle` /
+ * `setStyleOnce` (reactive re-runs included) writes through, each event name
+ * with handlers gets a real listener that dispatches to the same handler set
+ * `emit` uses (the abstract `press` event maps to `click` plus Enter/Space on
+ * elements without native keyboard activation), and `focus()` / `blur()` on
+ * focusable handles call the element's. `slot` stamps
+ * `data-af-slot="<slot>"`.
+ *
+ * Returns an idempotent unbind that removes the listeners and stops writing
+ * through; the handle keeps its in-memory state, so rebinding to a new
+ * element (a re-render) replays it. A handle is bound to at most one element:
+ * binding again moves it. Handles not created by this module only get the
+ * `data-af-slot` stamp.
+ *
+ * Authored code binds through `View.Slot.ref(...)`, which calls this from a
+ * JSX `ref` and unbinds on the owner's cleanup.
+ */
+export function bindElement(
+  handle: Handle,
+  element: BindableElement,
+  slot?: string,
+): Cleanup {
+  if (slot !== undefined) element.setAttribute?.(SLOT_ATTRIBUTE, slot);
+  const internals = handleInternals.get(handle);
+  if (internals === undefined) return () => {};
+  return internals.bind(element);
+}
+
+/**
+ * A JSX `ref` callback that binds `handle` to the element it lands on and
+ * unbinds when the ref's reactive owner is cleaned up (the element leaves or
+ * the component unmounts). The low-level form of `View.Slot.ref(...)` for
+ * handles that do not come from a slot contract (e.g. headless composables).
+ *
+ * @example
+ * <button ref={Element.ref(cb.trigger, "trigger")}>Toggle</button>
+ */
+export function ref(handle: Handle, slot?: string): (element: unknown) => void {
+  return (element) => {
+    if (element === null || element === undefined) return;
+    onCleanup(bindElement(handle, element as BindableElement, slot));
+  };
+}
+
+/** The element a handle is currently bound to, if any. */
+export function boundElementOf(handle: Handle): BindableElement | undefined {
+  return handleInternals.get(handle)?.element();
+}
+
 function makeHandle<T extends string>(tag: T): Handle & { readonly kind: T } {
   const attrs = new Map<string, unknown>();
   const styles = new Map<string, unknown>();
   const listeners: ListenerMap = new Map();
+
+  interface Binding {
+    readonly element: BindableElement;
+    /** DOM listener removers keyed by the handle-level event name. */
+    readonly dom: Map<string, Cleanup>;
+  }
+  let binding: Binding | undefined;
+
+  const writeAttr = (name: string, serialized: string | null): void => {
+    if (binding === undefined) return;
+    if (serialized === null) binding.element.removeAttribute?.(name);
+    else binding.element.setAttribute?.(name, serialized);
+  };
+
+  const writeStyle = (prop: string, value: unknown): void => {
+    const style = binding?.element.style;
+    if (style === undefined) return;
+    for (const [name, text] of inlineStyleDeclarations(prop, value)) {
+      if (text === null) style.removeProperty?.(name);
+      else style.setProperty?.(name, text);
+    }
+  };
+
+  const dispatch = (event: string, eventData: unknown): void => {
+    const set = listeners.get(event);
+    if (!set) return;
+    for (const handler of [...set]) {
+      handler(eventData);
+    }
+  };
+
+  const installDomListener = (event: string): void => {
+    if (binding === undefined || binding.dom.has(event)) return;
+    const element = binding.element;
+    if (typeof element.addEventListener !== "function") return;
+    const removers: Array<Cleanup> = [];
+    const listen = (domEvent: string, listener: (event: unknown) => void): void => {
+      element.addEventListener!(domEvent, listener);
+      removers.push(() => element.removeEventListener?.(domEvent, listener));
+    };
+    if (event === "press") {
+      listen("click", (domEvent) => dispatch("press", domEvent));
+      if (!activatesNatively(element)) {
+        listen("keydown", (domEvent) => {
+          const key = (domEvent as { readonly key?: string; readonly repeat?: boolean } | null);
+          if (key?.repeat === true) return;
+          if (key?.key !== "Enter" && key?.key !== " " && key?.key !== "Spacebar") return;
+          if (key.key !== "Enter") (domEvent as { preventDefault?: () => void }).preventDefault?.();
+          dispatch("press", domEvent);
+        });
+      }
+    } else {
+      listen(event, (domEvent) => dispatch(event, domEvent));
+    }
+    binding.dom.set(event, () => {
+      for (const remove of removers) remove();
+    });
+  };
+
+  const removeDomListener = (event: string): void => {
+    const remove = binding?.dom.get(event);
+    if (remove === undefined) return;
+    binding!.dom.delete(event);
+    remove();
+  };
+
+  const unbindCurrent = (): void => {
+    const current = binding;
+    if (current === undefined) return;
+    binding = undefined;
+    for (const remove of current.dom.values()) remove();
+    current.dom.clear();
+  };
 
   /**
    * Create a reactive reaction whose lifetime is owned by the ambient Effect
@@ -185,8 +363,10 @@ function makeHandle<T extends string>(tag: T): Handle & { readonly kind: T } {
         const set = listeners.get(event) ?? new Set<EventHandler>();
         set.add(handler);
         listeners.set(event, set);
+        installDomListener(event);
         return () => {
           set.delete(handler);
+          if (set.size === 0) removeDomListener(event);
         };
       });
     },
@@ -217,11 +397,7 @@ function makeHandle<T extends string>(tag: T): Handle & { readonly kind: T } {
       );
     },
     emit(event, eventData) {
-      const set = listeners.get(event);
-      if (!set) return;
-      for (const handler of set) {
-        handler(eventData);
-      }
+      dispatch(event, eventData);
     },
     // DQ-068: writes serialize and reads parse through the ONE attribute
     // contract (`src/attributes.ts`), so this test handle and the DOM/SSR
@@ -235,6 +411,7 @@ function makeHandle<T extends string>(tag: T): Handle & { readonly kind: T } {
         } else {
           attrs.set(name, serialized);
         }
+        writeAttr(name, serialized === null ? null : String(serialized));
       };
       if (typeof value === "function") {
         return reaction(() => {
@@ -251,18 +428,39 @@ function makeHandle<T extends string>(tag: T): Handle & { readonly kind: T } {
     },
     setStyle(prop, value) {
       return reaction(() => {
-        styles.set(prop, value());
+        const next = value();
+        styles.set(prop, next);
+        writeStyle(prop, next);
       });
     },
     setStyleOnce(prop, value) {
       return Effect.sync(() => {
         styles.set(prop, value);
+        writeStyle(prop, value);
       });
     },
     getStyle(prop) {
       return styles.get(prop);
     },
   };
+
+  handleInternals.set(base, {
+    element: () => binding?.element,
+    bind(element) {
+      if (binding?.element === element) return () => {};
+      unbindCurrent();
+      const next: Binding = { element, dom: new Map() };
+      binding = next;
+      for (const [name, value] of attrs) writeAttr(name, String(value));
+      for (const [prop, value] of styles) writeStyle(prop, value);
+      for (const [event, set] of listeners) {
+        if (set.size > 0) installDomListener(event);
+      }
+      return () => {
+        if (binding === next) unbindCurrent();
+      };
+    },
+  });
 
   return base;
 }
@@ -296,24 +494,28 @@ export function container(): Container {
 
 /** Create an in-memory focusable handle. */
 export function focusable(): Focusable {
-  const h = makeHandle("Focusable") as Focusable;
-  h.focus = () => {
-    h.emit("focus");
-  };
-  h.blur = () => {
-    h.emit("blur");
-  };
-  return h;
+  return withFocus(makeHandle("Focusable") as Focusable);
 }
 
 /** Create an in-memory text input handle. */
 export function textInput(): TextInput {
-  const h = makeHandle("TextInput") as TextInput;
+  return withFocus(makeHandle("TextInput") as TextInput);
+}
+
+/**
+ * `focus()` / `blur()` call the bound element's (whose real focus events then
+ * reach listeners); an unbound handle emits the event in memory.
+ */
+function withFocus<H extends Focusable>(h: H): H {
   h.focus = () => {
-    h.emit("focus");
+    const element = boundElementOf(h);
+    if (typeof element?.focus === "function") element.focus();
+    else h.emit("focus");
   };
   h.blur = () => {
-    h.emit("blur");
+    const element = boundElementOf(h);
+    if (typeof element?.blur === "function") element.blur();
+    else h.emit("blur");
   };
   return h;
 }
@@ -326,27 +528,65 @@ export function draggable(): Draggable {
 /** Create an in-memory collection handle for repeated slots. */
 export function collection<E extends Handle>(initial: ReadonlyArray<E> = []): Collection<E> {
   let current = initial;
-  const observers = new Set<{
-    run: (item: E, index: number) => Effect.Effect<Cleanup | void>;
-    cleanups: Set<Cleanup>;
-  }>();
+  interface Observer {
+    readonly run: (item: E, index: number) => Effect.Effect<Cleanup | void>;
+    readonly cleanups: Set<Cleanup>;
+    /** Reactive owner ambient when `observeEach` ran; item roots nest under it. */
+    readonly owner: Owner | null;
+  }
+  const observers = new Set<Observer>();
 
-  const runObserver = (observer: {
-    run: (item: E, index: number) => Effect.Effect<Cleanup | void>;
-    cleanups: Set<Cleanup>;
-  }): void => {
-    for (const cleanup of observer.cleanups) {
+  /**
+   * Run one per-item observer in its OWN child `Scope` and reactive root, so
+   * every resource the item acquires (`setAttr(fn)` reactions, `on(...)`
+   * listeners, nested finalizers) is released when that item's run is torn
+   * down — on re-run, on removal, and on the observer's own disposal. Without
+   * this, per-item work acquired inside `observeEach` had no Scope and piled
+   * up on every `set()`, still writing to items no longer in the collection.
+   */
+  const runItem = (observer: Observer, item: E, index: number): Cleanup => {
+    const itemScope = Effect.runSync(Scope.make());
+    let disposeRoot: () => void = () => {};
+    let out: Cleanup | void = undefined;
+    try {
+      out = runWithOwner(observer.owner, () =>
+        createRoot((dispose) => {
+          disposeRoot = dispose;
+          return Effect.runSync(observer.run(item, index).pipe(Scope.provide(itemScope)));
+        }),
+      );
+    } catch (error) {
+      Effect.runSync(Scope.close(itemScope, Exit.void));
+      disposeRoot();
+      throw error;
+    }
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      try {
+        if (typeof out === "function") out();
+      } finally {
+        Effect.runSync(Scope.close(itemScope, Exit.void));
+        disposeRoot();
+      }
+    };
+  };
+
+  const releaseAll = (observer: Observer): void => {
+    const pending = [...observer.cleanups];
+    observer.cleanups.clear();
+    for (const cleanup of pending) {
       cleanup();
     }
-    observer.cleanups.clear();
+  };
 
+  const runObserver = (observer: Observer): void => {
+    releaseAll(observer);
     for (let index = 0; index < current.length; index += 1) {
       const item = current[index];
       if (item === undefined) continue;
-      const out = Effect.runSync(observer.run(item, index));
-      if (typeof out === "function") {
-        observer.cleanups.add(out);
-      }
+      observer.cleanups.add(runItem(observer, item, index));
     }
   };
 
@@ -369,9 +609,10 @@ export function collection<E extends Handle>(initial: ReadonlyArray<E> = []): Co
       // scope close. The reactive owner is only the fallback for callers that
       // run without a Scope.
       return Effect.flatMap(Effect.serviceOption(Scope.Scope), (maybeScope) => {
-        const observer = {
+        const observer: Observer = {
           run: f,
           cleanups: new Set<Cleanup>(),
+          owner: getOwner(),
         };
         observers.add(observer);
         runObserver(observer);
@@ -385,11 +626,7 @@ export function collection<E extends Handle>(initial: ReadonlyArray<E> = []): Co
           if (disposed) return;
           disposed = true;
           observers.delete(observer);
-          const pending = [...observer.cleanups];
-          observer.cleanups.clear();
-          for (const cleanup of pending) {
-            cleanup();
-          }
+          releaseAll(observer);
         };
 
         if (Option.isSome(maybeScope)) {
@@ -413,4 +650,7 @@ export const Element = {
   textInput,
   draggable,
   collection,
+  bindElement,
+  boundElementOf,
+  ref,
 } as const;

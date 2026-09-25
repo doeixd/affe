@@ -64,7 +64,7 @@ describe("AN-2 live sync", () => {
   });
 
   it("a failed agent mutation broadcasts nothing", async () => {
-    class RejectedError extends Schema.TaggedErrorClass<RejectedError>(
+    class RejectedError extends Schema.TaggedError<RejectedError>(
       "reactivity-push-test/RejectedError",
     )("RejectedError", { reason: Schema.String }) {}
 

@@ -34,5 +34,18 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 30_000,
     },
+    {
+      // Every example at its own root (browser-tests/examples.spec.ts).
+      command: "node examples/serve.mjs",
+      url: "http://127.0.0.1:4200",
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: "npm run preview:router-example",
+      url: "http://127.0.0.1:4180",
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
   ],
 });

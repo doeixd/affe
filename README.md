@@ -1,11 +1,15 @@
 # Affe
 
-> Affe (German for "monkey", pronounced "AH-fuh") was called `effect-atom-jsx`
-> until this release. Install `@doeixd/affe` and replace `effect-atom-jsx` with
-> `@doeixd/affe` in imports and in `jsxImportSource`; the API is unchanged.
-
 Effect-native reactive state and inside-out UI. One algebra from a counter
 atom to a full-stack, schema-validated, single-flight application.
+
+```sh
+npm create @doeixd/affe@latest my-app
+cd my-app && npm install && npm run dev
+```
+
+> Affe is German for "monkey" (pronounced "AH-fuh"). It was published as
+> `effect-atom-jsx` before 0.6.
 
 ```ts
 import { Atom } from "@doeixd/affe";
@@ -29,23 +33,30 @@ typed, lifecycles are scoped, and everything composes with `.pipe()`.
 | **Atoms** | Callable fine-grained state, derived atoms, families, schema-validated forms |
 | **Async** | `Result`-based queries, actions, retry/polling schedules, optimistic updates |
 | **Reactivity** | Semantic key-based invalidation as an Effect service |
-| **Affe** | Components with published slot contracts; styles and behaviors attach from outside |
+| **Components** | Components with published slot contracts; styles and behaviors attach from outside |
 | **Router** | Schema-first routes, loaders with SWR caching, typed links, head metadata |
 | **Single flight** | One round-trip for a mutation *and* all affected loader data |
 | **Server** | Typed server routes, document rendering, SSR hydration |
+| **Resumability** | Dormant server-rendered pages that load only the code the first interaction needs |
+| **Agent surface** | Your actions as typed tools for AI agents, over HTTP and MCP, with approval and audit |
 
 You can stop at any row. The atoms work alone; the UI model works without the
 router; the router works without the server runtime.
 
 ## Install
 
+The quickest start is `npm create @doeixd/affe@latest my-app` (Vite,
+TypeScript, a counter and a slot-contract component). To add Affe to an
+existing project:
+
 ```sh
-npm install @doeixd/affe effect
+npm install @doeixd/affe effect@4.0.0-rc.117
+npm install -D vite @babel/core @babel/preset-typescript babel-plugin-jsx-dom-expressions
 ```
 
-**Effect compatibility:** this package peers on **Effect 4 beta**
-(`effect ^4.0.0-beta.29`). Ship as **0.x prerelease / beta** until Effect 4
-is stable; a `1.0.0` cut waits on a stable Effect core. See
+**Effect compatibility:** this package peers on **Effect 4** (a release candidate), pinned to
+exactly `effect@4.0.0-rc.117`. Ship as **0.x prerelease / beta** until
+Effect 4 is stable; a `1.0.0` cut waits on a stable Effect core. See
 `docs/RELEASE_CHECKLIST.md` and `docs/V1_SCOPE.md`.
 
 **TypeScript:** library typecheck and `tsc` build use **TypeScript 7**
@@ -55,7 +66,17 @@ package ships `.d.ts` from the TS7 toolchain.
 ### Setup
 
 JSX compiles to fine-grained DOM operations via
-`babel-plugin-jsx-dom-expressions`. Point `moduleName` at the
+`babel-plugin-jsx-dom-expressions`. With Vite, add the plugin:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import affe from "@doeixd/affe/vite";
+
+export default defineConfig({ plugins: [affe()] });
+```
+
+With another bundler, configure Babel yourself and point `moduleName` at the
 `@doeixd/affe/runtime` subpath (that is where the compiler-facing helpers
 live):
 
@@ -78,10 +99,14 @@ For `tsc` to type-check your JSX, set these in `tsconfig.json`:
 {
   "compilerOptions": {
     "jsx": "preserve",
-    "jsxImportSource": "@doeixd/affe"
+    "jsxImportSource": "@doeixd/affe",
+    "lib": ["ESNext", "DOM"]
   }
 }
 ```
+
+`lib` needs `ESNext` (or at least `ESNext.Disposable`) because Effect's own
+types use `Disposable`.
 
 Mount an app with `render` (SSR uses `renderToString` / `hydrateRoot`):
 
@@ -196,7 +221,7 @@ Parameterized keys use families (`Reactivity.Key.family("user")`, then
 Swap `Reactivity.live` for `Reactivity.test` in tests and drive invalidation
 manually with `flush()` — no component changes.
 
-## 4. UI: the inside-out component model (Affe)
+## 4. UI: the inside-out component model
 
 Most frameworks bake structure, style, and behavior into one file. Affe
 components declare a **slot contract** — a typed description of their
@@ -222,17 +247,19 @@ const Field = Component.make(
   Component.props<{ readonly label: string }>(),
   Component.require<never>(),
   () => Effect.succeed({}),
+  // `ref={View.Slot.ref(FieldSlots, name)}` binds a slot to its element, so
+  // what attaches from outside lands on the rendered page.
   (props) =>
     View.fromSlots(FieldSlots, (
-      <label>
-        <span>{props.label}</span>
-        <input />
+      <label ref={View.Slot.ref(FieldSlots, "root")}>
+        <span ref={View.Slot.ref(FieldSlots, "label")}>{props.label}</span>
+        <input ref={View.Slot.ref(FieldSlots, "input")} />
       </label>
     )),
 ).pipe(Component.withSlots(FieldSlots));
 
 // Appearance, from outside — token paths are type-checked against the theme.
-const FieldStyle = Style.forSlots(FieldSlots)({
+const FieldStyle = Style.make(FieldSlots, {
   root:  Style.slot({ display: "grid", gap: "sm" }),
   label: Style.slot({ fontWeight: 600 }),
   input: Style.slot({ padding: "sm" }),
@@ -279,6 +306,19 @@ compiler extraction of richer JSX tree metadata remains a tooling concern.
 Platform-agnosticism means your components are *verified* against declared
 platform vocabularies — alternate renderers (TUI, native) are deferred, not
 shipped.
+
+**What binds to the page:** a slot reaches an element only through
+`ref={View.Slot.ref(Slots, name)}` (or `Element.ref(handle)` for handles
+outside a contract). A bound element gets the slot's attached styles as inline
+styles (tokens resolved, numeric lengths in `px`), attributes set by
+behaviors, real listeners for `on(...)` (`press` = click, plus Enter/Space on
+elements without native keyboard activation), `focus()`/`blur()`, and a
+`data-af-slot="<name>"` stamp; SSR serializes the same. A slot with no `ref`
+stays an in-memory handle (the test kit still drives it). A `Collection` slot
+binds one item handle per element its `ref` lands on, in render order.
+Resumed components bind when activation re-renders them, not by adopting the
+server markup in place. Static CSS from `Style.extractStatic` targets
+`[data-af-slot="<slot>"]` by default.
 
 ## 5. Routing: schema-first, loader-driven
 
@@ -373,6 +413,65 @@ const dispose = Component.mount(App, {
 - Services close when their subtree unmounts (scoped finalizers).
 - Testing = swap the layer (`Reactivity.test`, mock services).
 
+## 8. Resumability: resume instead of hydrating
+
+A server-rendered page can stay dormant: the first interaction imports only
+the code it needs, and component setup never re-runs on the client. Wrap the
+code that should resume in a compiler marker; the Vite plugin
+(`resumeExtract` from `@doeixd/affe/compiler/resume-extract-vite`) hoists it
+into a `Portable.code` definition with a stable id and a lazy loader.
+
+```ts
+import { extract } from "@doeixd/affe/portable-extract";
+
+.bind("note", ({ props }) =>
+  Component.action(
+    extract(
+      (captures: { readonly label: string }) =>
+        Effect.gen(function* () {
+          yield* (yield* NoteService).record(captures.label);
+        }),
+      { captures: Schema.Struct({ label: Schema.String }), bind: { label: props.label } },
+    ),
+  ))
+```
+
+On the server, `Resume.collect(render, { buildId })` returns the HTML plus a
+small JSON manifest. On the client, `Resume.decodeManifest(...)` and
+`Resume.installClient({ root, manifest, expectedBuildId, resolverEntries,
+runtime })` install one listener per event type; the first click loads that
+handler's chunk and runs it. Everything that crosses the wire is
+schema-validated and gated by build id, so a stale or tampered page fails
+closed. Strict mode is plain JSON; `@doeixd/affe-permissive` adds seroval for
+`Map`, `Date` and friends. See `docs/RESUMABILITY_GUIDE.md` and
+`examples/resumable-extract`.
+
+## 9. Agent surface: your actions as tools
+
+An agent is just another caller. Expose `Portable.code` actions in a catalog,
+and one dispatch pipeline serves the UI, HTTP single flight and MCP:
+
+```ts
+const catalog = Agent.catalog({
+  addTodo: Agent.exposeMutation(AddTodo, {
+    description: "Add a todo",
+    args: Schema.Tuple([Schema.String]),
+    success: Schema.Struct({ id: Schema.String, text: Schema.String }),
+    reactivityKeys: ["todos"],
+    access: { agent: true, http: true },
+  }),
+});
+
+Agent.dispatch(catalog)({ tool: "addTodo", args: ["milk"], buildId });
+```
+
+Dispatch authorizes first, rejects stale builds, decodes arguments before the
+handler runs, and asks the `Approval` and `AuditLog` services when the entry
+or catalog requires them (refusing if they are missing). `ViewSpec` is a
+validated, markup-free view format for UI an agent generates, and
+`@doeixd/affe-ui-agent` projects the catalog as an MCP server. See
+`docs/AGENT_SURFACE_GUIDE.md`.
+
 ## Type architecture
 
 Every async value carries three axes — `A` (value), `E` (typed error), `R`
@@ -412,16 +511,52 @@ What you don't give up: incremental adoption inside an existing app, and SSR
 - `docs/SERVICES_AND_LAYERS.md` — dependency injection, provision tiers, request scoping
 - `docs/API.md` — API reference
 - `docs/TESTING.md` — DOM-free test harness, layer swapping, `Reactivity.test`
+- `docs/RESUMABILITY_GUIDE.md` — resumability: markers, manifests, strict vs permissive
+- `docs/AGENT_SURFACE_GUIDE.md` — the agent catalog, governance services, MCP, ViewSpec
 - `docs/V1_SCOPE.md` — what v1 ships and what is deliberately deferred
 - `examples/` — router golden path, single flight (custom + fetch transport),
   styled combobox, optimistic counter, SSR hydration
 
+## Size
+
+Measured with Vite 8, minified and gzipped, **Effect included**
+(`npm run size` reproduces these; CI fails if one grows past its budget):
+
+| App | Initial JavaScript |
+|---|---|
+| Atoms only | ~5 kB |
+| `render` + atoms | ~20 kB |
+| One component | ~25 kB |
+| Component + style + behavior | ~30 kB |
+| The `create-affe` template | ~32 kB |
+| Routing (`examples/router-basic`) | ~50 kB |
+
+You pay for what you import: every module is tree-shakeable, so an app that
+never routes ships no router, and one that never resumes ships no
+resumability runtime. Routing costs the most because params and loaders
+decode through Effect `Schema`, which a typed app usually carries anyway.
+
 ## Status
 
-Pre-release, breaking-change-first redesign track. The API shown here is the
-current shipped surface; names from older docs/posts (e.g.
-`ServerRoute.make("json")`, `AsyncResult`, `Atom.fn`) are gone. See
-`CHANGELOG.md` and `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`.
+**0.x prerelease.** Affe peers on Effect 4, which is itself a release
+candidate, so 1.0 waits for a stable Effect. Until then a minor version can
+change APIs; `CHANGELOG.md` lists every break with a migration note.
+
+| Area | Status |
+|---|---|
+| Atoms, `Result`, queries and actions | Stable surface |
+| Components, slots, styles, behaviors | Stable surface |
+| Router, loaders, single flight, server routes, SSR | Stable surface |
+| Resumability (`Resume`, `Portable`, the extract compiler) | Experimental |
+| Agent surface (`Agent`, `ViewSpec`, `@doeixd/affe-ui-agent`) | Experimental |
+
+"Stable surface" means it is exercised end to end (unit tests plus every
+example driven in a real browser) and changes only with a changelog entry.
+"Experimental" means it works and is tested, but its API may still move.
+
+Run the examples with `npm run examples`. Security reports go through
+[`SECURITY.md`](SECURITY.md); contributions through
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Events
 

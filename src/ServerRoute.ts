@@ -3,10 +3,10 @@ import * as Route from "./Route.js";
 import * as Resume from "./Resume.js";
 import * as Serialization from "./Serialization.js";
 import { renderToString } from "./dom.js";
-import { extractPatternParams, matchPatternSegments } from "./route-pattern.js";
+import { extractPatternParams, matchPatternSegments, mostSpecific } from "./route-pattern.js";
 import type { AnyRoute, AppRouteNode } from "./Route.js";
 
-export const ServerRouteNodeSymbol: unique symbol = Symbol.for("affe/ServerRouteNode");
+export const ServerRouteNodeSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/ServerRouteNode");
 
 /** Kind of server route handled by the Affe server bridge. */
 export type ServerRouteKind = "action" | "document" | "json" | "resource";
@@ -122,6 +122,54 @@ export interface ExecuteResult<R> {
   readonly headers: ReadonlyMap<string, ReadonlyArray<string>>;
   readonly redirect?: { readonly location: string; readonly status: number };
   readonly notFound?: true;
+  /** Set when {@link checkOrigin} refused a cross-site request (status 403). */
+  readonly forbidden?: { readonly reason: string };
+}
+
+/**
+ * Cross-site request forgery protection for state-changing requests.
+ *
+ * `false` turns it off (only for endpoints that must accept cross-site form
+ * posts and carry their own token check). `trustedOrigins` lists other
+ * origins allowed to call in, such as `https://admin.example.com`, or the
+ * public origin when a proxy rewrites the request URL.
+ */
+export type CsrfOptions = false | { readonly trustedOrigins?: ReadonlyArray<string> };
+
+/** Options for {@link execute} and {@link dispatch}. */
+export interface ServerExecuteOptions {
+  readonly layer?: import("effect").Layer.Layer<any>;
+  /** On by default. See {@link CsrfOptions} and {@link checkOrigin}. */
+  readonly csrf?: CsrfOptions;
+}
+
+const safeMethods = /*#__PURE__*/ new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+
+/**
+ * Decide whether a request may change state, the way browsers let servers
+ * tell: safe methods always pass; `Sec-Fetch-Site: same-origin` (or `none`,
+ * a user-initiated navigation) passes; otherwise an `Origin` header must be
+ * the request's own origin or a trusted one. A request with neither header
+ * did not come from a browser page, so it cannot be a forgery and passes.
+ *
+ * `execute` and `dispatch` apply this to every request. Call it yourself for
+ * endpoints you route by hand, such as a single-flight POST handler.
+ */
+export function checkOrigin(
+  request: Request,
+  options: CsrfOptions = {},
+): { readonly ok: true } | { readonly ok: false; readonly reason: string } {
+  if (options === false || safeMethods.has(request.method.toUpperCase())) return { ok: true };
+  const trusted = new Set(options.trustedOrigins ?? []);
+  const site = request.headers.get("sec-fetch-site");
+  if (site === "same-origin" || site === "none") return { ok: true };
+  const origin = request.headers.get("origin");
+  if (origin !== null) {
+    if (origin === new URL(request.url).origin || trusted.has(origin)) return { ok: true };
+    return { ok: false, reason: `cross-origin ${request.method} from ${origin}` };
+  }
+  if (site !== null) return { ok: false, reason: `${request.method} with Sec-Fetch-Site: ${site}` };
+  return { ok: true };
 }
 
 /** Result of dispatching a request through document and data routes. */
@@ -210,6 +258,33 @@ function withField<K extends keyof ServerRouteNode<any, any, any, any, any, any,
     meta: { ...route.meta, [key]: value },
     [key]: value,
   })) as ServerRouteEnhancer;
+}
+
+/**
+ * Parse a `Cookie` header into name/value pairs: values are unquoted and
+ * percent-decoded (a malformed escape keeps the raw value), as the `cookie`
+ * package and most frameworks do. The first occurrence of a name wins.
+ */
+function parseCookieHeader(header: string | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const part of (header ?? "").split(";")) {
+    const trimmed = part.trim();
+    if (trimmed === "") continue;
+    const index = trimmed.indexOf("=");
+    const name = (index >= 0 ? trimmed.slice(0, index) : trimmed).trim();
+    if (name === "" || Object.prototype.hasOwnProperty.call(out, name)) continue;
+    let value = index >= 0 ? trimmed.slice(index + 1).trim() : "";
+    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+    if (value.includes("%")) {
+      try {
+        value = decodeURIComponent(value);
+      } catch {
+        // Keep the raw value.
+      }
+    }
+    out[name] = value;
+  }
+  return out;
 }
 
 function decodeSchemaOrDefault<A>(schema: Schema.Schema<A> | undefined, input: unknown, fallback: A): A {
@@ -552,24 +627,32 @@ export function matches(
   return matchPath(route.path, pathname);
 }
 
-/** Find the first matching server route in a route graph. */
+/**
+ * Find the most specific matching server route in a route graph.
+ *
+ * Among routes that match the method and pathname, the most specific path
+ * wins, compared segment by segment: static > `:param` > `:param?` > `*`
+ * (so `/api/users/me` beats `/api/users/:id` whatever the declaration
+ * order). Equally specific matches keep declaration order.
+ */
 export function find(
   routes: ReadonlyArray<ServerRouteNode<any, any, any, any>>,
   methodValue: string,
   pathname: string,
   options?: { readonly kind?: ServerRouteKind },
 ): ServerRouteNode<any, any, any, any> | undefined {
-  return routes.find((route) => {
+  const candidates = routes.filter((route) => {
     if (options?.kind && route.kind !== options.kind) return false;
     return matches(route, methodValue, pathname);
   });
+  return mostSpecific(candidates, (route) => route.path ?? "");
 }
 
 /** Execute a typed non-document server route with Schema-driven request decoding. */
 export function execute<T extends AnyServerRouteNode>(
   route: T,
   request: Request,
-  options?: { readonly layer?: import("effect").Layer.Layer<any> },
+  options?: ServerExecuteOptions,
 ): Effect.Effect<ExecuteResult<ResponseOf<T>>, unknown> {
   const responseService = createResponseService();
   return executeWithServices(route, request, responseService, options);
@@ -611,10 +694,20 @@ export function executeWithServices<T extends AnyServerRouteNode>(
   route: T,
   request: Request,
   responseService: ResponseService,
-  options?: { readonly layer?: import("effect").Layer.Layer<any> },
+  options?: ServerExecuteOptions,
 ): Effect.Effect<ExecuteResult<ResponseOf<T>>, unknown> {
   return Effect.tryPromise({
     try: async () => {
+      const origin = checkOrigin(request, options?.csrf);
+      if (!origin.ok) {
+        return {
+          response: undefined,
+          encoded: { _tag: "CrossOriginRequestRefused", reason: origin.reason },
+          status: 403,
+          headers: new Map(),
+          forbidden: { reason: origin.reason },
+        } satisfies ExecuteResult<ResponseOf<T>>;
+      }
       const url = new URL(request.url);
       const paramsValue = decodeSchemaOrDefault(route.paramsSchema as Schema.Schema<ParamsOf<T>> | undefined, extractParams(route.path, url.pathname), {} as ParamsOf<T>);
       const queryValue = decodeSchemaOrDefault(route.querySchema as Schema.Schema<QueryOf<T>> | undefined, Object.fromEntries(url.searchParams.entries()), {} as QueryOf<T>);
@@ -629,10 +722,7 @@ export function executeWithServices<T extends AnyServerRouteNode>(
         headerObject[key] = value;
       });
       const headersValue = decodeSchemaOrDefault(route.headersSchema as Schema.Schema<HeadersOf<T>> | undefined, headerObject, {} as HeadersOf<T>);
-      const cookiesValue = decodeSchemaOrDefault(route.cookiesSchema as Schema.Schema<CookiesOf<T>> | undefined, Object.fromEntries((request.headers.get("cookie") ?? "").split(";").map((part) => part.trim()).filter(Boolean).map((part) => {
-        const index = part.indexOf("=");
-        return index >= 0 ? [part.slice(0, index), part.slice(index + 1)] : [part, ""];
-      })), {} as CookiesOf<T>);
+      const cookiesValue = decodeSchemaOrDefault(route.cookiesSchema as Schema.Schema<CookiesOf<T>> | undefined, parseCookieHeader(request.headers.get("cookie")), {} as CookiesOf<T>);
 
       if (!route.handler) {
         throw new Error("[affe/ServerRoute] execute requires a handler.");
@@ -712,11 +802,11 @@ export function runDocument(
   });
 }
 
-/** Match and execute the first server route that handles the request. */
+/** Match (most specific route wins, see {@link find}) and execute the server route that handles the request. */
 export function dispatch(
   routes: ReadonlyArray<ServerRouteNode<any, any, any, any>>,
   request: Request,
-  options?: { readonly layer?: import("effect").Layer.Layer<any> },
+  options?: ServerExecuteOptions,
 ): Effect.Effect<DispatchResult, unknown> {
   return Effect.gen(function* () {
     const url = new URL(request.url);
@@ -784,6 +874,7 @@ export function executeFromServices<T extends AnyServerRouteNode>(
 
 export const ServerRoute = {
   action,
+  checkOrigin,
   document,
   json,
   resource,

@@ -132,6 +132,7 @@ URL state and navigation. Provides a reactive `url` atom and imperative navigati
 | Layer                           | Description                                                                                        |
 | ------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `Route.Router.Browser`          | Wraps the browser History API. Listens to `popstate`. Use in client-rendered apps.                 |
+| `Route.Router.browser({ base })` | The browser router for an app served under a sub-path (`base: "/docs"`); routes and `url()` stay app-relative. |
 | `Route.Router.Hash`             | Hash-based routing (`#/path`). Listens to `hashchange`. Use when you can't control server routing. |
 | `Route.Router.Server(request)`  | Static URL from an incoming request. Use during SSR.                                               |
 | `Route.Router.Memory(initial?)` | In-memory history stack. Use in tests and Node environments.                                       |
@@ -455,6 +456,7 @@ The key insight is that `Component.make` separates _setup_ (an Effect that runs 
 - `Component.make(props, require, setup, view)`
 - `Component.headless(props, require, setup)` — setup-only, no view (for logic reuse)
 - `Component.from(fn)` — create from a plain function component
+- `Component.isComponent(value)` — type guard for component values
 - `Component.props<P>()` / `Component.propsSchema(schema)` — declare prop shape
 - `Component.require(...tags)` — declare required Effect services
 - metadata extractors: `Component.Requirements<T>`, `Component.Errors<T>`, `Component.PropsOf<T>`, `Component.BindingsOf<T>`, `Component.SlotsOf<T>`, `Component.SlotContractOf<T>`
@@ -746,7 +748,7 @@ Typed style composition that treats CSS as data. Styles are assembled as structu
 **Style maps and attachment:**
 
 - `Style.make` — create a style map (slot name → style)
-- `Style.forSlots(slots)` — create an authored style map over a `View.Slots` contract
+- `Style.make(slots, map)` — create an authored style map over a `View.Slots` contract (`Style.forSlots` was removed in DQ-054)
 - `Style.attachToSlots(style, slots)` — attach authored styles to the same slot contract
 - `Style.attachBySlotContract(style, map)` — typed remapping through slot contracts
 - `Style.attach` / `Style.attachByView` — **low-level/general** attach for components **without** a published `View.Slots` contract (`attach` targets setup `bindings.slots`; `attachByView` targets the rendered `View`). Prefer `attachToSlots` (authored) / `attachBySlotContract` (typed remap) / `attachBySlots` (dynamic string map) when a contract exists; those are typed sugar over these general forms.
@@ -931,7 +933,8 @@ Component wrappers like `Component.withLoading(...)`, `Component.withSpan(...)`,
 
 - `Route.guard`, `Route.title`, `Route.meta`, `Route.transition`
 - `Route.lazy(importer, { loading? })` — demand-load a component, expose `preload()`, and update through signals when the module resolves
-- `Route.Switch`, `Route.collect`, `Route.collectAll(source)`, `Route.validateLinks`
+- `Route.Switch({ children, fallback? })` — render the most specific routed child that matches the current URL (pass components, not calls, so only the winner is created)
+- `Route.collect`, `Route.collectAll(source)`, `Route.validateLinks`
 - `Route.registry([...])`, `Route.isRouteRegistry`, `Route.RouteSourceTag`, `Route.routeSourceLayer(source)` — explicit route sources; `routeSourceLayer` is what makes `RouterService.preload` resolvable
 
 **SSR/SSG loader helpers:**
@@ -1272,7 +1275,8 @@ Server-side route handlers with typed request decoding, schema-based params/form
 
 - `ServerRoute.execute(route, request)` — Schema-based params/form/body decoding + basic response encoding
 - `ServerRoute.executeWithServices(...)`, `ServerRoute.executeFromServices(...)` — service-native variants
-- `ServerRoute.dispatch(routes, request, { layer? })` — full route dispatch with loader payload output
+- `ServerRoute.dispatch(routes, request, { layer?, csrf? })` — full route dispatch with loader payload output; refuses cross-site state-changing requests with a 403 unless `csrf: false` or the origin is in `csrf.trustedOrigins`
+- `ServerRoute.checkOrigin(request, csrf?)` — the same cross-site check, for endpoints you route yourself
 - `ServerRoute.dispatchWithRuntime(runtime, request, ...)` — runtime-backed dispatch
 - `ServerRoute.toResponse(...)` — convert dispatch results to a generic response shape (`status`, `headers`, `body`/`html`, redirect, notFound)
 
@@ -2040,6 +2044,8 @@ otherwise they degrade to `Failure` and `Loading` respectively.
 
 These components pattern-match `Result` or conditional values and render the appropriate slot. They are the reactive equivalent of `switch` statements over async state.
 
+Each returns an accessor: in JSX (`<Async result={query()} ... />`) the props are getters, and the component re-renders its branch when they change. A branch is rebuilt only when the selection changes (for `Loading`, only when loading flips), and the previous branch is disposed. Called as a plain function, read the accessor to get the current branch.
+
 - **`Async({ result, loading?, refreshing?, stale?, success, error?, defect? })`** — render slots based on `Result` state. `refreshing?` is optional; falls back to the previous settled state. `stale?` is optional; falls back to `error?` or the `success` slot with stale data.
 - **`Loading({ when, fallback?, children })`** — show children while loading
 - **`Errored({ result, children })`** — show children on error
@@ -2051,7 +2057,7 @@ These components pattern-match `Result` or conditional values and render the app
 - **`Optional({ when, fallback?, children })`** — render when truthy
 - **`MatchOption({ value, some, none? })`** — match Effect `Option`
 - **`Dynamic({ component, ...props })`** — dynamic component selection at runtime
-- **`WithLayer({ layer, runtime?, fallback?, children })`** — provide a Layer boundary to a subtree
+- **`WithLayer({ layer, runtime?, fallback?, children })`** — build a Layer and provide its services to a subtree (component setup, `useService`, nested boundaries); shows `fallback` while an asynchronous layer builds, and releases the layer on unmount
 - **`Frame({ children })` / `createFrame(initial?)`** — animation frame loop
 
 ### Types
@@ -2104,6 +2110,7 @@ Functions called by `babel-plugin-jsx-dom-expressions` compiled JSX output. You 
 - `render(fn, container)` — mount a component tree; returns dispose function
 - `renderWithHMR(fn, container, hot?, key?)` — mount with Vite HMR self-accept + previous dispose handling
 - `withViteHMR(dispose, hot?, key?)` — attach any disposer to Vite HMR lifecycle
+- `@doeixd/affe/vite` — `affe(options?)`, the Vite plugin that compiles `.tsx`/`.jsx` with `babel-plugin-jsx-dom-expressions` (options: `include`, `exclude`, `hydratable`, `jsx`, `babelPlugins`)
 
 ### SSR
 
@@ -2326,10 +2333,10 @@ if (Diagnostics.hasErrors(diagnostics)) {
 CLI:
 
 ```bash
-af-ui doctor ./dist/app-routes.js
-af-ui doctor ./dist/app-routes.js --export app --export serverRoutes
-af-ui doctor ./dist/app-routes.js --json
-af-ui doctor ./dist/app-routes.js --fail-on-warnings
+affe doctor ./dist/app-routes.js
+affe doctor ./dist/app-routes.js --export app --export serverRoutes
+affe doctor ./dist/app-routes.js --json
+affe doctor ./dist/app-routes.js --fail-on-warnings
 ```
 
 The imported module may export route trees, server route arrays, diagnostics

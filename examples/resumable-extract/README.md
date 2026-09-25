@@ -11,7 +11,8 @@ The pieces:
 - [`vite.config.ts`](vite.config.ts) enables
   `resumeExtract` from `@doeixd/affe/compiler/resume-extract-vite`. The
   transform hoists the marker into an exported `Portable.code` with the
-  generated identity `app/note-button.ts#$0` and serves
+  generated identity `app/note-button.ts#$<hash>` (content-hashed, because
+  the marker is not assigned to a const) and serves
   `virtual:af-resume-entries` with a lazy loader per generated definition.
   `sourceModules` lists modules reachable only through the virtual module so
   their entries exist on a fresh build.

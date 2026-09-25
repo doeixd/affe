@@ -1,6 +1,224 @@
 # Changelog
 
-## Unreleased (Redesign Track)
+## 0.6.0 (2026-09-25)
+
+### Getting started works
+
+- `npm create @doeixd/affe@latest my-app` (the new `@doeixd/create-affe`
+  package) scaffolds a Vite + TypeScript project that runs with
+  `npm install && npm run dev`. It replaces the `create-af-ui` stub, whose
+  dev script only printed "configure a bundler".
+- `@doeixd/affe/vite` compiles Affe JSX in Vite: `plugins: [affe()]`. The
+  Babel packages and Vite are optional peer dependencies.
+- The CLIs are now `affe` and `affe-doctor` (were `af-ui` / `af-ui-doctor`).
+
+### Every example now runs in the browser suite, and the bugs that hid
+
+Fourteen of twenty examples had never been run by a test. Driving each one in
+Chromium found:
+
+- **Control flow never updated in JSX.** `Show`, `Async`, `Loading`,
+  `Errored`, `TypedBoundary`, `Switch`/`Match`, `Optional`, `MatchOption` and
+  `MatchTag` read their props once, so `<Async result={query()} ...>` stayed
+  on its first state. They now return accessors and follow their props.
+  **Behaviour change:** calling one as a plain function returns an accessor;
+  call it to read the current branch.
+- **`Route.Link` threw**, could not find a router provided by `WithLayer`
+  (so clicks did nothing), never updated its active class, and hijacked
+  ctrl/⌘-clicks. It now renders a real anchor and fixes all four.
+- **Mounted pages ignored new loader data.** Moving `/users/1` →
+  `/users/2`, a single-flight seed, or an invalidation now reaches a page
+  already on screen.
+- **Actions lost their context** when run from a click handler:
+  `useService` and `WithLayer` services now resolve inside `Atom.action` /
+  `defineMutation`.
+- **`renderToString` threw in a browser** (`window.document` is read-only).
+- **`Component.withLayer` services leaked** to siblings rendered after the
+  component.
+
+### New
+
+- `Router.browser({ base })` serves an app under a sub-path; the hash router
+  gives links `#/path` hrefs. `RouterService` gains an optional `href(to)`.
+- `ServerRoute.execute` / `dispatch` refuse state-changing requests that a
+  browser marks as coming from another site (403, before the handler runs);
+  `ServerRoute.checkOrigin` is exported for hand-routed endpoints, and
+  `csrf: false` / `csrf.trustedOrigins` configure it. **Behaviour change**
+  for apps that accept cross-site form posts.
+- `SECURITY.md`, `CONTRIBUTING.md`, and a guides-first `docs/README.md`.
+
+### Smaller bundles: you pay only for what you import
+
+Imports were not tree-shaking: an app that only used atoms shipped 38 kB
+gzipped, and any component pulled in the router, the loader cache and Effect
+`Schema`. Measured with Vite 8, gzipped, Effect included:
+
+| App | Before | After |
+|---|---|---|
+| Atoms only | 37.9 kB | 5.0 kB |
+| `render` + atoms | 47.9 kB | 20.1 kB |
+| One component | 70.4 kB | 25.1 kB |
+| The `create-affe` template | 75.8 kB | 31.5 kB |
+| Routing | 74.7 kB | ~50 kB |
+
+The causes, all fixed: a dynamic `import("./Route.js")` (bundlers keep
+every dynamic-import target, and everything it re-exports); module-level
+calls the bundler had to assume were side effects (`Object.assign` on
+`Atom.runtime`, schema and layer constants, and chained
+`Schema.TaggedError(...)(...)` class heritages); and a single-flight
+hydrator registered at module load. `npm run size` reports per-feature
+sizes, and CI enforces budgets for each.
+
+### `Route.Switch` and `WithLayer` work as documented
+
+- `WithLayer` never rendered its children: it waited on `Layer.launch`,
+  which never completes, and the layer's services never reached the
+  subtree. It now builds the layer (synchronous layers render immediately,
+  asynchronous ones show `fallback` until built), provides its services to
+  component setup, `useService` and nested boundaries, and releases the
+  layer on unmount. It returns an accessor.
+- `Route.Switch` returned its first non-null child, and a component call is
+  never null, so every router example only ever rendered its first page. It
+  now renders the most specific routed child that matches the current URL
+  (`/users/new` beats `/users/:id`), follows navigation, keeps the mounted
+  instance across URLs of the same route, and falls back to `fallback`. Pass
+  the components (`children={[Home, User]}`) so only the winner's setup and
+  loader run; calls (`Home({})`) are still accepted.
+- New `Component.isComponent(value)` guard.
+- `Component.route` components rendered side by side under a router now
+  rank against each other like `Switch` children: `/users/new` and
+  `/users/:id` compete, while `/users` and `/users/:id` (a layout and its
+  child) both render. A routed component is created only while it wins its
+  URL, so a page mounted on another URL renders once navigation reaches it
+  (before, it stayed empty), and a losing page never runs its loader.
+- Each component instance now owns a child of the component scope, so the
+  resources its setup acquires are released when that instance unmounts,
+  not when the whole app does. `WithLayer` gives its subtree a scope when
+  there is no ambient one.
+- Client bundles no longer include the resume-session collector (about
+  18 kB minified) unless the app renders resumable pages; the render hooks
+  reach it through `resume-hooks.ts`. The large shared chunk some bundlers
+  name `resume-handle-*.js` is Effect and the reactive core, not
+  resumability code.
+
+### Router matches rank by specificity
+
+- When sibling routes match the same path the most specific wins
+  (`static > :param > :param? > *`) in loaders, guards, head resolution, SSR
+  pre-runs, the client `RouterRuntime`, `ServerRoute.find` / `dispatch` and
+  `Route.Switch`. See "Match ranking" in `docs/router.md`.
+- Loader cache keys sort by code unit, so they no longer depend on locale.
+  Duration strings accept decimals and bad ones throw instead of becoming
+  `NaN`. Serialized records with a `__proto__` key are safe.
+
+### Background atom policies follow their readers
+
+- `Atom.withPolling`, `withStaleTime` and `withRetry` keep running while any
+  reactive reader holds the atom and stop when the last one goes. Before,
+  each read restarted or stopped the timer, so frequent re-reads starved
+  polling and one reader unmounting stopped polling for every other reader.
+
+### MCP adapter requires authentication by default
+
+- `@doeixd/affe-ui-agent`'s MCP adapter refuses tool calls that carry no
+  `McpAuth` with `McpAuthenticationRequiredError`. Pass `auth: "none"` to
+  opt out (for example, over a trusted local stdio transport).
+
+### Release tooling
+
+- `npm run verify:package` packs the package, installs it with its `effect`
+  peer, imports every subpath and type-checks a consumer strictly. CI runs
+  it, and pushing a `v*` tag publishes to npm with provenance (see
+  `docs/RELEASE_CHECKLIST.md`).
+
+### Slot handles bind to rendered elements
+
+- `View.Slot.ref(Slots, "name")` for the JSX `ref` prop binds a slot handle
+  to the element it names (DQ-073). Styles attached with
+  `Style.attachToSlots` render as inline styles, behavior `setAttr` and
+  `on(...)` listeners reach the element (`press` = click plus Enter/Space on
+  elements without native activation), `focus()`/`blur()` forward, and the
+  element gets `data-af-slot="name"`. SSR output carries the same. Only
+  declared slot names type-check. `Element.ref(handle, name)` does the same
+  for handles outside a contract; a `Collection` slot binds one item handle
+  per element.
+- `Style.extractStatic` now targets `[data-af-slot="<slot>"]` by default
+  (was `.af-<slot>`); pass `selector` to keep class selectors.
+- Attaching a style no longer subscribes the component's render to the
+  bindings it reads (`Style.whenBinding`), so a binding change updates the
+  styled element in place instead of re-rendering the view.
+- The pure token helpers `lookupToken` / `isStructuredTokenLeaf` now live in
+  `style-types.ts` (re-exported from `Theme`, unchanged API), so the style
+  runtime no longer imports `Theme`; a test loads every core module first in
+  a fresh module graph.
+
+### Release audit: 47 bugs fixed
+
+A pre-release audit of every core subsystem found 47 bugs; each fix has a
+regression test that fails on the previous code. Highlights:
+
+- **Reactive core:** effects and memos stopped updating after a conditional
+  read; query atoms died when their first reader re-ran; refresh and
+  reactivity keys never re-ran query atoms; diamond glitches.
+- **Rendering/SSR:** a `Component.make` component used as a JSX child or root
+  rendered its own source text; top-level strings were emitted unescaped
+  during SSR (XSS); components created after the first render had no Scope;
+  `withLayer` released resources early and did not reach children; the
+  server template parser mangled comment placeholders and entities.
+- **Router/server:** single-flight revalidation served stale, cross-request
+  cached data; malformed URLs crashed matching; guard refusals left the URL
+  bar on the refused page; `submit` did not really cancel navigation.
+- **Resumability:** the compiler hoisted code that wrote outer variables;
+  overlapping fragment activation ran setup twice; streaming installs did not
+  claim their root.
+- **Styles:** the Theme service was ignored at runtime; static CSS emitted
+  unitless lengths; collection behaviors kept writing to removed items.
+
+**Behaviour changes to note:**
+
+- A component view that returns a plain markup *string* now renders it as
+  escaped text on the server too (it already did on the client). Return
+  `SafeHtml.make(...)` or JSX for markup.
+- `Hydration.hydrate` / `hydrateFamilies` in strict mode now throw a
+  `HydrationError` (as documented), and the Effect variants fail with it
+  instead of dying. Strict hydration validates before writing anything.
+
+### Dependencies updated to their latest versions
+
+- **Effect `4.0.0-beta.102` → `4.0.0-rc.117`** (exact peer). The only API
+  changes that reached Affe: `Schema.TaggedErrorClass` is now
+  `Schema.TaggedError` (same shape), and `SchemaIssue.InvalidValue` takes
+  `(annotations, input)`. Schema issue messages no longer echo the rejected
+  value.
+- **`@typeonce/effect-machine` `0.1.0` → `0.38.1`.** Its authoring API was
+  rewritten, so `Machine.defineStates` is gone. Author with `Machine.state`,
+  `Machine.targets`, `Machine.events` / `Machine.eventsFromSchemas` and
+  `Machine.make({ root, events }).handle({ initial, states })`; `Machine.resume`
+  and `Machine.waitFor` are re-exported. `Machine.spawn` and
+  `Machine.resumable` are unchanged. **Breaking for persisted state:**
+  encoded snapshots are now codec version 2 (`version: 2`, root at path
+  `""`), and snapshots saved by earlier versions are rejected.
+- Tooling: Vite 8, Vitest 5 (benchmarks use the `bench` test-context fixture;
+  see `src/__bench__/group.ts`), `@effect/tsgo` 0.45, Playwright 1.63,
+  `babel-plugin-jsx-dom-expressions` 0.40 (now emits `setStyleProperty`,
+  which the runtime already exports), `seroval` 1.6.7. Babel stays on 7.x:
+  the JSX plugin does not support Babel 8 yet.
+- CI runs on Node 24 (Vitest 5 needs Node 22.12+; Node 20 is end-of-life).
+
+### Agent governance fails closed
+
+- **Breaking:** plain `Agent.dispatch` refuses an entry that declares
+  `access.approval` when no `Approval` service is provided, with
+  `GovernanceUnsatisfiedError` (`missing: "Approval"`). It used to skip the
+  approval step and run the action.
+- **Breaking:** an `Agent.audited` catalog refuses a mutation when no
+  `AuditLog` service is provided (`missing: "AuditLog"`), as it already did
+  when the sink failed. `audited(catalog, { onFailure: "proceed" })` opts out.
+- **Breaking:** `Agent.singleFlightHandler` only reaches entries that declare
+  `access.http: true`; others answer `AgentToolNotFoundError`. In-process
+  `Agent.dispatch` still reaches every entry.
+- `effect` is now only a peer (and dev) dependency, pinned to
+  `4.0.0-beta.102`, so an app never installs a second copy.
 
 ### Renamed to Affe (`@doeixd/affe`)
 
@@ -9,10 +227,9 @@
   workspace packages are `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and
   `@doeixd/affe-permissive`. Replace `effect-atom-jsx` with `@doeixd/affe` in
   imports, subpaths, `jsxImportSource`, and the Babel `moduleName`.
-- **Deprecation alias.** `deprecated/effect-atom-jsx` publishes
-  `effect-atom-jsx@0.6.0`, which re-exports every `@doeixd/affe` subpath for
-  the transition window. Regenerate it with
-  `node scripts/generate-effect-atom-jsx-alias.mjs`.
+- **No alias release.** The existing `effect-atom-jsx` package on npm is
+  left as it is: no re-exporting alias is published and it is not marked
+  deprecated. New code installs `@doeixd/affe`.
 - **Breaking: internal identifiers.** Symbol keys, Schema brands, error tags,
   and service keys move from `effect-atom-jsx/...` and `@effect-atom-jsx/...`
   to `affe/...`; the hydration marker is `~affe/DehydratedAtom`, the HMR key

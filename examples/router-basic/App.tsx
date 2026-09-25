@@ -81,9 +81,9 @@ export function App() {
           <Route.Switch
             fallback={<p>No route matched.</p>}
             children={[
-              HomeView({}),
-              UsersView({}),
-              UserProfileView({}),
+              HomeView,
+              UsersView,
+              UserProfileView,
             ]}
           />
         </main>

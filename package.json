@@ -1,6 +1,6 @@
 {
   "name": "@doeixd/affe",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Effect-native fine-grained reactive JSX runtime with Layer-powered service injection, async atoms, and optimistic actions.",
   "author": "Patrick G",
   "license": "MIT",
@@ -10,9 +10,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "af-ui": "./dist/cli.js",
-    "af-ui-doctor": "./dist/cli.js",
-    "create-af-ui": "./scripts/create-af-ui.mjs"
+    "affe": "./dist/cli.js",
+    "affe-doctor": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -203,13 +202,20 @@
       "import": "./dist/compiler/resume-extract-vite.js",
       "types": "./dist/compiler/resume-extract-vite.d.ts"
     },
+    "./vite": {
+      "import": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
+    },
     "./package.json": {
       "default": "./package.json"
     }
   },
   "files": [
     "dist",
-    "scripts/create-af-ui.mjs",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/type-tests",
     "README.md",
     "LICENSE",
     "llms.txt"
@@ -251,19 +257,22 @@
     "test:all": "npm test && npm run test:future",
     "test:future:watch": "vitest --config vitest.future.config.ts",
     "typecheck:future": "tsc --noEmit -p tsconfig.future.json",
-    "test:browser": "npm run build && npm run build:permissive && npm run build:resumable-example && npm run build:extract-example && npm run build:permissive-example && playwright test",
+    "test:browser": "npm run build && npm run build:permissive && npm run build:resumable-example && npm run build:extract-example && npm run build:permissive-example && npm run build:router-example && playwright test",
     "build:resumable-example": "node examples/resumable-action/build.mjs",
     "preview:resumable-example": "vite preview --config examples/resumable-action/vite.config.ts",
     "build:extract-example": "node examples/resumable-extract/build.mjs",
     "preview:extract-example": "vite preview --config examples/resumable-extract/vite.config.ts",
     "build:permissive-example": "node examples/permissive-demo/build.mjs",
     "preview:permissive-example": "vite preview --config examples/permissive-demo/vite.config.ts",
+    "build:router-example": "vite build --config examples/router-basic/vite.config.ts",
+    "preview:router-example": "vite preview --config examples/router-basic/vite.config.ts",
+    "examples": "node examples/serve.mjs",
     "build:resumability-benchmark": "node examples/resumability-benchmark/build.mjs",
     "preview:resumability-benchmark": "vite preview --config examples/resumability-benchmark/vite.config.ts",
     "bench:resumability": "npm run build && npm run build:resumability-benchmark && node benchmarks/resumability/run.mjs",
     "bench:resumability:verify": "node benchmarks/resumability/verify.mjs bench-results/resumability/latest.json",
     "bench": "vitest bench --run",
-    "bench:ci": "vitest bench --run --outputJson bench-results.json",
+    "bench:ci": "vitest bench --run --reporter=json --outputFile=bench-results.json",
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
     "typecheck:examples": "tsc --noEmit -p tsconfig.examples.json",
@@ -271,27 +280,47 @@
     "typecheck:effect": "effect-tsgo diagnostics --project tsconfig.build.json",
     "typecheck:all": "npm run typecheck && npm run typecheck:tests && npm run typecheck:examples && npm run typecheck:browser && npm run typecheck:permissive && npm run typecheck:agent && npm run typecheck:css && npm run typecheck:effect",
     "check": "npm run typecheck:all && npm run test",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "verify:package": "node scripts/verify-package.mjs",
+    "size": "node scripts/size.mjs"
   },
   "dependencies": {
-    "@typeonce/effect-machine": "0.1.0",
-    "effect": "4.0.0-beta.102",
-    "seroval": "^1.6.2"
+    "@typeonce/effect-machine": "0.38.1",
+    "seroval": "^1.6.7"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "@babel/preset-typescript": "^7.24.0",
-    "@effect/tsgo": "^0.24.3",
-    "@playwright/test": "^1.62.0",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-typescript": "^7.29.7",
+    "@effect/tsgo": "^0.45.0",
+    "@playwright/test": "^1.63.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.0.0",
-    "babel-plugin-jsx-dom-expressions": "^0.39.0",
-    "jest": "^30.2.0",
+    "@types/node": "^24.0.0",
+    "babel-plugin-jsx-dom-expressions": "^0.40.10",
+    "effect": "4.0.0-rc.117",
+    "jest": "^30.5.2",
     "typescript": "^7.0.2",
-    "vite": "^7.3.6",
-    "vitest": "^4.0.18"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "peerDependencies": {
-    "effect": "4.0.0-beta.102"
+    "effect": "4.0.0-rc.117",
+    "vite": ">=6",
+    "@babel/core": "^7.20.0",
+    "@babel/preset-typescript": "^7.20.0",
+    "babel-plugin-jsx-dom-expressions": ">=0.39.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "@babel/core": {
+      "optional": true
+    },
+    "@babel/preset-typescript": {
+      "optional": true
+    },
+    "babel-plugin-jsx-dom-expressions": {
+      "optional": true
+    }
   }
 }

@@ -11,6 +11,10 @@ const here = (relative: string) => fileURLToPath(new URL(relative, import.meta.u
  * Run with `npm run test:future`.
  */
 export default defineConfig({
+  // Vite 8 transforms TypeScript with Oxc, which does not read
+  // `jsxImportSource` from tsconfig; without this, JSX in examples compiles
+  // against react/jsx-dev-runtime.
+  oxc: { jsx: { runtime: "automatic", importSource: "@doeixd/affe" } },
   resolve: {
     // Same aliasing rule as vitest.config.ts: adapter packages under test
     // resolve the public core subpaths to `src/` and `@doeixd/affe-ui-agent` to its
@@ -33,5 +37,8 @@ export default defineConfig({
     // A red spec is a work item, not an emergency. Keep the whole worklist
     // visible in one run instead of stopping at the first failure.
     bail: 0,
+    // An empty worklist is a finished one, not an error: `test:all` chains
+    // this suite and must not fail just because every spec was promoted.
+    passWithNoTests: true,
   },
 });

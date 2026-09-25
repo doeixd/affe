@@ -35,13 +35,12 @@
  * `src/__tests__/serialization.test.ts`; those fixtures are immutable outside
  * an explicitly wire-versioned change.
  *
- * ## Known unprojected path
+ * ## Single-flight loaders
  *
- * `SingleFlightPayload.loaders[].result` does **not** go through this module:
- * it `JSON.stringify`s a core `Result` directly, silently dropping
- * `exit`/`rawCause`, and the client rehydrates it unvalidated. Routing that
- * path through `toWire`/`fromWire` is a byte-changing fix and is a named
- * follow-up, fenced out of the unification by plan Decision 6.
+ * `SingleFlightPayload.loaders[].result` also crosses the wire through this
+ * projection (`Serialization.ResultWire`, R5.1 in `Route.ts`), validated at
+ * the client's trust boundary. It once `JSON.stringify`ed a core `Result`
+ * directly; that follow-up is closed.
  */
 
 import { Schema } from "effect";
@@ -49,12 +48,12 @@ import { Result as CoreResult, type Result as CoreResultType } from "./effect-ts
 
 // ─── Wire schema ────────────────────────────────────────────────────────────
 
-const SuccessWire = Schema.Struct({
+const SuccessWire = /*#__PURE__*/ (() => Schema.Struct({
   _tag: Schema.Literal("Success"),
   value: Schema.Unknown,
   waiting: Schema.Boolean,
   timestamp: Schema.Number,
-});
+}))();
 
 /**
  * Flat, JSON-safe wire projection of a core loader `Result`.
@@ -66,7 +65,7 @@ const SuccessWire = Schema.Struct({
  * `Cause`/`Exit` — which is why the wire holds this rather than a core
  * `Result` directly.
  */
-export const ResultWire = Schema.Union([
+export const ResultWire = /*#__PURE__*/ (() => Schema.Union([
   Schema.Struct({
     _tag: Schema.Literal("Initial"),
     waiting: Schema.Boolean,
@@ -78,10 +77,10 @@ export const ResultWire = Schema.Union([
     waiting: Schema.Boolean,
     previousSuccess: Schema.NullOr(SuccessWire),
   }),
-]);
+]))();
 
 /** Wire schema for a full loader-data payload keyed by route id. */
-export const ResultWireRecord = Schema.Record(Schema.String, ResultWire);
+export const ResultWireRecord = /*#__PURE__*/ Schema.Record(Schema.String, ResultWire);
 
 /** The flat, JSON-safe wire shape a loader `Result` is projected to. */
 export type ResultWireValue = typeof ResultWire.Type;

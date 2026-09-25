@@ -25,14 +25,17 @@ const Card = Component.make(
   () => Effect.succeed({}),
   (props) =>
     View.fromSlots(CardSlots, (
-      <section>
-        <h2>{props.title}</h2>
-        <div>{props.children}</div>
+      <section ref={View.Slot.ref(CardSlots, "root")}>
+        <h2 ref={View.Slot.ref(CardSlots, "title")}>{props.title}</h2>
+        <div ref={View.Slot.ref(CardSlots, "body")}>{props.children}</div>
       </section>
     )),
 ).pipe(Component.withSlots(CardSlots));
 
-const CardStyle = Style.forSlots(CardSlots)({
+// Each `ref` binds a slot to its element: the attached style renders as
+// inline styles on it (and as `[data-af-slot="…"]` rules via extractStatic).
+
+const CardStyle = Style.make(CardSlots, {
   root: Style.compose(
     Style.slot({ display: "grid", gap: "md", padding: "lg" }),
     Style.pseudo({ ":focus-within": { outlineColor: "accent.default" } }),
@@ -103,7 +106,7 @@ import { Behavior, Style } from "@doeixd/affe";
 
 const IsOpen = Behavior.binding<"isOpen", boolean>("isOpen");
 
-const DisclosureStyle = Style.forSlots(DisclosureSlots)({
+const DisclosureStyle = Style.make(DisclosureSlots, {
   panel: Style.compose(
     Style.slot({ opacity: 0 }),
     Style.whenBinding(IsOpen, true, Style.slot({ opacity: 1 })),

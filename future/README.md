@@ -18,8 +18,8 @@ Three jobs in one folder:
 
 **The suite is empty.** Every spec written here has been driven green and
 promoted into `src/__tests__/`; only the harness and the two `support.ts`
-fixture files remain. `npm run test:future` therefore exits non-zero with
-"No test files found" — that is an empty suite, not a broken one.
+fixture files remain. `npm run test:future` reports "No test files found"
+and exits cleanly (`passWithNoTests`), so `npm run test:all` still works.
 
 This folder is still the right place for the next milestone: write the
 finished design here first, then implement against it. See the workflow

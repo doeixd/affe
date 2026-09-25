@@ -179,7 +179,7 @@ describe("R5 — wire hygiene", () => {
     const error = failureOf(exit);
     expect(error).toBeDefined();
     expect(error?._tag).toBe("SingleFlightInvokeError");
-    // A `Schema.TaggedErrorClass` instance, matching the resumability layer's
+    // A `Schema.TaggedError` instance, matching the resumability layer's
     // discipline: a real Error with a stack, not a bare literal.
     expect(error).toBeInstanceOf(Error);
     expect(error instanceof Error ? typeof error.stack : undefined).toBe("string");
@@ -409,7 +409,7 @@ describe("R5 — wire hygiene", () => {
     const error = timedOut.error;
     expect(error).toBeInstanceOf(RouteLoaderTimeoutError);
     if (!(error instanceof RouteLoaderTimeoutError)) return;
-    // A `Schema.TaggedErrorClass` instance: a real Error with a stack, matching
+    // A `Schema.TaggedError` instance: a real Error with a stack, matching
     // the discipline R5.2 imposes on the rest of this lane.
     expect(error._tag).toBe("RouteLoaderTimeoutError");
     expect(typeof error.stack).toBe("string");

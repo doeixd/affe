@@ -14,26 +14,27 @@ class HighlightEvent extends Schema.TaggedClass<HighlightEvent>()("HighlightEven
   index: Schema.Number,
 }) {}
 
-const states = Machine.defineStates({ Idle, Open });
+const Root = Machine.state({ states: { Idle, Open } });
+const targets = Machine.targets(Root);
 
 const DisclosureMachine = Machine.make({
   id: "disclosure",
-  states: states.states,
-  events: [OpenEvent, CloseEvent, HighlightEvent],
-  initial: () => states.initial.Idle(new Idle()),
+  root: Root,
+  events: Machine.eventsFromSchemas(OpenEvent, CloseEvent, HighlightEvent),
 }).handle({
-  Idle: {
-    on: {
-      OpenEvent: ({ target }: { target: any }) =>
-        Effect.succeed(target.full.Open(new Open({ highlighted: null }))),
+  initial: { target: targets.root.Idle },
+  states: {
+    Idle: {
+      on: { OpenEvent: { target: targets.root.Open, data: { highlighted: null } } },
     },
-  },
-  Open: {
-    on: {
-      CloseEvent: ({ target }: { target: any }) =>
-        Effect.succeed(target.full.Idle(new Idle())),
-      HighlightEvent: ({ event, target }: { event: HighlightEvent; target: any }) =>
-        Effect.succeed(target.full.Open(new Open({ highlighted: event.index }))),
+    Open: {
+      on: {
+        CloseEvent: { target: targets.root.Idle },
+        HighlightEvent: {
+          update: targets.root.Open,
+          data: ({ event }: { event: HighlightEvent }) => ({ highlighted: event.index }),
+        },
+      },
     },
   },
 });
@@ -60,7 +61,7 @@ describe("Machine adapter", () => {
     expect(handle.matches("Idle")).toBe(true);
     expect(handle.path()).toBe("Idle");
     expect(handle.state()._tag).toBe("MachineSnapshot");
-    expect(handle.state().active[0]?.path).toBe("Idle");
+    expect(handle.state().active.at(-1)?.path).toBe("Idle");
 
     handle.send(new OpenEvent());
     await Effect.runPromise(Effect.sleep("30 millis"));
@@ -106,7 +107,7 @@ describe("Machine adapter", () => {
     await Effect.runPromise(Effect.sleep("20 millis"));
 
     const snapshot = first.value.state();
-    expect(snapshot.active[0]?.path).toBe("Open");
+    expect(snapshot.active.at(-1)?.path).toBe("Open");
     first.close();
 
     const second = await spawnInScope(
@@ -129,7 +130,7 @@ describe("Machine adapter", () => {
 
     const encoded = Schema.encodeSync(Machine.EncodedSnapshotSchema)(handle.state());
     const decoded = Schema.decodeUnknownSync(Machine.EncodedSnapshotSchema)(encoded);
-    expect(decoded.active[0]?.path).toBe("Open");
+    expect(decoded.active.at(-1)?.path).toBe("Open");
 
     close();
   });

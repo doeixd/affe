@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { group } from "./group.js";
 import { Effect } from "effect";
 import * as Component from "../Component.js";
 import * as Style from "../Style.js";
@@ -39,7 +39,7 @@ function makeCard() {
   );
 }
 
-describe("style data construction", () => {
+group("style data construction", (bench) => {
   bench("Style.make + compose a slot style", () => {
     Style.make({
       root: Style.compose(
@@ -54,7 +54,7 @@ describe("style data construction", () => {
   });
 });
 
-describe("style resolution", () => {
+group("style resolution", (bench) => {
   const Card = makeCard();
   const bindings = Effect.runSync(Component.setupEffect(Card, {}));
 
@@ -67,7 +67,7 @@ describe("style resolution", () => {
   });
 });
 
-describe("component mount", () => {
+group("component mount", (bench) => {
   const Card = makeCard();
 
   bench("setup a styled one-slot component (per-mount setup Effect)", () => {

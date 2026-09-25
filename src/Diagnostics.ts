@@ -52,7 +52,7 @@ export interface ReporterService {
   readonly reporter: Reporter;
 }
 
-export const ReporterTag = Context.Service<ReporterService>("DiagnosticsReporter");
+export const ReporterTag = /*#__PURE__*/ Context.Service<ReporterService>("DiagnosticsReporter");
 
 /**
  * Create a diagnostic reporter.
@@ -142,7 +142,7 @@ export function report(diagnostics: readonly Diagnostic[]): Effect.Effect<readon
   });
 }
 
-/** Summary produced by `doctor` and the `af-ui doctor` CLI. */
+/** Summary produced by `doctor` and the `affe doctor` CLI. */
 export interface DoctorReport {
   readonly diagnostics: readonly Diagnostic[];
   readonly ok: boolean;

@@ -31,9 +31,41 @@ function flattenTokens(
     if (typeof value === "object" && value !== null) {
       flattenTokens(value as Record<string, unknown>, path, out);
     } else if (value !== undefined) {
-      out.push([path, String(value)] as const);
+      out.push([path, tokenValueText(path, value)] as const);
     }
   }
+}
+
+/**
+ * Token categories whose numeric values are LENGTHS. A custom property
+ * holding a bare `16` is invalid at computed-value time wherever a length is
+ * expected (`padding: var(--af-spacing-md)`), so these emit `16px`.
+ * `fontWeight`, `lineHeight`, `zIndex`, `opacity`, ... stay unitless.
+ */
+const lengthTokenCategories = new Set([
+  "spacing",
+  "radius",
+  "fontSize",
+  "breakpoint",
+  "size",
+  "sizes",
+  "borderWidth",
+  "letterSpacing",
+]);
+
+/** Numeric fields of structured shadow tokens that are lengths. */
+const shadowLengthFields = new Set(["x", "y", "blur", "spread"]);
+
+function tokenValueText(path: string, value: unknown): string {
+  if (typeof value !== "number" || !Number.isFinite(value) || value === 0) {
+    return String(value);
+  }
+  const segments = path.split(".");
+  const category = segments[0] ?? "";
+  const field = segments[segments.length - 1] ?? "";
+  if (lengthTokenCategories.has(category)) return `${value}px`;
+  if (category === "shadow" && shadowLengthFields.has(field)) return `${value}px`;
+  return String(value);
 }
 
 export interface FoundationOptions {

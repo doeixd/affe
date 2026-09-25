@@ -1,7 +1,8 @@
 /**
  * Affe machine adapter over `@typeonce/effect-machine`.
  *
- * Author machines with effect-machine (`defineStates` / `make` / `handle`).
+ * Author machines with effect-machine (`state` / `targets` / `events` /
+ * `make(...).handle(...)`).
  * Spawn them into Affe setup/behaviors with `spawn` so state is a resumable
  * `Component.state` atom, listeners reattach in fresh scopes, and dispose is
  * exact-once. Do **not** use their AtomMachine — Affe atoms own the bridge.
@@ -22,14 +23,24 @@ import {
 // declaration emit references private type names (ValidateStateTree,
 // MachineRuntime) that TypeScript cannot re-name from this package.
 
-/** @see `@typeonce/effect-machine` `Machine.defineStates` */
-export const defineStates: any = EffectMachine.defineStates;
+/** @see `@typeonce/effect-machine` `Machine.state` — declares the state topology. */
+export const state: any = EffectMachine.state;
+/** @see `@typeonce/effect-machine` `Machine.targets` — typed destinations for a root. */
+export const targets: any = EffectMachine.targets;
+/** @see `@typeonce/effect-machine` `Machine.events` — a public event protocol from fields. */
+export const events: any = EffectMachine.events;
+/** @see `@typeonce/effect-machine` `Machine.eventsFromSchemas` — a protocol from tagged schemas. */
+export const eventsFromSchemas: any = EffectMachine.eventsFromSchemas;
 /** @see `@typeonce/effect-machine` `Machine.make` */
 export const make: any = EffectMachine.make;
 /** @see `@typeonce/effect-machine` `Machine.isMachine` */
 export const isMachine: any = EffectMachine.isMachine;
 /** @see `@typeonce/effect-machine` `Machine.start` */
 export const start: any = EffectMachine.start;
+/** @see `@typeonce/effect-machine` `Machine.resume` — start from a decoded snapshot. */
+export const resume: any = EffectMachine.resume;
+/** @see `@typeonce/effect-machine` `Machine.waitFor` */
+export const waitFor: any = EffectMachine.waitFor;
 /** @see `@typeonce/effect-machine` `Machine.encodeSnapshot` */
 export const encodeSnapshot: any = EffectMachine.encodeSnapshot;
 /** @see `@typeonce/effect-machine` `Machine.decodeSnapshot` */
@@ -59,27 +70,36 @@ export type AnyMachine = EffectMachine.Machine.Any;
 
 // ─── Encoded snapshot schema (JSON-safe wire / Component.state payload) ───────
 
-const EncodedActiveState = Schema.Struct({
+const EncodedActiveState = /*#__PURE__*/ (() => Schema.Struct({
   path: Schema.String,
-  value: Schema.Unknown,
-});
+  value: Schema.optionalKey(Schema.Unknown),
+}))();
 
-const EncodedCompletion = Schema.Struct({
+const EncodedCompletion = /*#__PURE__*/ (() => Schema.Struct({
   path: Schema.String,
   output: Schema.optionalKey(Schema.Unknown),
-});
+}))();
+
+const EncodedHistoryEntry = /*#__PURE__*/ (() => Schema.Struct({
+  mode: Schema.Literals(["shallow", "deep"]),
+  active: Schema.Array(Schema.String),
+  values: Schema.Record(Schema.String, Schema.Unknown),
+}))();
 
 /**
- * Schema for effect-machine's normalized wire snapshot.
+ * Schema for effect-machine's normalized wire snapshot (codec version 2: the
+ * root is active at path `""`; earlier versions are rejected on decode).
  *
  * Use with `Resume.snapshotState(Machine.EncodedSnapshotSchema)` on the
  * `state` atom returned by `spawn`.
  */
-export const EncodedSnapshotSchema = Schema.Struct({
+export const EncodedSnapshotSchema = /*#__PURE__*/ (() => Schema.Struct({
   _tag: Schema.Literal("MachineSnapshot"),
+  version: Schema.Literal(2),
   active: Schema.Array(EncodedActiveState),
   completed: Schema.optionalKey(Schema.Array(EncodedCompletion)),
-});
+  history: Schema.optionalKey(Schema.Record(Schema.String, EncodedHistoryEntry)),
+}))();
 
 export type EncodedSnapshotValue = typeof EncodedSnapshotSchema.Type;
 
@@ -165,18 +185,9 @@ function isEncodedSnapshot(value: unknown): value is EncodedSnapshotValue {
   );
 }
 
-function withInitialSnapshot(
-  machine: AnyMachine,
-  snapshot: unknown,
-): AnyMachine {
-  return {
-    ...machine,
-    initial: () => snapshot,
-  } as AnyMachine;
-}
-
+/** Active state paths, excluding the root (which is always active at `""`). */
 function activePaths(encoded: EncodedSnapshotValue): ReadonlyArray<string> {
-  return encoded.active.map((entry) => entry.path);
+  return encoded.active.map((entry) => entry.path).filter((path) => path !== "");
 }
 
 function matchesPath(encoded: EncodedSnapshotValue, path: string): boolean {
@@ -209,8 +220,9 @@ export function spawn<Event = unknown, Error = never>(
   options?: SpawnOptions,
 ): Effect.Effect<SpawnedMachine<Event, Error>, unknown, Scope.Scope> {
   return Effect.gen(function* () {
-    let definition: AnyMachine = machine;
+    const definition: AnyMachine = machine;
 
+    let started: Effect.Effect<AnyMachineRef, unknown, Scope.Scope>;
     if (options?.snapshot !== undefined) {
       const decoded = isEncodedSnapshot(options.snapshot)
         ? yield* (EffectMachine.decodeSnapshot(machine as any, options.snapshot) as Effect.Effect<
@@ -218,18 +230,24 @@ export function spawn<Event = unknown, Error = never>(
           unknown
         >)
         : options.snapshot;
-      definition = withInitialSnapshot(machine, decoded);
+      started = EffectMachine.resume(machine as any, decoded as any) as unknown as Effect.Effect<
+        AnyMachineRef,
+        unknown,
+        Scope.Scope
+      >;
+    } else {
+      started = EffectMachine.start(machine as any) as unknown as Effect.Effect<
+        AnyMachineRef,
+        unknown,
+        Scope.Scope
+      >;
     }
-
-    const ref = (yield* (EffectMachine.start(definition as any) as Effect.Effect<
-      AnyMachineRef,
-      unknown
-    >)) as AnyMachineRef;
+    const ref = yield* started;
     const initialDecoded = yield* ref.state;
     const initialEncoded = (yield* (EffectMachine.encodeSnapshot(
       definition as any,
       initialDecoded as any,
-    ) as Effect.Effect<EncodedSnapshotValue, unknown>)) as EncodedSnapshotValue;
+    ) as unknown as Effect.Effect<EncodedSnapshotValue, unknown>)) as EncodedSnapshotValue;
 
     const state = yield* Component.state<EncodedSnapshotValue>(
       Schema.decodeUnknownSync(EncodedSnapshotSchema)(initialEncoded),
@@ -257,7 +275,7 @@ export function spawn<Event = unknown, Error = never>(
           const encoded = (yield* (EffectMachine.encodeSnapshot(
             definition as any,
             runtime.state as any,
-          ) as Effect.Effect<EncodedSnapshotValue, unknown>)) as EncodedSnapshotValue;
+          ) as unknown as Effect.Effect<EncodedSnapshotValue, unknown>)) as EncodedSnapshotValue;
           if (!stopped) {
             state.set(Schema.decodeUnknownSync(EncodedSnapshotSchema)(encoded));
           }
@@ -308,7 +326,7 @@ export function encodeState(
   machine: AnyMachine,
   snapshot: unknown,
 ): Effect.Effect<EncodedSnapshotValue, unknown> {
-  return EffectMachine.encodeSnapshot(machine as any, snapshot as any) as Effect.Effect<
+  return EffectMachine.encodeSnapshot(machine as any, snapshot as any) as unknown as Effect.Effect<
     EncodedSnapshotValue,
     unknown
   >;
@@ -327,10 +345,15 @@ export function decodeState(
 
 export const Machine: {
   readonly TypeId: typeof TypeId;
-  readonly defineStates: any;
+  readonly state: any;
+  readonly targets: any;
+  readonly events: any;
+  readonly eventsFromSchemas: any;
   readonly make: any;
   readonly isMachine: any;
   readonly start: any;
+  readonly resume: any;
+  readonly waitFor: any;
   readonly spawn: typeof spawn;
   readonly encodeSnapshot: any;
   readonly decodeSnapshot: any;
@@ -352,10 +375,15 @@ export const Machine: {
   readonly ProcessLocalError: typeof ProcessLocalError;
 } = {
   TypeId,
-  defineStates,
+  state,
+  targets,
+  events,
+  eventsFromSchemas,
   make,
   isMachine,
   start,
+  resume,
+  waitFor,
   spawn,
   encodeSnapshot,
   decodeSnapshot,

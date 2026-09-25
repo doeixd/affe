@@ -63,8 +63,11 @@ import {
 import { createMemo } from "./api.js";
 import { render } from "./dom.js";
 import {
+  ComponentScopeContext,
+  ComponentServicesContext,
   closeComponentScope,
   currentComponentScope,
+  currentComponentServices,
   withComponentScope,
 } from "./component-scope.js";
 import { ReactivityTag } from "./Reactivity.js";
@@ -595,7 +598,7 @@ function staleDataFromPrevious<A, E>(
 
 // ─── Ambient ManagedRuntime context ───────────────────────────────────────────
 
-export const ManagedRuntimeContext = createContext<ManagedRuntime.ManagedRuntime<unknown, unknown> | null>(null);
+export const ManagedRuntimeContext = /*#__PURE__*/ createContext<ManagedRuntime.ManagedRuntime<unknown, unknown> | null>(null);
 
 function getAmbientManagedRuntime(): ManagedRuntime.ManagedRuntime<unknown, unknown> | null {
   return useContext(ManagedRuntimeContext);
@@ -612,19 +615,11 @@ function withManagedRuntimeContext<A>(
     map = new Map();
     contextMap.set(owner, map);
   }
-  const key = ManagedRuntimeContext.id;
-  const hadPrevious = map.has(key);
-  const previous = map.get(key);
-  map.set(key, managed);
-  try {
-    return fn();
-  } finally {
-    if (hadPrevious) {
-      map.set(key, previous);
-    } else {
-      map.delete(key);
-    }
-  }
+  // Permanent for the owner's life (the mount's render computation), like
+  // the component scope: components created later under this mount — on a
+  // re-run or after an async setup — must still find the runtime.
+  map.set(ManagedRuntimeContext.id, managed);
+  return fn();
 }
 
 type RuntimeLike<R, ER = never> =
@@ -666,6 +661,13 @@ function runForkWithRuntime<R, A, E>(
  * }
  */
 export function useService<I, S>(tag: Context.Key<I, S>): S {
+  // Services a `WithLayer` / `Component.withLayer` boundary published for
+  // this subtree win over the mount's runtime.
+  const published = currentComponentServices();
+  if (published !== null) {
+    const found = Context.getOption(published as Context.Context<I>, tag);
+    if (Option.isSome(found)) return found.value;
+  }
   const runtime = getAmbientManagedRuntime();
   if (runtime === null) {
     throw new Error(
@@ -785,13 +787,13 @@ export function useServices<T extends Record<string, Context.Key<any, any>>>(
  * Testing seam: short-circuit an async result accessor without running the
  * underlying Effect. Used by `testing.resolveQuery` / `resolveAction`.
  */
-const resultControllers = new WeakMap<
+const resultControllers = /*#__PURE__*/ (() => new WeakMap<
   Accessor<Result<any, any>>,
   {
     readonly set: (result: Result<any, any>) => void;
     readonly interrupt: () => void;
   }
->();
+>())();
 
 /** @internal Drive a query/action/mutation result for tests. */
 export function setResultForTest<A, E>(
@@ -956,7 +958,7 @@ function resultValueToEffect<A, E>(
   return resultAccessorToEffect(() => state);
 }
 
-const queryGet: QueryGet = Object.assign(
+const queryGet: QueryGet = /*#__PURE__*/ (() => Object.assign(
   (<A>(atom: AtomTypes.ReadonlyAtom<A, any, any>): A => atom()),
   {
     get<A>(atom: AtomTypes.ReadonlyAtom<A, any, any>): A {
@@ -966,7 +968,7 @@ const queryGet: QueryGet = Object.assign(
       return resultValueToEffect(atom());
     },
   },
-);
+))();
 
 /**
  * Primary Effect-native query API with optional typed invalidation keys.
@@ -1360,6 +1362,13 @@ function mutationEffect<A, E, R>(
   const [result, setResult] = createSignal<Result<void, E>>(Result.success(undefined));
   let fiberRef: Fiber.Fiber<unknown, unknown> | null = null;
   let runVersion = 0;
+  // A mutation runs later, from an event handler with no owner. Capture what
+  // was visible where it was defined — the owner (so `useService` inside
+  // `fn` resolves), the mount runtime, and `WithLayer` services — and run
+  // every invocation with them.
+  const definedOwner = getOwner();
+  const definedRuntime = options?.runtime ?? getAmbientManagedRuntime() ?? undefined;
+  const definedServices = currentComponentServices();
 
   const interrupt = (): void => {
     if (fiberRef !== null) {
@@ -1404,8 +1413,15 @@ function mutationEffect<A, E, R>(
       setResult(Result.refreshing(prev));
     }
 
+    let body: Effect.Effect<unknown, E, R>;
+    try {
+      body = definedOwner === null ? fn(input) : runWithOwner(definedOwner, () => fn(input));
+    } catch (error) {
+      body = Effect.die(error);
+    }
+    if (definedServices !== null) body = Effect.provideContext(body, definedServices as Context.Context<R>);
     const wrapped = pipe(
-      fn(input),
+      body,
       Effect.matchCause({
         onSuccess: (): void => {
           if (version !== runVersion) return;
@@ -1438,7 +1454,7 @@ function mutationEffect<A, E, R>(
       }),
     );
 
-    fiberRef = runForkWithRuntime(options?.runtime, wrapped as Effect.Effect<void, never, R>) as
+    fiberRef = runForkWithRuntime(definedRuntime as RuntimeLike<R, unknown> | undefined, wrapped as Effect.Effect<void, never, R>) as
       Fiber.Fiber<unknown, unknown>;
   };
 
@@ -1700,42 +1716,73 @@ export function layerContext<A, E, RIn>(
     : [runtime: RuntimeLike<RIn, unknown>]
 ): { readonly children: unknown } {
   const runtimeArg = runtime[0] as RuntimeLike<RIn, unknown> | undefined;
-  const [ready, setReady] = createSignal(false);
+  const [services, setServices] = createSignal<Context.Context<never> | null>(null);
   const [error, setError] = createSignal<E | null>(null);
+  const owner = getOwner();
 
+  // The layer is built into its own scope, which lives as long as the
+  // boundary's owner: scoped resources are released on unmount. Services an
+  // ancestor boundary (or `Component.withLayer`) published reach the layer's
+  // own requirements, and the built services are published to `fn`'s subtree
+  // — the same channel component setup reads from.
+  const layerScope = Scope.makeUnsafe();
+  const inherited = currentComponentServices();
+  const ambientRuntime = getAmbientManagedRuntime();
+  const build = Layer.buildWithScope(layer, layerScope);
   const fiber = pipe(
-    Layer.launch(layer),
+    inherited === null ? build : Effect.provideContext(build, inherited as Context.Context<RIn>),
     Effect.matchCause({
-      onSuccess: (): void => { setReady(true); },
+      onSuccess: (context): void => { setServices(context as Context.Context<never>); },
       onFailure: (cause: Cause.Cause<E>): void => {
         const typed = Cause.findErrorOption(cause);
         if (Option.isSome(typed)) {
           setError(typed.value);
-        } else {
+        } else if (!Cause.hasInterruptsOnly(cause)) {
           console.error("[affe] layerContext: layer build failed:", Cause.pretty(cause));
         }
       },
     }),
-    (eff) => runForkWithRuntime(runtimeArg, eff as Effect.Effect<void, never, RIn>),
+    (eff) => runForkWithRuntime(
+      runtimeArg ?? (ambientRuntime as RuntimeLike<RIn, unknown> | null) ?? undefined,
+      eff as Effect.Effect<void, never, RIn>,
+    ),
   );
 
-  const interrupt = (): void => {
+  const release = (): void => {
     Effect.runFork(Fiber.interrupt(fiber));
+    closeComponentScope(layerScope);
   };
 
   const scope = currentComponentScope();
   if (scope !== null) {
-    Effect.runSync(Scope.addFinalizer(scope, Effect.sync(interrupt)));
+    Effect.runSync(Scope.addFinalizer(scope, Effect.sync(release)));
   }
 
-  onCleanup(() => {
-    interrupt();
-  });
+  onCleanup(release);
 
   return {
     get children() {
-      if (error()) return null;
-      return ready() ? fn() : null;
+      if (error() !== null) return null;
+      const context = services();
+      if (context === null) return null;
+      // `fn` runs under a fresh child of whichever owner evaluates this
+      // (so it shares that computation's lifetime), carrying the context
+      // captured where the boundary was created: the accessor is often
+      // evaluated later, under an owner that cannot see those entries.
+      const parent = getOwner() ?? owner;
+      if (parent === null) return fn();
+      const subtree = new Owner(parent);
+      const entries = new Map<symbol, unknown>();
+      if (ambientRuntime !== null) entries.set(ManagedRuntimeContext.id, ambientRuntime);
+      // Scoped component setups need a scope even outside `mount`: without
+      // an ambient one the subtree uses the boundary's own scope.
+      entries.set(ComponentScopeContext.id, scope ?? layerScope);
+      entries.set(
+        ComponentServicesContext.id,
+        inherited === null ? context : Context.merge(inherited, context),
+      );
+      contextMap.set(subtree, entries);
+      return runWithOwner(subtree, fn);
     },
   };
 }
@@ -1846,6 +1893,32 @@ export function mountWithManagedRuntime(
   };
 }
 
+/**
+ * The shape every control-flow component shares: `select` reads the props
+ * (tracked, so a prop getter compiled from `when={x()}` re-runs when `x`
+ * changes), and `render` builds the chosen branch UNTRACKED under its own
+ * owner. The branch is rebuilt only when the selection changes (per
+ * `equals`), and the previous one is disposed.
+ *
+ * Returning an accessor is what makes these components reactive in JSX:
+ * `createComponent` calls a component once, untracked, so a component that
+ * read its props eagerly would render its first state forever.
+ */
+function branch<K>(
+  select: () => K,
+  render: (selected: K) => unknown,
+  equals?: (previous: K, next: K) => boolean,
+): Accessor<unknown> {
+  const selected = createMemo(select, equals === undefined ? undefined : { equals });
+  return createMemo(() => {
+    const current = selected();
+    return untrack(() => render(current));
+  });
+}
+
+const readProp = <T>(value: T | Accessor<T>): T =>
+  (typeof value === "function" ? (value as Accessor<T>)() : value);
+
 // ─── Async ────────────────────────────────────────────────────────────────────
 
 /**
@@ -1861,27 +1934,28 @@ export function mountWithManagedRuntime(
  * />
  */
 export function Async<A, E>(props: {
-  result: Result<A, E>;
+  result: Result<A, E> | Accessor<Result<A, E>>;
   loading?: () => unknown;
   refreshing?: (previous: Success<A> | Failure<E> | Defect) => unknown;
   stale?: (error: E, data: A) => unknown;
   error?: (err: E) => unknown;
   defect?: (cause: string) => unknown;
   success: (value: A) => unknown;
-}): unknown {
+}): Accessor<unknown> {
   const renderSettled = (r: Success<A> | Failure<E> | Defect): unknown => {
     if (r._tag === "Failure") return props.error?.(r.error) ?? null;
     if (r._tag === "Defect") return props.defect?.(r.cause) ?? null;
     return props.success(r.value);
   };
 
-  const r = props.result;
-  // DQ-092: an Idle-unaware renderer treats Idle as not-ready.
-  if (r._tag === "Idle") return props.loading?.() ?? null;
-  if (r._tag === "Loading") return props.loading?.() ?? null;
-  if (r._tag === "Refreshing") return props.refreshing?.(r.previous) ?? renderSettled(r.previous);
-  if (r._tag === "Stale") return props.stale?.(r.error, r.data) ?? props.error?.(r.error) ?? props.success(r.data);
-  return renderSettled(r);
+  return branch(() => readProp(props.result), (r) => {
+    // DQ-092: an Idle-unaware renderer treats Idle as not-ready.
+    if (r._tag === "Idle") return props.loading?.() ?? null;
+    if (r._tag === "Loading") return props.loading?.() ?? null;
+    if (r._tag === "Refreshing") return props.refreshing?.(r.previous) ?? renderSettled(r.previous);
+    if (r._tag === "Stale") return props.stale?.(r.error, r.data) ?? props.error?.(r.error) ?? props.success(r.data);
+    return renderSettled(r);
+  });
 }
 
 
@@ -1921,13 +1995,13 @@ export function Loading(props: {
   when: Result<unknown, unknown> | boolean | Accessor<Result<unknown, unknown> | boolean>;
   fallback: () => unknown;
   children: unknown;
-}): unknown {
-  const whenValue = isAccessor<Result<unknown, unknown> | boolean>(props.when)
-    ? props.when()
-    : props.when;
-
-  if (isLoadingInput(whenValue)) return props.fallback();
-  return renderNode(props.children);
+}): Accessor<unknown> {
+  // Only the loading/not-loading flip rebuilds: children stay mounted while
+  // a result refreshes or its value changes.
+  return branch(
+    () => isLoadingInput(readProp(props.when)),
+    (loading) => (loading ? props.fallback() : renderNode(props.children)),
+  );
 }
 
 /**
@@ -1946,15 +2020,13 @@ export function Errored<A, E>(props: {
   result: Result<A, E> | Accessor<Result<A, E>>;
   fallback?: () => unknown;
   children: (error: E | ResultDefectError) => unknown;
-}): unknown {
-  const result = isAccessor<Result<A, E>>(props.result)
-    ? props.result()
-    : props.result;
-
-  if (result._tag === "Failure") return props.children(result.error);
-  if (result._tag === "Stale") return props.children(result.error);
-  if (result._tag === "Defect") return props.children({ _tag: "ResultDefectError", defect: result.cause });
-  return props.fallback?.() ?? null;
+}): Accessor<unknown> {
+  return branch(() => readProp(props.result), (result) => {
+    if (result._tag === "Failure") return props.children(result.error);
+    if (result._tag === "Stale") return props.children(result.error);
+    if (result._tag === "Defect") return props.children({ _tag: "ResultDefectError", defect: result.cause });
+    return props.fallback?.() ?? null;
+  });
 }
 
 /**
@@ -1968,29 +2040,27 @@ export function TypedBoundary<E>(props: {
   catch: TypedCatch<E>;
   children: (error: E) => unknown;
   fallback?: () => unknown;
-}): unknown {
-  const state = isAccessor<Result<unknown, unknown>>(props.result)
-    ? props.result()
-    : props.result;
-
-  const candidate: unknown =
-    state._tag === "Failure"
-      ? state.error
-      : state._tag === "Stale"
+}): Accessor<unknown> {
+  return branch(() => readProp(props.result), (state) => {
+    const candidate: unknown =
+      state._tag === "Failure"
         ? state.error
-      : state._tag === "Defect"
-        ? { defect: state.cause }
-        : undefined;
+        : state._tag === "Stale"
+          ? state.error
+        : state._tag === "Defect"
+          ? { defect: state.cause }
+          : undefined;
 
-  if (candidate !== undefined && matchesTypedCatch(props.catch, candidate)) {
-    return props.children(candidate);
-  }
-  return props.fallback?.() ?? null;
+    if (candidate !== undefined && matchesTypedCatch(props.catch, candidate)) {
+      return props.children(candidate);
+    }
+    return props.fallback?.() ?? null;
+  });
 }
 
 // ─── Switch / Match ───────────────────────────────────────────────────────────
 
-const MatchTypeId = Symbol.for("affe/Match");
+const MatchTypeId = /*#__PURE__*/ Symbol.for("affe/Match");
 
 type MatchCase<T> = {
   readonly [MatchTypeId]: true;
@@ -2015,10 +2085,16 @@ export function Match<T>(props: {
   when: T | false | null | undefined | 0 | "";
   children: ((value: NonNullable<T>) => unknown) | unknown;
 }): MatchCase<T> {
+  // Getters, not copies: `Switch` reads `when` inside its own tracked scope,
+  // so `<Match when={x()}>` follows `x`.
   return {
     [MatchTypeId]: true,
-    when: props.when,
-    children: props.children,
+    get when() {
+      return props.when;
+    },
+    get children() {
+      return props.children;
+    },
   };
 }
 
@@ -2042,23 +2118,30 @@ export function createMount<R, E>(
 export function Switch(props: {
   fallback?: () => unknown;
   children: unknown;
-}): unknown {
-  const children = Array.isArray(props.children)
-    ? props.children
-    : [props.children];
-
-  for (const child of children) {
-    if (typeof child === "object" && child !== null && MatchTypeId in child) {
-      const match = child as MatchCase<unknown>;
-      if (!match.when) continue;
-      if (typeof match.children === "function") {
-        return (match.children as (value: unknown) => unknown)(match.when);
+}): Accessor<unknown> {
+  const cases = (): ReadonlyArray<MatchCase<unknown>> => {
+    const children = Array.isArray(props.children) ? props.children : [props.children];
+    return children.filter((child): child is MatchCase<unknown> =>
+      typeof child === "object" && child !== null && MatchTypeId in child);
+  };
+  return branch(
+    () => {
+      const all = cases();
+      for (let index = 0; index < all.length; index += 1) {
+        const when = all[index]!.when;
+        if (when) return { index, when };
       }
-      return match.children;
-    }
-  }
-
-  return props.fallback?.() ?? null;
+      return { index: -1, when: undefined as unknown };
+    },
+    ({ index, when }) => {
+      if (index < 0) return props.fallback?.() ?? null;
+      const match = cases()[index]!;
+      return typeof match.children === "function"
+        ? (match.children as (value: unknown) => unknown)(when)
+        : match.children;
+    },
+    (previous, next) => previous.index === next.index && previous.when === next.when,
+  );
 }
 
 // ─── Optional / Option matching ───────────────────────────────────────────────
@@ -2073,13 +2156,14 @@ export function Optional<T>(props: {
   when: T | null | undefined | Accessor<T | null | undefined>;
   fallback?: () => unknown;
   children: ((value: NonNullable<T>) => unknown) | unknown;
-}): unknown {
-  const value = isAccessor<T | null | undefined>(props.when) ? props.when() : props.when;
-  if (value === null || value === undefined) return props.fallback?.() ?? null;
-  if (typeof props.children === "function") {
-    return (props.children as (v: NonNullable<T>) => unknown)(value as NonNullable<T>);
-  }
-  return props.children;
+}): Accessor<unknown> {
+  return branch(() => readProp(props.when), (value) => {
+    if (value === null || value === undefined) return props.fallback?.() ?? null;
+    if (typeof props.children === "function") {
+      return (props.children as (v: NonNullable<T>) => unknown)(value as NonNullable<T>);
+    }
+    return props.children;
+  });
 }
 
 /**
@@ -2089,12 +2173,15 @@ export function MatchOption<A>(props: {
   value: Option.Option<A> | Accessor<Option.Option<A>>;
   some: (value: A) => unknown;
   none?: () => unknown;
-}): unknown {
-  const value = isAccessor<Option.Option<A>>(props.value) ? props.value() : props.value;
-  return Option.match(value, {
-    onNone: () => props.none?.() ?? null,
-    onSome: props.some,
-  });
+}): Accessor<unknown> {
+  return branch(
+    () => readProp(props.value),
+    (value) => Option.match(value, {
+      onNone: () => props.none?.() ?? null,
+      onSome: props.some,
+    }),
+    (previous, next) => (Option.isNone(previous) && Option.isNone(next)) || previous === next,
+  );
 }
 
 // ─── Dynamic / lazy-like helpers ──────────────────────────────────────────────
@@ -2166,7 +2253,9 @@ export function WithLayer<A, E, RIn>(props: {
     props.children as () => unknown,
     props.runtime as RuntimeLike<RIn, unknown>,
   );
-  return ctx.children ?? props.fallback?.() ?? null;
+  // An accessor, so the boundary swaps from `fallback` to its children when
+  // an asynchronous layer finishes building.
+  return () => ctx.children ?? props.fallback?.() ?? null;
 }
 
 // ─── MatchTag ─────────────────────────────────────────────────────────────────
@@ -2194,11 +2283,12 @@ export function MatchTag<T extends Tagged, R>(props: {
   value: T | Accessor<T>;
   cases: MatchTagCases<T, R>;
   fallback?: (value: T) => R;
-}): R | null {
-  const value = isAccessor<T>(props.value) ? props.value() : props.value;
-  const handler = props.cases[value._tag as T["_tag"]] as ((v: T) => R) | undefined;
-  if (handler) return handler(value);
-  return props.fallback ? props.fallback(value) : null;
+}): Accessor<R | null> {
+  return branch(() => readProp(props.value), (value) => {
+    const handler = props.cases[value._tag as T["_tag"]] as ((v: T) => R) | undefined;
+    if (handler) return handler(value);
+    return props.fallback ? props.fallback(value) : null;
+  }) as Accessor<R | null>;
 }
 
 // ─── For ──────────────────────────────────────────────────────────────────────
@@ -2251,10 +2341,12 @@ export function Show<T>(props: {
   when: T | false | null | undefined | 0 | "";
   fallback?: () => unknown;
   children: ((value: NonNullable<T>) => unknown) | unknown;
-}): unknown {
-  if (!props.when) return props.fallback?.() ?? null;
-  if (typeof props.children === "function") {
-    return (props.children as (v: NonNullable<T>) => unknown)(props.when as NonNullable<T>);
-  }
-  return props.children;
+}): Accessor<unknown> {
+  return branch(() => props.when, (when) => {
+    if (!when) return props.fallback?.() ?? null;
+    if (typeof props.children === "function") {
+      return (props.children as (v: NonNullable<T>) => unknown)(when as NonNullable<T>);
+    }
+    return props.children;
+  });
 }

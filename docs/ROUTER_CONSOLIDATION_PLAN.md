@@ -152,6 +152,13 @@ Milestone 11 item 4 is where these meet; this plan clears the ground for it.
 2. Reconcile optional-segment handling between `extractParams` and
    `validateTree`; add specificity-based (not length-based) match ranking,
    or document and test length ranking as intended.
+   **Done (2026-09):** sibling matches rank static > `:param` > `:param?` >
+   `*`, segment by segment, ties in declaration order
+   (`selectMostSpecificBranch` / `comparePatternSpecificity` in
+   `src/route-pattern.ts`), applied to route-entry matching, the client
+   runtime, and `ServerRoute.find`/`dispatch`; tests in
+   `src/__tests__/router-ranking.test.ts`. `Component.route`'s own
+   self-match (`src/Component.ts`) is still per-pattern.
 3. Delete F6 outright. For every F5 declared-but-dead option: implement it
    or remove it from the type this release — the type surface must stop
    overstating. (`revalidateOnFocus`/`revalidateOnReconnect` are real
@@ -343,7 +350,7 @@ failing navigation rolls it back with the error observable.
 >    fixtures are unchanged and a `Date` survives both SSR and single-flight).
 > 2. `SingleFlightInvokeError` / `SingleFlightDecodeError` /
 >    `SingleFlightTransportError` / `RouteLoaderTimeoutError` are
->    `Schema.TaggedErrorClass`es; a malformed response or body is a typed
+>    `Schema.TaggedError`es; a malformed response or body is a typed
 >    failure, never a defect, and hydrates nothing. `runCachedLoader`'s type
 >    now carries the timeout error.
 > 3. One resolution ladder — context transport → declared endpoint → local
@@ -364,7 +371,7 @@ failing navigation rolls it back with the error observable.
    service with declared schemas — one encoding for loader `Result`s across
    SSR and single-flight (this also positions the payload for M10's
    serializer-identity gate).
-2. Replace untagged error literals with `Schema.TaggedErrorClass` (matching
+2. Replace untagged error literals with `Schema.TaggedError` (matching
    the resumability layer's discipline); type the `ServerRoute`
    execute/dispatch error channel; decode request bodies with
    `decodeUnknownEffect` so malformed input is a typed failure, not a

@@ -9,16 +9,16 @@ import {
   type InspectableStateHandle,
 } from "./resume-handle.js";
 
-export const ExpressionTypeId: unique symbol = Symbol.for(
+export const ExpressionTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Resume/Expression",
 );
-export const ExpressionRenderTypeId: unique symbol = Symbol.for(
+export const ExpressionRenderTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Resume/ExpressionRender",
 );
-export const ExpressionDependenciesSchemaTypeId: unique symbol = Symbol.for(
+export const ExpressionDependenciesSchemaTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Resume/ExpressionDependenciesSchema",
 );
-export const ExpressionStructuralModeTypeId: unique symbol = Symbol.for(
+export const ExpressionStructuralModeTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Resume/ExpressionStructuralMode",
 );
 
@@ -203,12 +203,12 @@ export interface ExpressionContext {
   readonly values: ReadonlyArray<unknown>;
 }
 
-export class ExpressionDependencyDecodeError extends Schema.TaggedErrorClass<ExpressionDependencyDecodeError>(
+export class ExpressionDependencyDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ExpressionDependencyDecodeError>(
   "affe/ExpressionDependencyDecodeError",
 )("ExpressionDependencyDecodeError", {
   codeId: Portable.CodeId,
   message: Schema.String,
-}) {}
+}))() {}
 
 export interface ExpressionCode<
   Captures,
@@ -276,9 +276,9 @@ export interface ResumableExpression<A extends ExpressionOutput = ExpressionOutp
   readonly [ExpressionTypeId]: () => ExpressionInspection<A>;
 }
 
-const creationObservers = new Set<
+const creationObservers = /*#__PURE__*/ (() => new Set<
   (expression: ResumableExpression) => void
->();
+>())();
 
 function decodeExpressionDependencies<
   Dependencies extends ReadonlyArray<unknown>,

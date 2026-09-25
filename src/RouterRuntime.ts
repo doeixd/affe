@@ -2,6 +2,7 @@ import { Effect, Fiber, Layer, Context } from "effect";
 import * as Atom from "./Atom.js";
 import * as Route from "./Route.js";
 import { SwrRefreshSupervisorTag } from "./router-runtime.js";
+import { selectMostSpecificBranch } from "./route-pattern.js";
 import type { Result as CoreResultType } from "./effect-ts.js";
 import * as ServerRoute from "./ServerRoute.js";
 import type { AnyRoute, AppRouteNode } from "./Route.js";
@@ -188,9 +189,9 @@ export interface NavigationService {
   readonly cancel: RouterRuntimeInstance["cancel"];
 }
 
-export const HistoryTag = Context.Service<HistoryService>("History");
-export const NavigationTag = Context.Service<NavigationService>("Navigation");
-export const RouterRuntimeTag = Context.Service<RouterRuntimeInstance>("RouterRuntime");
+export const HistoryTag = /*#__PURE__*/ Context.Service<HistoryService>("History");
+export const NavigationTag = /*#__PURE__*/ Context.Service<NavigationService>("Navigation");
+export const RouterRuntimeTag = /*#__PURE__*/ Context.Service<RouterRuntimeInstance>("RouterRuntime");
 
 /** Configuration for a router runtime instance. */
 export interface RouterRuntimeConfig {
@@ -314,7 +315,9 @@ function matchedAppNodes(
   nodes: ReadonlyArray<AppRouteNode<any, any, any, any, any, any> | AnyRoute>,
   pathname: string,
 ): ReadonlyArray<AppRouteNode<any, any, any, any, any, any> | AnyRoute> {
-  return nodes.filter((node) => nodePath(root, node).length > 0 && Route.matchPattern(nodePath(root, node), pathname, nodeExact(node)));
+  const matched = nodes.filter((node) => nodePath(root, node).length > 0 && Route.matchPattern(nodePath(root, node), pathname, nodeExact(node)));
+  // R5: a shadowed sibling (`/users/:id` under `/users/new`) is not a match.
+  return selectMostSpecificBranch(matched, (node) => nodePath(root, node), pathname);
 }
 
 function routeResultEntriesToMaps(
@@ -380,8 +383,7 @@ function createSnapshot(state: {
   serverRoutes: ReadonlyArray<ServerRouteNode<any, any, any, any>>;
 }): RouterRuntimeSnapshot {
   const pathname = state.location.pathname;
-  const appMatches = state.appNodes
-    .filter((node) => nodePath(state.appRoot, node).length > 0 && Route.matchPattern(nodePath(state.appRoot, node), pathname, nodeExact(node)))
+  const appMatches = matchedAppNodes(state.appRoot, state.appNodes, pathname)
     .map((node) => nodeId(state.appRoot, node));
   const matchedServer = ServerRoute.find(state.serverRoutes, "GET", pathname, { kind: "document" })
     ?? ServerRoute.find(state.serverRoutes, "GET", pathname);
@@ -452,6 +454,9 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
   const inFlightFetchers = new Map<string, number>();
   const inFlightFetchFibers = new Map<string, Fiber.Fiber<void, unknown>>();
   let inFlightNavigationFiber: Fiber.Fiber<void, never> | null = null;
+  // The URL a guard-refused navigation rolled the history back to; the
+  // history event that rollback raises is not a new navigation.
+  let historyRollbackTarget: string | null = null;
   let inFlightSubmitFiber: Fiber.Fiber<void, unknown> | null = null;
   let inFlightRequestFiber: Fiber.Fiber<Route.RenderRequestResult, never> | null = null;
   let inFlightDispatchFiber: Fiber.Fiber<ServerRoute.DispatchResult, unknown> | null = null;
@@ -686,6 +691,10 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
       if (initialized) return;
       initialized = true;
       unsubscribeHistory = config.history.subscribe((event) => {
+        if (historyRollbackTarget !== null && event.location.toString() === historyRollbackTarget) {
+          historyRollbackTarget = null;
+          return;
+        }
         historyAction = event.action;
         const previousLocation = location;
         location = new URL(event.location.toString());
@@ -716,6 +725,15 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
           if (guardExit._tag === "Failure") {
             if (isCurrentTask("navigation", taskId)) {
               location = previousLocation;
+              // Roll the history back too, or the URL bar keeps the refused
+              // URL while the page shows the previous one.
+              historyRollbackTarget = previousLocation.toString();
+              if (event.action === "push") config.history.go(-1);
+              else {
+                config.history.replace(
+                  `${previousLocation.pathname}${previousLocation.search}${previousLocation.hash}`,
+                );
+              }
               navigation = cancelledTask(nextLocation.pathname, navigation.outcome);
               clearInFlight("navigation");
               inFlightNavigationFiber = null;
@@ -825,7 +843,11 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
       else config.history.push(to);
     }),
     submit: ((to, options) => Effect.gen(function* () {
+      // Cancel means stop: an in-flight navigation must not commit its
+      // loader data or flip the task back to idle after the submit starts.
       cancelTask("navigation");
+      yield* interruptTrackedFiber("navigation");
+      clearInFlight("navigation");
       yield* interruptTrackedFiber("submit");
       const taskId = allocateTaskId();
       inFlightSubmit = taskId;
@@ -946,6 +968,8 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
     }),
     revalidate: (() => Effect.gen(function* () {
       cancelTask("navigation");
+      yield* interruptTrackedFiber("navigation");
+      clearInFlight("navigation");
       yield* interruptTrackedFiber("revalidate");
       const taskId = allocateTaskId();
       inFlightRevalidate = taskId;

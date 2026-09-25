@@ -122,7 +122,7 @@ describe("AN-1 agent catalog", () => {
 
   it("[AN-1] a typed TaggedError crosses the wire as a discriminated value, not a string", async () => {
 
-    class ListFullError extends Schema.TaggedErrorClass<ListFullError>(
+    class ListFullError extends Schema.TaggedError<ListFullError>(
       "future/agent/ListFullError",
     )("ListFullError", { listId: Schema.String, limit: Schema.Number }) {}
 
@@ -191,7 +191,7 @@ describe("AN-1 agent catalog", () => {
     // NEGATIVE CONTROL: an action that fails with the error it *did* declare is
     // forwarded verbatim, so "rewrite every failure into AgentErrorEncodeError"
     // cannot pass. Also pins the two codes as distinguishable.
-    class DeclaredError extends Schema.TaggedErrorClass<DeclaredError>(
+    class DeclaredError extends Schema.TaggedError<DeclaredError>(
       "future/agent/DeclaredError",
     )("DeclaredError", { why: Schema.String }) {}
     const declared = catalog({

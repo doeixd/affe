@@ -151,6 +151,9 @@ describe("JSX compiler/runtime ABI", () => {
       "setAttribute",
       "setAttributeNS",
       "setBoolAttribute",
+      // babel-plugin-jsx-dom-expressions 0.40 sets object `style` properties
+      // one at a time through this helper.
+      "setStyleProperty",
       "spread",
       "template",
       "use",
@@ -386,6 +389,21 @@ describe("JSX compiler/runtime ABI", () => {
     expect(renderToString(() => [factory(), factory()])).toBe(
       "<button>Save</button><button>Save</button>",
     );
+  });
+
+  it("parses template placeholder comments as comments during SSR", () => {
+    // The compiler marks dynamic text positions with a bare `<!>` comment. The
+    // server parser used to read it as an element named "!", which swallowed
+    // the static text after it and emitted `<!> …</!>`.
+    const view = compileExecutable<(props: { readonly a: number; readonly b: number }) => unknown>(`
+      export default (props) => <p>count={props.a} doubled={props.b} end</p>
+    `);
+    expect(renderToString(() => view({ a: 1, b: 2 }))).toBe(
+      "<p>count=1<!----> doubled=2<!----> end</p>",
+    );
+
+    const factory = template("<div><!--keep-->text<!>tail");
+    expect(renderToString(() => factory())).toBe("<div><!--keep-->text<!---->tail</div>");
   });
 
   it("stores delegated handlers using the compiler's $$event convention", () => {

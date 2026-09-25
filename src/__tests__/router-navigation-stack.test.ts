@@ -24,6 +24,7 @@ import * as Route from "../Route.js";
 import * as RouterRuntime from "../RouterRuntime.js";
 import { clearLoaderCache } from "../router-runtime.js";
 import { withTestLayer } from "../testing.js";
+import { renderToString } from "../dom.js";
 
 // Promoted from future/router/navigation-stack.spec.ts (all green 2026-08-11),
 // retyped: no `any`, no assertion casts.
@@ -341,35 +342,29 @@ describe("R4 — one navigation stack", () => {
 
     const Page = Route.path("/r4-active/:id")(Component.from(() => null));
 
-    // The `class` callback receives `active` before any DOM construction, so it
-    // observes the decision even though rendering an anchor outside compiled JSX
-    // does not complete in this environment (`createComponent("a", …)` needs a
-    // DOM). Only the recorded `active` flag is asserted, so this spec stays about
-    // the URL source and does not accidentally become a rendering test — see the
-    // sibling spec below for the "no browser global" half.
+    // Rendered with the server document `renderToString` installs, so the
+    // anchor is really built; `seen` records what the class callback got.
     const activeUnder = async (initial: string) => {
       const harness = withTestLayer(Route.Memory(initial));
       const seen: Array<boolean> = [];
+      let html = "";
       try {
         harness.run(() => {
-          try {
-            Route.Link({
-              to: Route.link(Page),
-              params: { id: "alice" },
-              class: (active: boolean) => {
-                seen.push(active);
-                return active ? "on" : "off";
-              },
-              children: "go",
-            });
-          } catch {
-            // Rendering the anchor is out of scope here; the `class` callback has
-            // already reported the only thing under test.
-          }
+          html = renderToString(() => Route.Link({
+            to: Route.link(Page),
+            params: { id: "alice" },
+            class: (active: boolean) => {
+              seen.push(active);
+              return active ? "on" : "off";
+            },
+            children: "go",
+          }));
         });
       } finally {
         await harness.dispose();
       }
+      expect(html).toContain(`href="/r4-active/alice"`);
+      expect(html).toContain(seen[0] ? `class="on"` : `class="off"`);
       return seen;
     };
 

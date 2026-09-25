@@ -9,7 +9,19 @@
  */
 import { Layer, Context } from "effect";
 import * as Atom from "./Atom.js";
-import { defaultThemeTokens, type ThemeTokenSchema, type ThemeTokens, type TokenPathOf } from "./style-types.js";
+import {
+  defaultThemeTokens,
+  isStructuredTokenLeaf,
+  lookupToken,
+  type ThemeTokenSchema,
+  type ThemeTokens,
+  type TokenPathOf,
+} from "./style-types.js";
+
+// Pure token helpers live in `style-types.ts` so the style runtime (and
+// `Element`, which serializes style values) can use them without importing
+// this module, which builds Atom-backed layers at load time.
+export { isStructuredTokenLeaf, lookupToken };
 
 /** Theme service consumed by style token resolution. */
 export interface ThemeService {
@@ -18,7 +30,7 @@ export interface ThemeService {
   readonly resolve: (token: string) => string;
 }
 
-export const Theme = Context.Service<ThemeService>("Theme");
+export const Theme = /*#__PURE__*/ Context.Service<ThemeService>("Theme");
 
 /**
  * User-defined theme contract.
@@ -72,49 +84,6 @@ export function define<const Tokens extends ThemeTokenSchema>(tokens: Tokens): T
   };
 }
 
-/** Resolve a token path or short token name against a token schema. */
-export function lookupToken(tokens: ThemeTokenSchema, token: string): unknown {
-  const candidates = [
-    token,
-    `color.${token}`,
-    `spacing.${token}`,
-    `fontSize.${token}`,
-    `fontWeight.${token}`,
-    `radius.${token}`,
-    `shadow.${token}`,
-    `transition.${token}`,
-    `breakpoint.${token}`,
-  ];
-
-  for (const candidate of candidates) {
-    const parts = candidate.split(".");
-    let current: unknown = tokens;
-    let ok = true;
-    for (const part of parts) {
-      if (typeof current !== "object" || current === null || !(part in current)) {
-        ok = false;
-        break;
-      }
-      current = (current as Record<string, unknown>)[part];
-    }
-    if (ok) {
-      return current;
-    }
-  }
-  // Literal-key fallback: several categories use dotted LITERAL keys
-  // ("body.sm" under fontSize), which the path walk above cannot reach —
-  // without this, no fontSize token ever resolved.
-  for (const category of Object.values(tokens)) {
-    if (
-      typeof category === "object" && category !== null
-      && token in (category as Record<string, unknown>)
-    ) {
-      return (category as Record<string, unknown>)[token];
-    }
-  }
-  return token;
-}
-
 /**
  * Resolve a token, following SEMANTIC INDIRECTION (`DQ-061`, ratified): a
  * token whose value is itself a token path ("brand" -> "color.blue500")
@@ -153,7 +122,8 @@ export function layer<Tokens extends ThemeTokenSchema>(
  * complete Layer — never merge-aware `Layer.merge` semantics for the Theme
  * service, which would make one Context service behave against Effect's
  * grain. "Zinc color + compact spacing" is category composition: categories
- * merge by key, later definitions winning per token.
+ * merge by key (deeply, through nested token groups), later definitions
+ * winning per token.
  */
 export function compose<
   const Definitions extends readonly [
@@ -163,16 +133,38 @@ export function compose<
 >(
   ...definitions: Definitions
 ): ThemeDefinition<MergedTokensOf<Definitions>> {
-  const merged: Record<string, Record<string, unknown>> = {};
+  let merged: Record<string, unknown> = {};
   for (const definition of definitions) {
-    for (const [category, tokens] of Object.entries(definition.tokens)) {
-      merged[category] = {
-        ...(merged[category] ?? {}),
-        ...(tokens as Record<string, unknown>),
-      };
-    }
+    merged = mergeTokenSchemas(merged, definition.tokens as Record<string, unknown>);
   }
   return define(merged as MergedTokensOf<Definitions>);
+}
+
+function isPlainTokenGroup(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  if (isStructuredTokenLeaf(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
+ * Deep-merge token schemas: plain-object groups merge recursively, so a later
+ * schema overriding `color.text.primary` keeps the earlier
+ * `color.text.secondary`. Any non-group value (string, number, array) is a
+ * token leaf and the later schema wins. Neither input is mutated.
+ */
+export function mergeTokenSchemas<A extends Record<string, unknown>, B extends Record<string, unknown>>(
+  base: A,
+  override: B,
+): A & B {
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const previous = out[key];
+    out[key] = isPlainTokenGroup(previous) && isPlainTokenGroup(value)
+      ? mergeTokenSchemas(previous, value)
+      : value;
+  }
+  return out as A & B;
 }
 
 type UnionToIntersection<U> =
@@ -183,10 +175,10 @@ type MergedTokensOf<Definitions extends readonly ThemeDefinition<any>[]> =
     infer Merged extends ThemeTokenSchema ? Merged : ThemeTokenSchema;
 
 /** Default light theme layer. */
-export const ThemeLight: Layer.Layer<ThemeService> = layer(defaultThemeTokens);
+export const ThemeLight: Layer.Layer<ThemeService> = /*#__PURE__*/ layer(defaultThemeTokens);
 
 /** Default theme definition for path helpers and lookups. */
-export const ThemeDefault = define(defaultThemeTokens);
+export const ThemeDefault = /*#__PURE__*/ define(defaultThemeTokens);
 
 /** The default token schema, re-exported for foundation-stylesheet emitters. */
 export { defaultThemeTokens, type ThemeTokenSchema } from "./style-types.js";

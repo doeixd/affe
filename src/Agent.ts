@@ -44,56 +44,56 @@ import * as ViewSpec from "./ViewSpec.js";
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
-export class AgentToolNotFoundError extends Schema.TaggedErrorClass<AgentToolNotFoundError>(
+export class AgentToolNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentToolNotFoundError>(
   "affe/AgentToolNotFoundError",
 )("AgentToolNotFoundError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentArgsDecodeError extends Schema.TaggedErrorClass<AgentArgsDecodeError>(
+export class AgentArgsDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentArgsDecodeError>(
   "affe/AgentArgsDecodeError",
 )("AgentArgsDecodeError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentErrorEncodeError extends Schema.TaggedErrorClass<AgentErrorEncodeError>(
+export class AgentErrorEncodeError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentErrorEncodeError>(
   "affe/AgentErrorEncodeError",
 )("AgentErrorEncodeError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentBuildIdMissingError extends Schema.TaggedErrorClass<AgentBuildIdMissingError>(
+export class AgentBuildIdMissingError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentBuildIdMissingError>(
   "affe/AgentBuildIdMissingError",
 )("AgentBuildIdMissingError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class GovernanceUnsatisfiedError extends Schema.TaggedErrorClass<GovernanceUnsatisfiedError>(
+export class GovernanceUnsatisfiedError extends /*#__PURE__*/ (() => Schema.TaggedError<GovernanceUnsatisfiedError>(
   "affe/GovernanceUnsatisfiedError",
 )("GovernanceUnsatisfiedError", {
   tool: Schema.String,
   /** The missing service's name — what "fail closed" makes actionable. */
   missing: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ApprovalDeniedError extends Schema.TaggedErrorClass<ApprovalDeniedError>(
+export class ApprovalDeniedError extends /*#__PURE__*/ (() => Schema.TaggedError<ApprovalDeniedError>(
   "affe/ApprovalDeniedError",
 )("ApprovalDeniedError", {
   summary: Schema.String,
   reason: Schema.String,
-}) {}
+}))() {}
 
-export class AuthorizationDeniedError extends Schema.TaggedErrorClass<AuthorizationDeniedError>(
+export class AuthorizationDeniedError extends /*#__PURE__*/ (() => Schema.TaggedError<AuthorizationDeniedError>(
   "affe/AuthorizationDeniedError",
 )("AuthorizationDeniedError", {
   tool: Schema.String,
   reason: Schema.String,
-}) {}
+}))() {}
 
 // ─── Governance services ─────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ export interface CallerContextService {
   readonly user: unknown;
   readonly lineage: unknown;
 }
-export const CallerContext = Context.Service<CallerContextService>(
+export const CallerContext = /*#__PURE__*/ Context.Service<CallerContextService>(
   "affe/Agent/CallerContext",
 );
 
@@ -111,18 +111,18 @@ export const CallerContext = Context.Service<CallerContextService>(
 export interface ApprovalService {
   readonly require: (summary: string) => Effect.Effect<void, unknown>;
 }
-export const Approval = Context.Service<ApprovalService>(
+export const Approval = /*#__PURE__*/ Context.Service<ApprovalService>(
   "affe/Agent/Approval",
 );
 
 // ─── ApprovalStore (DQ-095) ──────────────────────────────────────────────────
 
-export class ApprovalNotFoundError extends Schema.TaggedErrorClass<ApprovalNotFoundError>(
+export class ApprovalNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<ApprovalNotFoundError>(
   "affe/ApprovalNotFoundError",
 )("ApprovalNotFoundError", {
   id: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 /** One queued approval: plain wire data any component can render. */
 export interface PendingApproval {
@@ -241,7 +241,7 @@ export function makeApprovalStore(): Effect.Effect<ApprovalStore> {
 export interface AuthorizerService {
   readonly authorize: (tool: string) => Effect.Effect<void, unknown>;
 }
-export const Authorizer = Context.Service<AuthorizerService>(
+export const Authorizer = /*#__PURE__*/ Context.Service<AuthorizerService>(
   "affe/Agent/Authorizer",
 );
 
@@ -249,7 +249,7 @@ export const Authorizer = Context.Service<AuthorizerService>(
 export interface AuditLogService {
   readonly record: (entry: AuditRecord) => Effect.Effect<void, unknown>;
 }
-export const AuditLog = Context.Service<AuditLogService>(
+export const AuditLog = /*#__PURE__*/ Context.Service<AuditLogService>(
   "affe/Agent/AuditLog",
 );
 
@@ -370,7 +370,7 @@ export interface CatalogEntry {
   readonly render?: unknown;
 }
 
-const CatalogTypeId: unique symbol = Symbol.for("affe/Agent/Catalog");
+const CatalogTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Agent/Catalog");
 
 export type CatalogEntries = Readonly<Record<string, CatalogEntry>>;
 
@@ -402,7 +402,7 @@ function entryOf(
 
 // ─── Kit-shipped suggestions (DQ-097) ────────────────────────────────────────
 
-const SuggestedEntryTypeId: unique symbol = Symbol.for(
+const SuggestedEntryTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Agent/SuggestedEntry",
 );
 
@@ -800,6 +800,15 @@ function scrubArgs(entry: CatalogEntry, args: ReadonlyArray<unknown>): unknown {
  * (`DQ-083` — `runFail`-observable, typed, never a defect).
  */
 export function dispatch(base: Catalog) {
+  return dispatchOn(base, undefined);
+}
+
+/**
+ * The one dispatch pipeline. `surface` names the transport whose `access`
+ * flag must admit the entry; `undefined` is the in-process path, which every
+ * entry admits.
+ */
+function dispatchOn(base: Catalog, surface: "http" | undefined) {
   return (request: DispatchRequest): Effect.Effect<DispatchResponse, unknown> =>
     Effect.gen(function* () {
       // DQ-086: authorization OUTERMOST — before the tool is even looked up,
@@ -820,6 +829,16 @@ export function dispatch(base: Catalog) {
           new AgentToolNotFoundError({
             tool: request.tool,
             message: `Unknown tool "${request.tool}".`,
+          }),
+        );
+      }
+      // Exposure is per-surface: an entry reaches HTTP only when it declares
+      // `access.http: true`, as MCP requires `access.agent: true`.
+      if (surface === "http" && entry.access?.http !== true) {
+        return failure(
+          new AgentToolNotFoundError({
+            tool: request.tool,
+            message: `Tool "${request.tool}" is not exposed over HTTP (access.http).`,
           }),
         );
       }
@@ -875,6 +894,19 @@ export function dispatch(base: Catalog) {
 
       // Approve (after drift: no human is asked about a stale call).
       const maybeApproval = yield* Effect.serviceOption(Approval);
+      // A declared approval requirement never runs unapproved: with no
+      // Approval service it fails closed, as makeDispatcher does at
+      // construction (DQ-082).
+      if (maybeApproval._tag === "None" && entry.access?.approval !== undefined) {
+        const error = new GovernanceUnsatisfiedError({
+          tool: request.tool,
+          missing: "Approval",
+          message:
+            `Catalog entry "${request.tool}" declares approval "${entry.access.approval}" but no Approval service is provided.`,
+        });
+        yield* auditDenial(base, request, error);
+        return failure(error);
+      }
       if (maybeApproval._tag === "Some") {
         const approval = yield* Effect.exit(
           maybeApproval.value.require(`Approve dispatch of "${request.tool}"`),
@@ -1003,7 +1035,17 @@ function auditWriteAhead(
 ): Effect.Effect<unknown | undefined> {
   return Effect.gen(function* () {
     const sink = yield* Effect.serviceOption(AuditLog);
-    if (sink._tag === "None") return undefined;
+    if (sink._tag === "None") {
+      // No sink is the same as a failed write: refuse unless the catalog
+      // opted into `onFailure: "proceed"` (DQ-083).
+      if (base.audit?.onFailure === "proceed") return undefined;
+      return new GovernanceUnsatisfiedError({
+        tool: request.tool,
+        missing: "AuditLog",
+        message:
+          `Catalog is audited but no AuditLog service is provided; "${request.tool}" was refused.`,
+      });
+    }
     const caller = callerOf((yield* Effect.serviceOption(CallerContext)) as never);
     const record: AuditRecord = {
       tool: request.tool,
@@ -1030,11 +1072,10 @@ function auditWriteAhead(
 
 /**
  * The single-flight entry point is the SAME implementation (§3: one dispatch
- * path); the alias exists so the router adapter and the agent endpoint are
- * visibly the same function.
+ * path), restricted to entries that declare `access.http: true`.
  */
 export function singleFlightHandler(base: Catalog) {
-  return dispatch(base);
+  return dispatchOn(base, "http");
 }
 
 // ─── makeDispatcher (DQ-082) ─────────────────────────────────────────────────
@@ -1075,26 +1116,26 @@ export function makeDispatcher<Provided, LE>(
 
 // ─── Result rendering (AN-4) ─────────────────────────────────────────────────
 
-export class AgentRenderTargetMissingError extends Schema.TaggedErrorClass<AgentRenderTargetMissingError>(
+export class AgentRenderTargetMissingError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentRenderTargetMissingError>(
   "affe/AgentRenderTargetMissingError",
 )("AgentRenderTargetMissingError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentRenderPropsError extends Schema.TaggedErrorClass<AgentRenderPropsError>(
+export class AgentRenderPropsError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentRenderPropsError>(
   "affe/AgentRenderPropsError",
 )("AgentRenderPropsError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class AgentRenderError extends Schema.TaggedErrorClass<AgentRenderError>(
+export class AgentRenderError extends /*#__PURE__*/ (() => Schema.TaggedError<AgentRenderError>(
   "affe/AgentRenderError",
 )("AgentRenderError", {
   tool: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 export interface RenderedResult {
   readonly html: string;

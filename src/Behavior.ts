@@ -5,7 +5,7 @@ import * as Element from "./Element.js";
 import * as Portable from "./Portable.js";
 import * as View from "./View.js";
 
-const BehaviorTypeId: unique symbol = Symbol.for("affe/Behavior");
+const BehaviorTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Behavior");
 
 /**
  * Effectful behavior that attaches logic to selected elements.
@@ -92,7 +92,7 @@ export type BehaviorAttachment =
     readonly kind: "opaque";
   };
 
-const opaqueAttachment: BehaviorAttachment = Object.freeze({
+const opaqueAttachment: BehaviorAttachment = /*#__PURE__*/ Object.freeze({
   kind: "opaque",
 }) as BehaviorAttachment;
 
@@ -126,14 +126,14 @@ export function inspectAttachment(
  * happens where an error channel exists — inside `run`, surfacing on attach —
  * never as a synchronous throw at the factory call site.
  */
-export class BehaviorOptionsError extends Schema.TaggedErrorClass<BehaviorOptionsError>(
+export class BehaviorOptionsError extends /*#__PURE__*/ (() => Schema.TaggedError<BehaviorOptionsError>(
   "affe/BehaviorOptionsError",
 )("BehaviorOptionsError", {
   behavior: Schema.String,
   message: Schema.String,
   /** The structured schema issue, for debugging dynamic configs. */
   issue: Schema.optional(Schema.Unknown),
-}) {}
+}))() {}
 
 /**
  * Decode a catalog behavior's options against its Schema, failing closed with

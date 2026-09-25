@@ -1,5 +1,6 @@
 import {
   Cause,
+  Deferred,
   type Duration,
   Effect,
   Exit,
@@ -128,49 +129,49 @@ export type {
   StateSnapshotPolicy,
 } from "./resume-handle.js";
 
-export const EventId = Schema.String.check(Schema.isPattern(/^e[0-9]+$/)).pipe(
+export const EventId = /*#__PURE__*/ (() => Schema.String.check(Schema.isPattern(/^e[0-9]+$/)).pipe(
   Schema.brand("affe/Resume/EventId"),
-);
+))();
 export type EventId = typeof EventId.Type;
 
-export const EventType = Schema.String.check(
+export const EventType = /*#__PURE__*/ (() => Schema.String.check(
   Schema.isPattern(/^[a-z][a-z0-9-]*$/),
-).pipe(Schema.brand("affe/Resume/EventType"));
+).pipe(Schema.brand("affe/Resume/EventType")))();
 export type EventType = typeof EventType.Type;
 
-export const PortableEventEntrySchema = Schema.Struct({
+export const PortableEventEntrySchema = /*#__PURE__*/ (() => Schema.Struct({
   type: EventType,
   invocation: Schema.Literal(DeferredNoArgs),
   code: Portable.DescriptorSchema,
-});
-export const ActivationEventEntrySchema = Schema.Struct({
+}))();
+export const ActivationEventEntrySchema = /*#__PURE__*/ (() => Schema.Struct({
   type: EventType,
   invocation: Schema.Literal(ActivationProjection),
   projection: Schema.Literal(MouseEventProjection.id),
   targetKey: EventTargetKey,
-});
-export const EventEntrySchema = Schema.Union([
+}))();
+export const EventEntrySchema = /*#__PURE__*/ Schema.Union([
   PortableEventEntrySchema,
   ActivationEventEntrySchema,
 ]);
 
-export const ComponentId = Schema.String.check(
+export const ComponentId = /*#__PURE__*/ (() => Schema.String.check(
   Schema.isPattern(/^c[0-9]+$/),
-).pipe(Schema.brand("affe/Resume/ComponentId"));
+).pipe(Schema.brand("affe/Resume/ComponentId")))();
 export type ComponentId = typeof ComponentId.Type;
 
-export const ExpressionId = Schema.String.check(
+export const ExpressionId = /*#__PURE__*/ (() => Schema.String.check(
   Schema.isPattern(/^x[0-9]+$/),
-).pipe(Schema.brand("affe/Resume/ExpressionId"));
+).pipe(Schema.brand("affe/Resume/ExpressionId")))();
 export type ExpressionId = typeof ExpressionId.Type;
 
-export const ComponentActivationTypeId: unique symbol = Symbol.for(
+export const ComponentActivationTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Resume/ComponentActivation",
 );
 
-export const BindingName = Schema.String.check(Schema.isNonEmpty()).pipe(
+export const BindingName = /*#__PURE__*/ (() => Schema.String.check(Schema.isNonEmpty()).pipe(
   Schema.brand("affe/Resume/BindingName"),
-);
+))();
 export type BindingName = typeof BindingName.Type;
 
 // These decoders sit at internal invariant boundaries: values have already
@@ -178,18 +179,18 @@ export type BindingName = typeof BindingName.Type;
 // Keeping the synchronous assertion outside Effect workflows makes those
 // workflows reserve their typed error channels for recoverable protocol
 // failures.
-const eventIdFromValidatedString = Schema.decodeUnknownSync(EventId);
-const eventTypeFromValidatedString = Schema.decodeUnknownSync(EventType);
-const componentIdFromValidatedString = Schema.decodeUnknownSync(ComponentId);
-const expressionIdFromValidatedString = Schema.decodeUnknownSync(ExpressionId);
-const bindingNameFromValidatedString = Schema.decodeUnknownSync(BindingName);
+const eventIdFromValidatedString = /*#__PURE__*/ Schema.decodeUnknownSync(EventId);
+const eventTypeFromValidatedString = /*#__PURE__*/ Schema.decodeUnknownSync(EventType);
+const componentIdFromValidatedString = /*#__PURE__*/ Schema.decodeUnknownSync(ComponentId);
+const expressionIdFromValidatedString = /*#__PURE__*/ Schema.decodeUnknownSync(ExpressionId);
+const bindingNameFromValidatedString = /*#__PURE__*/ Schema.decodeUnknownSync(BindingName);
 
-export const StateBindingSnapshotSchema = Schema.Struct({
+export const StateBindingSnapshotSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("state"),
   key: Schema.String,
   value: Schema.Unknown,
   dehydratedAt: Schema.Finite,
-});
+}))();
 export type StateBindingSnapshot = typeof StateBindingSnapshotSchema.Type;
 
 /**
@@ -197,55 +198,55 @@ export type StateBindingSnapshot = typeof StateBindingSnapshotSchema.Type;
  * the portable descriptor of its executor. The executor is resolved lazily on
  * the client, and only when the query is refreshed.
  */
-export const QueryBindingSnapshotSchema = Schema.Struct({
+export const QueryBindingSnapshotSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("query"),
   key: Schema.String,
   value: Schema.Unknown,
   dehydratedAt: Schema.Finite,
   executor: Portable.DescriptorSchema,
   reactivityKeys: Schema.Array(Schema.String),
-});
+}))();
 export type QueryBindingSnapshot = typeof QueryBindingSnapshotSchema.Type;
 
-export const BindingSnapshotSchema = Schema.Union([
+export const BindingSnapshotSchema = /*#__PURE__*/ Schema.Union([
   StateBindingSnapshotSchema,
   QueryBindingSnapshotSchema,
 ]);
 export type BindingSnapshot = typeof BindingSnapshotSchema.Type;
 
-export const ComponentRegionSchema = Schema.Struct({
+export const ComponentRegionSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("comment-pair"),
-});
+}))();
 export type ComponentRegion = typeof ComponentRegionSchema.Type;
 
-export const ComponentSnapshotSchema = Schema.Struct({
+export const ComponentSnapshotSchema = /*#__PURE__*/ (() => Schema.Struct({
   definitionName: Schema.optional(Schema.String),
   region: ComponentRegionSchema,
   activation: Schema.optional(Portable.DescriptorSchema),
   bindings: Schema.Record(BindingName, BindingSnapshotSchema),
-});
+}))();
 export type ComponentSnapshot = typeof ComponentSnapshotSchema.Type;
 
-export const ManifestV1Schema = Schema.Struct({
+export const ManifestV1Schema = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(1),
   buildId: Portable.BuildId,
   installationId: Schema.optional(Schema.String),
   serializer: Schema.optional(Schema.String),
   events: Schema.Record(EventId, EventEntrySchema),
-});
+}))();
 
-export const ManifestV2Schema = Schema.Struct({
+export const ManifestV2Schema = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(2),
   buildId: Portable.BuildId,
   installationId: Schema.optional(Schema.String),
   serializer: Schema.optional(Schema.String),
   events: Schema.Record(EventId, EventEntrySchema),
   components: Schema.Record(ComponentId, ComponentSnapshotSchema),
-});
+}))();
 
-export const ExpressionRegionSchema = Schema.Struct({
+export const ExpressionRegionSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("comment-pair"),
-});
+}))();
 export type ExpressionRegion = typeof ExpressionRegionSchema.Type;
 
 /**
@@ -253,22 +254,22 @@ export type ExpressionRegion = typeof ExpressionRegionSchema.Type;
  * URL-capable style properties, DOM properties, and HTML injection sinks
  * remain intentionally outside the portable protocol.
  */
-export const ExpressionAttributeName = Schema.Union([
+export const ExpressionAttributeName = /*#__PURE__*/ (() => Schema.Union([
   Schema.Literal("aria-description"),
   Schema.Literal("aria-label"),
   Schema.Literal("aria-valuetext"),
   Schema.Literal("data-state"),
   Schema.Literal("data-status"),
   Schema.Literal("title"),
-]);
+]))();
 export type ExpressionAttributeName = typeof ExpressionAttributeName.Type;
 
-const ExpressionCustomStylePropertyName = Schema.String.check(
+const ExpressionCustomStylePropertyName = /*#__PURE__*/ (() => Schema.String.check(
   Schema.isPattern(ExpressionCustomStylePropertyPattern),
 ).pipe(
   Schema.brand("affe/Resume/ExpressionCustomStylePropertyName"),
-);
-export const ExpressionStylePropertyName = Schema.Union([
+))();
+export const ExpressionStylePropertyName = /*#__PURE__*/ (() => Schema.Union([
   Schema.Literal("background-color"),
   Schema.Literal("color"),
   Schema.Literal("display"),
@@ -278,7 +279,7 @@ export const ExpressionStylePropertyName = Schema.Union([
   Schema.Literal("visibility"),
   Schema.Literal("width"),
   ExpressionCustomStylePropertyName,
-]);
+]))();
 export type ExpressionStylePropertyName =
   typeof ExpressionStylePropertyName.Type;
 
@@ -303,21 +304,21 @@ const _expressionTargetNameCoverage: readonly [
 ] = [true, true];
 void _expressionTargetNameCoverage;
 
-export const TextExpressionTargetSchema = Schema.Struct({
+export const TextExpressionTargetSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("text"),
-});
-export const AttributeExpressionTargetSchema = Schema.Struct({
+}))();
+export const AttributeExpressionTargetSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("attribute"),
   name: ExpressionAttributeName,
-});
-export const ClassExpressionTargetSchema = Schema.Struct({
+}))();
+export const ClassExpressionTargetSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("class"),
-});
-export const StylePropertyExpressionTargetSchema = Schema.Struct({
+}))();
+export const StylePropertyExpressionTargetSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("style-property"),
   name: ExpressionStylePropertyName,
-});
-export const ExpressionTargetSchema = Schema.Union([
+}))();
+export const ExpressionTargetSchema = /*#__PURE__*/ Schema.Union([
   TextExpressionTargetSchema,
   AttributeExpressionTargetSchema,
   ClassExpressionTargetSchema,
@@ -328,11 +329,11 @@ export const ExpressionTargetSchema = Schema.Union([
  * predicate stays single-sited (`kind === "structural"`). `target` is a wire
  * field, so admitting this member is a real v4 → v5 manifest bump (`DQ-100`).
  */
-export const StructuralExpressionTargetSchema = Schema.Struct({
+export const StructuralExpressionTargetSchema = /*#__PURE__*/ (() => Schema.Struct({
   kind: Schema.Literal("structural"),
   mode: Schema.Union([Schema.Literal("list"), Schema.Literal("branch")]),
-});
-export const ExpressionTargetV5Schema = Schema.Union([
+}))();
+export const ExpressionTargetV5Schema = /*#__PURE__*/ Schema.Union([
   TextExpressionTargetSchema,
   AttributeExpressionTargetSchema,
   ClassExpressionTargetSchema,
@@ -348,33 +349,33 @@ const ExpressionEntryFields = {
   component: Schema.optional(ComponentId),
 } as const;
 
-export const ExpressionEntryV3Schema = Schema.Struct({
+export const ExpressionEntryV3Schema = /*#__PURE__*/ Schema.Struct({
   region: ExpressionRegionSchema,
   ...ExpressionEntryFields,
 });
 export type ExpressionEntryV3 = typeof ExpressionEntryV3Schema.Type;
 
-export const ExpressionEntryV4Schema = Schema.Struct({
+export const ExpressionEntryV4Schema = /*#__PURE__*/ Schema.Struct({
   target: ExpressionTargetSchema,
   ...ExpressionEntryFields,
 });
 export type ExpressionEntryV4 = typeof ExpressionEntryV4Schema.Type;
 
-export const ExpressionEntryV5Schema = Schema.Struct({
+export const ExpressionEntryV5Schema = /*#__PURE__*/ Schema.Struct({
   target: ExpressionTargetV5Schema,
   ...ExpressionEntryFields,
 });
 export type ExpressionEntryV5 = typeof ExpressionEntryV5Schema.Type;
 
 /** Any expression entry accepted by the backwards-compatible wire decoder. */
-export const ExpressionEntrySchema = Schema.Union([
+export const ExpressionEntrySchema = /*#__PURE__*/ Schema.Union([
   ExpressionEntryV3Schema,
   ExpressionEntryV4Schema,
   ExpressionEntryV5Schema,
 ]);
 export type ExpressionEntry = typeof ExpressionEntrySchema.Type;
 
-export const ManifestV3Schema = Schema.Struct({
+export const ManifestV3Schema = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(3),
   buildId: Portable.BuildId,
   installationId: Schema.optional(Schema.String),
@@ -382,9 +383,9 @@ export const ManifestV3Schema = Schema.Struct({
   events: Schema.Record(EventId, EventEntrySchema),
   components: Schema.Record(ComponentId, ComponentSnapshotSchema),
   expressions: Schema.Record(ExpressionId, ExpressionEntryV3Schema),
-});
+}))();
 
-export const ManifestV4Schema = Schema.Struct({
+export const ManifestV4Schema = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(4),
   buildId: Portable.BuildId,
   installationId: Schema.optional(Schema.String),
@@ -392,7 +393,7 @@ export const ManifestV4Schema = Schema.Struct({
   events: Schema.Record(EventId, EventEntrySchema),
   components: Schema.Record(ComponentId, ComponentSnapshotSchema),
   expressions: Schema.Record(ExpressionId, ExpressionEntryV4Schema),
-});
+}))();
 
 /**
  * One loader snapshot carried inside the manifest (R6, `DQ-034`): the
@@ -403,12 +404,12 @@ export const ManifestV4Schema = Schema.Struct({
  * another's URL. The result crosses the wire through the canonical
  * `Serialization.ResultWire` projection, the same encoding the router uses everywhere.
  */
-export const ManifestLoaderEntrySchema = Schema.Struct({
+export const ManifestLoaderEntrySchema = /*#__PURE__*/ Schema.Struct({
   params: Schema.Unknown,
   result: Serialization.ResultWire,
 });
 
-export const ManifestV5Schema = Schema.Struct({
+export const ManifestV5Schema = /*#__PURE__*/ (() => Schema.Struct({
   version: Schema.Literal(5),
   buildId: Portable.BuildId,
   installationId: Schema.optional(Schema.String),
@@ -419,7 +420,7 @@ export const ManifestV5Schema = Schema.Struct({
   loaders: Schema.optional(
     Schema.Record(Schema.String, ManifestLoaderEntrySchema),
   ),
-});
+}))();
 
 /**
  * Runtime-readable adapter-SPI version (`DQ-011`, ratified 2026-07-30): an
@@ -429,7 +430,7 @@ export const ManifestV5Schema = Schema.Struct({
  */
 export const spiVersion = "af.resume-spi.v1";
 
-export const ManifestSchema = Schema.Union([
+export const ManifestSchema = /*#__PURE__*/ Schema.Union([
   ManifestV1Schema,
   ManifestV2Schema,
   ManifestV3Schema,
@@ -477,7 +478,7 @@ function expressionTargetOf(entry: ExpressionEntry): ExpressionTarget {
  * would be forgeable by anyone holding a validated manifest. The set is not
  * reachable from outside this module at all.
  */
-const validatedManifests = new WeakSet<object>();
+const validatedManifests = /*#__PURE__*/ new WeakSet<object>();
 
 declare const ValidatedManifestTypeId: unique symbol;
 
@@ -611,11 +612,11 @@ export interface CollectionResult {
   readonly diagnostics: ReadonlyArray<ResumeDiagnostic>;
 }
 
-export class ResumeConfigurationError extends Schema.TaggedErrorClass<ResumeConfigurationError>(
+export class ResumeConfigurationError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeConfigurationError>(
   "affe/ResumeConfigurationError",
 )("ResumeConfigurationError", {
   message: Schema.String,
-}) {}
+}))() {}
 
 /**
  * The manifest was produced by a different serializer than the client's
@@ -623,259 +624,259 @@ export class ResumeConfigurationError extends Schema.TaggedErrorClass<ResumeConf
  * misdecoding is worse than not decoding. Distinct from a build mismatch,
  * its nearest neighbour, since both gate in the same place.
  */
-export class ResumeSerializerMismatchError extends Schema.TaggedErrorClass<ResumeSerializerMismatchError>(
+export class ResumeSerializerMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeSerializerMismatchError>(
   "affe/ResumeSerializerMismatchError",
 )("ResumeSerializerMismatchError", {
   expected: Schema.String,
   actual: Schema.optional(Schema.String),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeRenderError extends Schema.TaggedErrorClass<ResumeRenderError>(
+export class ResumeRenderError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeRenderError>(
   "affe/ResumeRenderError",
 )("ResumeRenderError", {
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeDescriptorError extends Schema.TaggedErrorClass<ResumeDescriptorError>(
+export class ResumeDescriptorError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDescriptorError>(
   "affe/ResumeDescriptorError",
 )("ResumeDescriptorError", {
   eventId: EventId,
   codeId: Portable.CodeId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeBuildMismatchError extends Schema.TaggedErrorClass<ResumeBuildMismatchError>(
+export class ResumeBuildMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeBuildMismatchError>(
   "affe/ResumeBuildMismatchError",
 )("ResumeBuildMismatchError", {
   eventId: EventId,
   expected: Portable.BuildId,
   actual: Portable.BuildId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionDescriptorError extends Schema.TaggedErrorClass<ResumeExpressionDescriptorError>(
+export class ResumeExpressionDescriptorError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionDescriptorError>(
   "affe/ResumeExpressionDescriptorError",
 )("ResumeExpressionDescriptorError", {
   expressionId: ExpressionId,
   codeId: Portable.CodeId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionInputDecodeError extends Schema.TaggedErrorClass<ResumeExpressionInputDecodeError>(
+export class ResumeExpressionInputDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionInputDecodeError>(
   "affe/ResumeExpressionInputDecodeError",
 )("ResumeExpressionInputDecodeError", {
   expressionId: ExpressionId,
   codeId: Portable.CodeId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionBuildMismatchError extends Schema.TaggedErrorClass<ResumeExpressionBuildMismatchError>(
+export class ResumeExpressionBuildMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionBuildMismatchError>(
   "affe/ResumeExpressionBuildMismatchError",
 )("ResumeExpressionBuildMismatchError", {
   expressionId: ExpressionId,
   expected: Portable.BuildId,
   actual: Portable.BuildId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationDescriptorError extends Schema.TaggedErrorClass<ResumeComponentActivationDescriptorError>(
+export class ResumeComponentActivationDescriptorError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationDescriptorError>(
   "affe/ResumeComponentActivationDescriptorError",
 )("ResumeComponentActivationDescriptorError", {
   componentId: ComponentId,
   codeId: Portable.CodeId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationBuildMismatchError extends Schema.TaggedErrorClass<ResumeComponentActivationBuildMismatchError>(
+export class ResumeComponentActivationBuildMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationBuildMismatchError>(
   "affe/ResumeComponentActivationBuildMismatchError",
 )("ResumeComponentActivationBuildMismatchError", {
   componentId: ComponentId,
   expected: Portable.BuildId,
   actual: Portable.BuildId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationNotFoundError extends Schema.TaggedErrorClass<ResumeComponentActivationNotFoundError>(
+export class ResumeComponentActivationNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationNotFoundError>(
   "affe/ResumeComponentActivationNotFoundError",
 )("ResumeComponentActivationNotFoundError", {
   componentId: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentNotAddressableError extends Schema.TaggedErrorClass<ResumeComponentNotAddressableError>(
+export class ResumeComponentNotAddressableError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentNotAddressableError>(
   "affe/ResumeComponentNotAddressableError",
 )("ResumeComponentNotAddressableError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationDisposedError extends Schema.TaggedErrorClass<ResumeComponentActivationDisposedError>(
+export class ResumeComponentActivationDisposedError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationDisposedError>(
   "affe/ResumeComponentActivationDisposedError",
 )("ResumeComponentActivationDisposedError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationResolutionError extends Schema.TaggedErrorClass<ResumeComponentActivationResolutionError>(
+export class ResumeComponentActivationResolutionError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationResolutionError>(
   "affe/ResumeComponentActivationResolutionError",
 )("ResumeComponentActivationResolutionError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationExecutionError extends Schema.TaggedErrorClass<ResumeComponentActivationExecutionError>(
+export class ResumeComponentActivationExecutionError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationExecutionError>(
   "affe/ResumeComponentActivationExecutionError",
 )("ResumeComponentActivationExecutionError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentActivationMountError extends Schema.TaggedErrorClass<ResumeComponentActivationMountError>(
+export class ResumeComponentActivationMountError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentActivationMountError>(
   "affe/ResumeComponentActivationMountError",
 )("ResumeComponentActivationMountError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeManifestEncodeError extends Schema.TaggedErrorClass<ResumeManifestEncodeError>(
+export class ResumeManifestEncodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeManifestEncodeError>(
   "affe/ResumeManifestEncodeError",
 )("ResumeManifestEncodeError", {
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeManifestDecodeError extends Schema.TaggedErrorClass<ResumeManifestDecodeError>(
+export class ResumeManifestDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeManifestDecodeError>(
   "affe/ResumeManifestDecodeError",
 )("ResumeManifestDecodeError", {
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeClientBuildMismatchError extends Schema.TaggedErrorClass<ResumeClientBuildMismatchError>(
+export class ResumeClientBuildMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeClientBuildMismatchError>(
   "affe/ResumeClientBuildMismatchError",
 )("ResumeClientBuildMismatchError", {
   expected: Portable.BuildId,
   actual: Portable.BuildId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeUnknownEventMarkerError extends Schema.TaggedErrorClass<ResumeUnknownEventMarkerError>(
+export class ResumeUnknownEventMarkerError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeUnknownEventMarkerError>(
   "affe/ResumeUnknownEventMarkerError",
 )("ResumeUnknownEventMarkerError", {
   marker: Schema.String,
   eventType: EventType,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeDuplicateEventMarkerError extends Schema.TaggedErrorClass<ResumeDuplicateEventMarkerError>(
+export class ResumeDuplicateEventMarkerError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDuplicateEventMarkerError>(
   "affe/ResumeDuplicateEventMarkerError",
 )("ResumeDuplicateEventMarkerError", {
   eventId: EventId,
   eventType: EventType,
   count: Schema.Finite,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeMissingEventMarkerError extends Schema.TaggedErrorClass<ResumeMissingEventMarkerError>(
+export class ResumeMissingEventMarkerError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeMissingEventMarkerError>(
   "affe/ResumeMissingEventMarkerError",
 )("ResumeMissingEventMarkerError", {
   eventId: EventId,
   eventType: EventType,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeEventTypeMismatchError extends Schema.TaggedErrorClass<ResumeEventTypeMismatchError>(
+export class ResumeEventTypeMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeEventTypeMismatchError>(
   "affe/ResumeEventTypeMismatchError",
 )("ResumeEventTypeMismatchError", {
   eventId: EventId,
   expected: EventType,
   actual: EventType,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeActivationEventOwnershipError extends Schema.TaggedErrorClass<ResumeActivationEventOwnershipError>(
+export class ResumeActivationEventOwnershipError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeActivationEventOwnershipError>(
   "affe/ResumeActivationEventOwnershipError",
 )("ResumeActivationEventOwnershipError", {
   eventId: EventId,
   eventType: EventType,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeUnsupportedActivationEventTypeError extends Schema.TaggedErrorClass<ResumeUnsupportedActivationEventTypeError>(
+export class ResumeUnsupportedActivationEventTypeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeUnsupportedActivationEventTypeError>(
   "affe/ResumeUnsupportedActivationEventTypeError",
 )("ResumeUnsupportedActivationEventTypeError", {
   eventId: EventId,
   eventType: EventType,
   projection: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionOwnershipError extends Schema.TaggedErrorClass<ResumeExpressionOwnershipError>(
+export class ResumeExpressionOwnershipError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionOwnershipError>(
   "affe/ResumeExpressionOwnershipError",
 )("ResumeExpressionOwnershipError", {
   expressionId: ExpressionId,
   componentId: Schema.optional(ComponentId),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionDependencyMetadataError extends Schema.TaggedErrorClass<ResumeExpressionDependencyMetadataError>(
+export class ResumeExpressionDependencyMetadataError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionDependencyMetadataError>(
   "affe/ResumeExpressionDependencyMetadataError",
 )("ResumeExpressionDependencyMetadataError", {
   expressionId: ExpressionId,
   message: Schema.String,
-}) {}
+}))() {}
 
-class ResumeEventHandoffError extends Schema.TaggedErrorClass<ResumeEventHandoffError>(
+class ResumeEventHandoffError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeEventHandoffError>(
   "affe/ResumeEventHandoffError",
 )("ResumeEventHandoffError", {
   componentId: ComponentId,
   eventId: EventId,
   eventType: EventType,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeListenerInstallError extends Schema.TaggedErrorClass<ResumeListenerInstallError>(
+export class ResumeListenerInstallError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeListenerInstallError>(
   "affe/ResumeListenerInstallError",
 )("ResumeListenerInstallError", {
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeDuplicateClientInstallationError extends Schema.TaggedErrorClass<ResumeDuplicateClientInstallationError>(
+export class ResumeDuplicateClientInstallationError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDuplicateClientInstallationError>(
   "affe/ResumeDuplicateClientInstallationError",
 )("ResumeDuplicateClientInstallationError", {
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeInvalidComponentBoundaryMarkerError extends Schema.TaggedErrorClass<ResumeInvalidComponentBoundaryMarkerError>(
+export class ResumeInvalidComponentBoundaryMarkerError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeInvalidComponentBoundaryMarkerError>(
   "affe/ResumeInvalidComponentBoundaryMarkerError",
 )("ResumeInvalidComponentBoundaryMarkerError", {
   marker: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeUnknownComponentBoundaryError extends Schema.TaggedErrorClass<ResumeUnknownComponentBoundaryError>(
+export class ResumeUnknownComponentBoundaryError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeUnknownComponentBoundaryError>(
   "affe/ResumeUnknownComponentBoundaryError",
 )("ResumeUnknownComponentBoundaryError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeDuplicateComponentBoundaryError extends Schema.TaggedErrorClass<ResumeDuplicateComponentBoundaryError>(
+export class ResumeDuplicateComponentBoundaryError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDuplicateComponentBoundaryError>(
   "affe/ResumeDuplicateComponentBoundaryError",
 )("ResumeDuplicateComponentBoundaryError", {
   componentId: ComponentId,
   edge: Schema.Union([Schema.Literal("start"), Schema.Literal("end")]),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentBoundaryNestingError extends Schema.TaggedErrorClass<ResumeComponentBoundaryNestingError>(
+export class ResumeComponentBoundaryNestingError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentBoundaryNestingError>(
   "affe/ResumeComponentBoundaryNestingError",
 )("ResumeComponentBoundaryNestingError", {
   componentId: ComponentId,
   expectedComponentId: Schema.optional(ComponentId),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeMissingComponentBoundaryError extends Schema.TaggedErrorClass<ResumeMissingComponentBoundaryError>(
+export class ResumeMissingComponentBoundaryError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeMissingComponentBoundaryError>(
   "affe/ResumeMissingComponentBoundaryError",
 )("ResumeMissingComponentBoundaryError", {
   componentId: ComponentId,
@@ -885,39 +886,39 @@ export class ResumeMissingComponentBoundaryError extends Schema.TaggedErrorClass
     Schema.Literal("both"),
   ]),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeInvalidExpressionBoundaryMarkerError extends Schema.TaggedErrorClass<ResumeInvalidExpressionBoundaryMarkerError>(
+export class ResumeInvalidExpressionBoundaryMarkerError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeInvalidExpressionBoundaryMarkerError>(
   "affe/ResumeInvalidExpressionBoundaryMarkerError",
 )("ResumeInvalidExpressionBoundaryMarkerError", {
   marker: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeUnknownExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeUnknownExpressionBoundaryError>(
+export class ResumeUnknownExpressionBoundaryError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeUnknownExpressionBoundaryError>(
   "affe/ResumeUnknownExpressionBoundaryError",
 )("ResumeUnknownExpressionBoundaryError", {
   expressionId: ExpressionId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeDuplicateExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeDuplicateExpressionBoundaryError>(
+export class ResumeDuplicateExpressionBoundaryError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDuplicateExpressionBoundaryError>(
   "affe/ResumeDuplicateExpressionBoundaryError",
 )("ResumeDuplicateExpressionBoundaryError", {
   expressionId: ExpressionId,
   edge: Schema.Union([Schema.Literal("start"), Schema.Literal("end")]),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionBoundaryNestingError extends Schema.TaggedErrorClass<ResumeExpressionBoundaryNestingError>(
+export class ResumeExpressionBoundaryNestingError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionBoundaryNestingError>(
   "affe/ResumeExpressionBoundaryNestingError",
 )("ResumeExpressionBoundaryNestingError", {
   expressionId: ExpressionId,
   expectedExpressionId: Schema.optional(ExpressionId),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeMissingExpressionBoundaryError extends Schema.TaggedErrorClass<ResumeMissingExpressionBoundaryError>(
+export class ResumeMissingExpressionBoundaryError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeMissingExpressionBoundaryError>(
   "affe/ResumeMissingExpressionBoundaryError",
 )("ResumeMissingExpressionBoundaryError", {
   expressionId: ExpressionId,
@@ -927,37 +928,37 @@ export class ResumeMissingExpressionBoundaryError extends Schema.TaggedErrorClas
     Schema.Literal("both"),
   ]),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeInvalidExpressionElementMarkerError extends Schema.TaggedErrorClass<ResumeInvalidExpressionElementMarkerError>(
+export class ResumeInvalidExpressionElementMarkerError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeInvalidExpressionElementMarkerError>(
   "affe/ResumeInvalidExpressionElementMarkerError",
 )("ResumeInvalidExpressionElementMarkerError", {
   marker: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeUnknownExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeUnknownExpressionElementTargetError>(
+export class ResumeUnknownExpressionElementTargetError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeUnknownExpressionElementTargetError>(
   "affe/ResumeUnknownExpressionElementTargetError",
 )("ResumeUnknownExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeDuplicateExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeDuplicateExpressionElementTargetError>(
+export class ResumeDuplicateExpressionElementTargetError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDuplicateExpressionElementTargetError>(
   "affe/ResumeDuplicateExpressionElementTargetError",
 )("ResumeDuplicateExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeMissingExpressionElementTargetError extends Schema.TaggedErrorClass<ResumeMissingExpressionElementTargetError>(
+export class ResumeMissingExpressionElementTargetError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeMissingExpressionElementTargetError>(
   "affe/ResumeMissingExpressionElementTargetError",
 )("ResumeMissingExpressionElementTargetError", {
   expressionId: ExpressionId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedErrorClass<ResumeExpressionTargetKindMismatchError>(
+export class ResumeExpressionTargetKindMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionTargetKindMismatchError>(
   "affe/ResumeExpressionTargetKindMismatchError",
 )("ResumeExpressionTargetKindMismatchError", {
   expressionId: ExpressionId,
@@ -972,15 +973,15 @@ export class ResumeExpressionTargetKindMismatchError extends Schema.TaggedErrorC
     Schema.Literal("structural"),
   ]),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeExpressionElementMarkerCleanupError extends Schema.TaggedErrorClass<ResumeExpressionElementMarkerCleanupError>(
+export class ResumeExpressionElementMarkerCleanupError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeExpressionElementMarkerCleanupError>(
   "affe/ResumeExpressionElementMarkerCleanupError",
 )("ResumeExpressionElementMarkerCleanupError", {
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedErrorClass<ResumeUnsupportedExpressionTargetError>(
+export class ResumeUnsupportedExpressionTargetError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeUnsupportedExpressionTargetError>(
   "affe/ResumeUnsupportedExpressionTargetError",
 )("ResumeUnsupportedExpressionTargetError", {
   expressionId: ExpressionId,
@@ -990,9 +991,9 @@ export class ResumeUnsupportedExpressionTargetError extends Schema.TaggedErrorCl
     Schema.Literal("style-property"),
   ]),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumePayloadTooLargeError extends Schema.TaggedErrorClass<ResumePayloadTooLargeError>(
+export class ResumePayloadTooLargeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumePayloadTooLargeError>(
   "affe/ResumePayloadTooLargeError",
 )("ResumePayloadTooLargeError", {
   maximumBytes: Schema.Finite,
@@ -1009,88 +1010,88 @@ export class ResumePayloadTooLargeError extends Schema.TaggedErrorClass<ResumePa
   largestBindingName: Schema.optional(Schema.String),
   largestCaptureName: Schema.optional(Schema.String),
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeStateSnapshotEncodeError extends Schema.TaggedErrorClass<ResumeStateSnapshotEncodeError>(
+export class ResumeStateSnapshotEncodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeStateSnapshotEncodeError>(
   "affe/ResumeStateSnapshotEncodeError",
 )("ResumeStateSnapshotEncodeError", {
   componentId: ComponentId,
   binding: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentSnapshotNotFoundError extends Schema.TaggedErrorClass<ResumeComponentSnapshotNotFoundError>(
+export class ResumeComponentSnapshotNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentSnapshotNotFoundError>(
   "affe/ResumeComponentSnapshotNotFoundError",
 )("ResumeComponentSnapshotNotFoundError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeComponentPlanUnsupportedError extends Schema.TaggedErrorClass<ResumeComponentPlanUnsupportedError>(
+export class ResumeComponentPlanUnsupportedError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeComponentPlanUnsupportedError>(
   "affe/ResumeComponentPlanUnsupportedError",
 )("ResumeComponentPlanUnsupportedError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
 /**
  * A second live restoration was requested for a component boundary that
  * already owns one. Two restorations of the same boundary would both claim the
  * boundary's hydration keys and DOM region, so the duplicate fails closed.
  */
-export class ResumeDuplicateComponentRestorationError extends Schema.TaggedErrorClass<ResumeDuplicateComponentRestorationError>(
+export class ResumeDuplicateComponentRestorationError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeDuplicateComponentRestorationError>(
   "affe/ResumeDuplicateComponentRestorationError",
 )("ResumeDuplicateComponentRestorationError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
 /**
  * A restored component's render callback failed after restoration committed.
  * Classified as a restoration fallback: the region is rolled back to its SSR
  * content and the boundary is handed to one normal activation.
  */
-export class ResumeRestoredRenderError extends Schema.TaggedErrorClass<ResumeRestoredRenderError>(
+export class ResumeRestoredRenderError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeRestoredRenderError>(
   "affe/ResumeRestoredRenderError",
 )("ResumeRestoredRenderError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeStateBindingMissingError extends Schema.TaggedErrorClass<ResumeStateBindingMissingError>(
+export class ResumeStateBindingMissingError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeStateBindingMissingError>(
   "affe/ResumeStateBindingMissingError",
 )("ResumeStateBindingMissingError", {
   componentId: ComponentId,
   binding: BindingName,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeStateBindingUnexpectedError extends Schema.TaggedErrorClass<ResumeStateBindingUnexpectedError>(
+export class ResumeStateBindingUnexpectedError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeStateBindingUnexpectedError>(
   "affe/ResumeStateBindingUnexpectedError",
 )("ResumeStateBindingUnexpectedError", {
   componentId: ComponentId,
   binding: BindingName,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeStateSnapshotDecodeError extends Schema.TaggedErrorClass<ResumeStateSnapshotDecodeError>(
+export class ResumeStateSnapshotDecodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeStateSnapshotDecodeError>(
   "affe/ResumeStateSnapshotDecodeError",
 )("ResumeStateSnapshotDecodeError", {
   componentId: ComponentId,
   binding: BindingName,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeQueryExecutorDescriptorError extends Schema.TaggedErrorClass<ResumeQueryExecutorDescriptorError>(
+export class ResumeQueryExecutorDescriptorError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeQueryExecutorDescriptorError>(
   "affe/ResumeQueryExecutorDescriptorError",
 )("ResumeQueryExecutorDescriptorError", {
   componentId: ComponentId,
   binding: Schema.String,
   codeId: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedErrorClass<ResumeQueryExecutorBuildMismatchError>(
+export class ResumeQueryExecutorBuildMismatchError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeQueryExecutorBuildMismatchError>(
   "affe/ResumeQueryExecutorBuildMismatchError",
 )("ResumeQueryExecutorBuildMismatchError", {
   componentId: ComponentId,
@@ -1098,54 +1099,54 @@ export class ResumeQueryExecutorBuildMismatchError extends Schema.TaggedErrorCla
   expected: Schema.String,
   actual: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeRestoredQueryDisposedError extends Schema.TaggedErrorClass<ResumeRestoredQueryDisposedError>(
+export class ResumeRestoredQueryDisposedError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeRestoredQueryDisposedError>(
   "affe/ResumeRestoredQueryDisposedError",
 )("ResumeRestoredQueryDisposedError", {
   componentId: ComponentId,
   binding: BindingName,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumePortableBehaviorAttachmentError extends Schema.TaggedErrorClass<ResumePortableBehaviorAttachmentError>(
+export class ResumePortableBehaviorAttachmentError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumePortableBehaviorAttachmentError>(
   "affe/ResumePortableBehaviorAttachmentError",
 )("ResumePortableBehaviorAttachmentError", {
   componentId: ComponentId,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeBindingSnapshotNotFoundError extends Schema.TaggedErrorClass<ResumeBindingSnapshotNotFoundError>(
+export class ResumeBindingSnapshotNotFoundError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeBindingSnapshotNotFoundError>(
   "affe/ResumeBindingSnapshotNotFoundError",
 )("ResumeBindingSnapshotNotFoundError", {
   componentId: Schema.String,
   binding: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeBindingSnapshotNotWritableError extends Schema.TaggedErrorClass<ResumeBindingSnapshotNotWritableError>(
+export class ResumeBindingSnapshotNotWritableError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeBindingSnapshotNotWritableError>(
   "affe/ResumeBindingSnapshotNotWritableError",
 )("ResumeBindingSnapshotNotWritableError", {
   componentId: ComponentId,
   binding: BindingName,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeBindingSnapshotWriteDisposedError extends Schema.TaggedErrorClass<ResumeBindingSnapshotWriteDisposedError>(
+export class ResumeBindingSnapshotWriteDisposedError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeBindingSnapshotWriteDisposedError>(
   "affe/ResumeBindingSnapshotWriteDisposedError",
 )("ResumeBindingSnapshotWriteDisposedError", {
   componentId: Schema.String,
   binding: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
-export class ResumeBindingSnapshotWriteEncodeError extends Schema.TaggedErrorClass<ResumeBindingSnapshotWriteEncodeError>(
+export class ResumeBindingSnapshotWriteEncodeError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeBindingSnapshotWriteEncodeError>(
   "affe/ResumeBindingSnapshotWriteEncodeError",
 )("ResumeBindingSnapshotWriteEncodeError", {
   componentId: Schema.String,
   binding: Schema.String,
   message: Schema.String,
-}) {}
+}))() {}
 
 export type BindingSnapshotWriteError =
   | ResumeBindingSnapshotNotFoundError
@@ -1544,7 +1545,7 @@ interface ActivationSpec {
   readonly props: Schema.Codec<any, any>;
 }
 
-const activationSpecs = new WeakMap<object, ActivationSpec>();
+const activationSpecs = /*#__PURE__*/ new WeakMap<object, ActivationSpec>();
 
 // Process-local activation registry (AN-4): `installFragment` falls back to
 // it when no `Portable.Resolver` is provided. It mirrors the process's own
@@ -1552,7 +1553,7 @@ const activationSpecs = new WeakMap<object, ActivationSpec>();
 // declaring the component already granted — and unknown ids fail closed.
 // Same-id re-declaration is last-wins (the resolver's buildId check still
 // gates execution).
-const activationCodesById = new Map<string, Portable.AnyCode>();
+const activationCodesById = /*#__PURE__*/ new Map<string, Portable.AnyCode>();
 
 function activationRegistryResolver(): Portable.ResolverService {
   return {
@@ -1661,7 +1662,7 @@ export type RestorePropsArgs<Props> =
     : readonly [propsValue: Props];
 
 const defaultMaximumPayloadBytes = 64 * 1024;
-const activeClientInstallations = new WeakMap<object, symbol>();
+const activeClientInstallations = /*#__PURE__*/ new WeakMap<object, symbol>();
 
 function largestManifestEntry(manifest: Manifest): {
   readonly kind: "event" | "component" | "expression";
@@ -1854,7 +1855,7 @@ export function collectAsync<E = never, R = never>(
   ).pipe(Effect.withSpan("Resume.collectAsync"));
 }
 
-const asyncSetupTimedOut = Symbol.for(
+const asyncSetupTimedOut = /*#__PURE__*/ Symbol.for(
   "affe/Resume/asyncSetupTimedOut",
 );
 
@@ -2441,7 +2442,7 @@ export function decodeManifest(
  * boundary id names exactly one restorable boundary, and only one restoration
  * of it may be live at a time.
  */
-const liveRestorations = new WeakMap<object, Set<ComponentId>>();
+const liveRestorations = /*#__PURE__*/ new WeakMap<object, Set<ComponentId>>();
 
 function restoreStateBindingsInScope<Props, Req, E, Bindings, Slots>(
   component: Component.Component<Props, Req, E, Bindings, Slots>,
@@ -3832,9 +3833,9 @@ export interface StructuralRowScopeObservation {
   readonly scope: StructuralRowScope;
 }
 
-const structuralRowScopeObservers = new Set<
+const structuralRowScopeObservers = /*#__PURE__*/ (() => new Set<
   (observation: StructuralRowScopeObservation) => void
->();
+>())();
 
 /**
  * Observe every structural row `Scope` as it opens, so tests can register
@@ -5772,7 +5773,9 @@ function installClientClaimed<R, ER>(
         // Extracted so a fragment mount (`DQ-014`/M11b) can install a root
         // listener for an event type the page itself never used.
         const installListener = (eventType: EventType): void => {
-          if (listeners.has(eventType)) return;
+          // A disposed installation must never re-acquire a root listener
+          // (a late fragment mount would otherwise resurrect dispatch).
+          if (disposed || listeners.has(eventType)) return;
           const listener: EventListener = (event) => {
             if (disposed) return;
             const path = eventPathWithinRoot(event, options.root);
@@ -5791,8 +5794,12 @@ function installClientClaimed<R, ER>(
                 if (separator <= 0) continue;
                 const fragment = fragmentScopes.get(marker.slice(0, separator));
                 if (fragment === undefined || fragment.disposed) continue;
-                const fragmentEntry =
-                  fragment.events[marker.slice(separator + 1)];
+                const fragmentEventId = marker.slice(separator + 1);
+                // Own-property lookup: a DOM-supplied id such as
+                // "constructor" must never resolve through Object.prototype.
+                const fragmentEntry = Object.hasOwn(fragment.events, fragmentEventId)
+                  ? fragment.events[fragmentEventId]
+                  : undefined;
                 if (
                   fragmentEntry === undefined
                   || fragmentEntry.type !== eventType
@@ -5812,7 +5819,9 @@ function installClientClaimed<R, ER>(
                 launch(eventType, marker, fragmentEntry);
                 return;
               }
-              const entry = events[scopedEventId];
+              const entry = Object.hasOwn(events, scopedEventId)
+                ? events[scopedEventId]
+                : undefined;
               if (entry === undefined) {
                 report({
                   code: "unknown-event-marker",
@@ -6187,7 +6196,19 @@ function installClientClaimed<R, ER>(
           report,
           fragmentScopes,
           regionFragments,
-          mintFragmentScope: () => `f${++fragmentScopeCounter}`,
+          isDisposed: () => disposed,
+          // A minted scope must never alias the page's own installation id
+          // (the listener consults the page table first) nor a live fragment.
+          mintFragmentScope: () => {
+            let candidate: string;
+            do {
+              candidate = `f${++fragmentScopeCounter}`;
+            } while (
+              candidate === manifest.installationId
+              || fragmentScopes.has(candidate)
+            );
+            return candidate;
+          },
           installListener: (eventType) => installListener(eventType as EventType),
         });
         return installation;
@@ -6205,11 +6226,11 @@ function installClientClaimed<R, ER>(
  * activated component regions are released with the caller's Scope.
  */
 /** A record stream ended without its terminal completeness record (M11.5). */
-export class ResumeStreamTruncatedError extends Schema.TaggedErrorClass<ResumeStreamTruncatedError>(
+export class ResumeStreamTruncatedError extends /*#__PURE__*/ (() => Schema.TaggedError<ResumeStreamTruncatedError>(
   "affe/ResumeStreamTruncatedError",
 )("ResumeStreamTruncatedError", {
   message: Schema.String,
-}) {}
+}))() {}
 
 export interface InstallClientStreamedOptions<R, ER>
   extends Omit<ClientInstallOptions<R, ER>, "manifest">
@@ -6266,6 +6287,40 @@ export interface StreamingClientInstallation {
  */
 export function installClientStreaming<R, ER>(
   options: InstallClientStreamingOptions<R, ER>,
+): Effect.Effect<
+  StreamingClientInstallation,
+  ResumeDuplicateClientInstallationError
+> {
+  return Effect.suspend(() => {
+    // Same synchronous root claim as `installClient`: one active
+    // installation per root, whichever door installed it. Released on
+    // dispose, on teardown (a truncated stream), and on a failed install.
+    const installationToken = Symbol();
+    if (activeClientInstallations.has(options.root)) {
+      return Effect.fail(
+        new ResumeDuplicateClientInstallationError({
+          message:
+            "A resume client installation is already active for this root.",
+        }),
+      );
+    }
+    activeClientInstallations.set(options.root, installationToken);
+    const releaseClaim = (): void => {
+      if (activeClientInstallations.get(options.root) === installationToken) {
+        activeClientInstallations.delete(options.root);
+      }
+    };
+    return installClientStreamingClaimed(options, releaseClaim).pipe(
+      Effect.onExit((exit) =>
+        Exit.isSuccess(exit) ? Effect.void : Effect.sync(releaseClaim)
+      ),
+    );
+  }).pipe(Effect.withSpan("Resume.installClientStreaming"));
+}
+
+function installClientStreamingClaimed<R, ER>(
+  options: InstallClientStreamingOptions<R, ER>,
+  releaseClaim: () => void,
 ): Effect.Effect<StreamingClientInstallation> {
   return Effect.gen(function* () {
     const resolver = yield* Portable.makeResolver(options.resolverEntries);
@@ -6297,6 +6352,7 @@ export function installClientStreaming<R, ER>(
     const teardown = (): void => {
       if (torndown) return;
       torndown = true;
+      releaseClaim();
       for (const [eventType, listener] of listeners) {
         try {
           options.root.removeEventListener(eventType, listener, true);
@@ -6426,7 +6482,11 @@ export function installClientStreaming<R, ER>(
             queued.push({ region, eventId, eventType });
             return;
           }
-          const entry = table[eventId];
+          // Own-property lookup: a DOM-supplied id such as "constructor"
+          // must never resolve through Object.prototype.
+          const entry = Object.hasOwn(table, eventId)
+            ? table[eventId]
+            : undefined;
           if (entry === undefined) {
             report({
               code: "unknown-event-marker",
@@ -6529,7 +6589,9 @@ export function installClientStreaming<R, ER>(
             continue;
           }
           queued.splice(index, 1);
-          const entry = events[pending.eventId];
+          const entry = Object.hasOwn(events, pending.eventId)
+            ? events[pending.eventId]
+            : undefined;
           if (entry === undefined) {
             report({
               code: "unknown-event-marker",
@@ -6568,7 +6630,21 @@ export function installClientStreaming<R, ER>(
           && expected.length === new Set(expected).size
           && expected.length === arrived.length
           && arrived.every((id) => expected.includes(id));
-        if (complete) return Effect.void;
+        if (complete) {
+          // Every expected region arrived, so an interaction still queued
+          // targets a region the stream never described: it can never
+          // replay. Surface it instead of holding it forever.
+          const stranded = queued.splice(0, queued.length);
+          for (const pending of stranded) {
+            report({
+              code: "unknown-event-marker",
+              eventType: pending.eventType,
+              eventId: `${pending.region}:${pending.eventId}`,
+              reason: `A queued interaction targeted region "${pending.region}", which the completed stream never described; it will not run.`,
+            });
+          }
+          return Effect.void;
+        }
         const message =
           terminal === undefined
             ? "The record stream ended without its terminal completeness record; tearing the streamed installation down."
@@ -6596,7 +6672,7 @@ export function installClientStreaming<R, ER>(
         teardown();
       }),
     } satisfies StreamingClientInstallation;
-  }).pipe(Effect.withSpan("Resume.installClientStreaming"));
+  });
 }
 
 /**
@@ -6610,7 +6686,9 @@ export function installClientStreamed<R, ER>(
   options: InstallClientStreamedOptions<R, ER>,
 ): Effect.Effect<
   StreamingClientInstallation,
-  StreamIngestError | ResumeStreamTruncatedError
+  | StreamIngestError
+  | ResumeStreamTruncatedError
+  | ResumeDuplicateClientInstallationError
 > {
   const { records, ...rest } = options;
   return Effect.gen(function* () {
@@ -6679,15 +6757,16 @@ interface ClientFragmentInternals {
   readonly regionFragments: Map<string, { dispose: () => void }>;
   readonly mintFragmentScope: () => string;
   readonly installListener: (eventType: string) => void;
+  readonly isDisposed: () => boolean;
 }
 
 /** Fragment machinery per live install, kept off the public handle type. */
-const clientInstallationFragmentInternals = new WeakMap<
+const clientInstallationFragmentInternals = /*#__PURE__*/ new WeakMap<
   ClientInstallation,
   ClientFragmentInternals
 >();
 
-const voidElements = new Set([
+const voidElements = /*#__PURE__*/ new Set([
   "area",
   "base",
   "br",
@@ -6902,6 +6981,11 @@ function mountClientFragment(
           "This installation cannot host fragments; mount into the handle installClient returned.",
       });
     }
+    if (internals.isDisposed()) {
+      return yield* new ResumeConfigurationError({
+        message: `Cannot mount a fragment into region "${regionId}": the client installation has been disposed.`,
+      });
+    }
     const manifest = yield* validateManifestValue(
       options.manifest,
       "fragment mount",
@@ -7073,9 +7157,30 @@ export function installFragment(
       Record<string, typeof ComponentSnapshotSchema.Type>
     > = validated.version === 1 ? {} : validated.components;
 
-    let state: "installed" | "active" | "disposed" = "installed";
+    let state: "installed" | "activating" | "active" | "disposed" =
+      "installed";
     let disposeCount = 0;
     const mounted: Array<Effect.Effect<void>> = [];
+    // The one in-flight activation: overlapping activate() calls join it, so
+    // setup runs exactly once however many callers race.
+    let inFlight:
+      | Deferred.Deferred<void, InstalledFragmentActivateError>
+      | undefined;
+    // Read through a function so control-flow narrowing never assumes the
+    // state is unchanged across an `yield*` (dispose may run meanwhile).
+    const isDisposed = (): boolean => state === "disposed";
+    // `componentId` is schema-checked (`c<n>`), so a placeholder such as
+    // "fragment" would make the constructor throw a defect instead of
+    // failing typed. Name the component in flight, else the fragment's first.
+    const fallbackComponentId = (Object.keys(componentEntries)[0] ?? "c0") as
+      typeof ComponentId.Type;
+    const disposedError = (
+      componentId: typeof ComponentId.Type = fallbackComponentId,
+    ) =>
+      new ResumeComponentActivationDisposedError({
+        componentId,
+        message: "This fragment installation is disposed.",
+      });
 
     const disposeMounts = Effect.suspend(() => {
       const pending = mounted.splice(0, mounted.length);
@@ -7084,15 +7189,8 @@ export function installFragment(
       });
     });
 
-    const activate = (): Effect.Effect<void, InstalledFragmentActivateError> =>
+    const runActivation: Effect.Effect<void, InstalledFragmentActivateError> =
       Effect.gen(function* () {
-        if (state === "disposed") {
-          return yield* new ResumeComponentActivationDisposedError({
-            componentId: "fragment" as typeof ComponentId.Type,
-            message: "This fragment installation is disposed.",
-          });
-        }
-        if (state === "active") return;
         for (const [rawComponentId, entry] of Object.entries(componentEntries)) {
           const componentId = rawComponentId as typeof ComponentId.Type;
           if (entry.activation === undefined) continue;
@@ -7113,6 +7211,12 @@ export function installFragment(
               })
             ),
           );
+          // dispose() may have run while the activation resolved: stop
+          // before running any setup.
+          if (isDisposed()) {
+            yield* disposeMounts;
+            return yield* disposedError(componentId);
+          }
           const context: ComponentActivationContext = {
             componentId,
             mount: (component, props) =>
@@ -7138,15 +7242,45 @@ export function installFragment(
             // Roll the partially activated fragment back before failing, so
             // a later successful activate cannot double-mount.
             yield* disposeMounts;
+            if (isDisposed()) return yield* disposedError(componentId);
             return yield* new ResumeComponentActivationExecutionError({
               componentId,
               message:
                 `Fragment component "${componentId}" failed to activate: ${String(mount.cause)}`,
             });
           }
+          if (isDisposed()) {
+            // Disposed mid-setup: this mount (and any made before it) must
+            // not outlive the handle.
+            yield* mount.value.dispose;
+            yield* disposeMounts;
+            return yield* disposedError(componentId);
+          }
           mounted.push(mount.value.dispose);
         }
-        state = "active";
+      });
+
+    const activate = (): Effect.Effect<void, InstalledFragmentActivateError> =>
+      Effect.suspend(() => {
+        if (isDisposed()) return Effect.fail(disposedError());
+        if (state === "active") return Effect.void;
+        if (inFlight !== undefined) return Deferred.await(inFlight);
+        const deferred = Deferred.makeUnsafe<
+          void,
+          InstalledFragmentActivateError
+        >();
+        inFlight = deferred;
+        state = "activating";
+        return runActivation.pipe(
+          Effect.onExit((exit) =>
+            Effect.sync(() => {
+              if (inFlight === deferred) inFlight = undefined;
+              if (!isDisposed()) {
+                state = Exit.isSuccess(exit) ? "active" : "installed";
+              }
+            }).pipe(Effect.andThen(Deferred.done(deferred, exit)))
+          ),
+        );
       });
 
     const dispose = (): Effect.Effect<void> =>
@@ -7311,7 +7445,11 @@ function validateMarkers(
             }.`,
           });
         }
-        const entry = events[eventId];
+        // Own-property lookup: a DOM-supplied id such as "constructor" must
+        // never resolve through Object.prototype.
+        const entry = Object.hasOwn(events, eventId)
+          ? events[eventId]
+          : undefined;
         if (entry === undefined) {
           return yield* new ResumeUnknownEventMarkerError({
             marker,

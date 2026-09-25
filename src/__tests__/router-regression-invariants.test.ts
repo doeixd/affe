@@ -219,7 +219,10 @@ describe("R1/R2 — standing router invariants", () => {
     if (error._tag === "Some") {
       const tagged = error.value as { readonly _tag?: unknown };
       expect(typeof tagged._tag).toBe("string");
-      expect(JSON.stringify(error.value)).toContain("99");
+      // The failure names the offending field. (Effect 4 RC schema issues no
+      // longer echo the received value, so assert on the path, not on "99".)
+      expect(JSON.stringify(error.value)).toContain('"version"');
+      expect(String((error.value as { readonly message?: unknown }).message)).toContain("version");
     }
   });
 });

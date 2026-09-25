@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { group } from "./group.js";
 import { Effect, Schema } from "effect";
 import * as Component from "../Component.js";
 import {
@@ -69,7 +69,7 @@ function collectPage(count: number): void {
   );
 }
 
-describe("no-instrumentation server render (no Resume.collect scope)", () => {
+group("no-instrumentation server render (no Resume.collect scope)", (bench) => {
   bench("24 plain handlers", () => {
     renderPage(24, () => plainHandler);
   });
@@ -79,7 +79,7 @@ describe("no-instrumentation server render (no Resume.collect scope)", () => {
   });
 });
 
-describe("collection cost (Resume.collect around the same render)", () => {
+group("collection cost (Resume.collect around the same render)", (bench) => {
   bench("collect 1 portable event", () => {
     collectPage(1);
   });

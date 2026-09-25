@@ -75,8 +75,16 @@ function readonlyRef<A>(key: string, read: () => A): ReadonlyRef<A> {
     subscribe(f) {
       const owner = new Owner();
       runWithOwner(owner, () => {
+        // Every ref reads the single root signal, so this effect re-runs on
+        // any write to the root; only report when this ref's value changed.
+        let first = true;
+        let previous: A;
         createEffect(() => {
-          f(read());
+          const next = read();
+          if (!first && Object.is(previous, next)) return;
+          first = false;
+          previous = next;
+          f(next);
         });
       });
       return () => owner.dispose();

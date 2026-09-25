@@ -2,8 +2,10 @@ import { Effect, Layer, Context } from "effect";
 import * as Element from "./Element.js";
 import * as MetadataToken from "./MetadataToken.js";
 import * as SafeHtml from "./SafeHtml.js";
+import { onCleanup } from "./api.js";
+import { Owner, getOwner, runWithOwner } from "./owner.js";
 
-export const ViewTypeId: unique symbol = Symbol.for("affe/View");
+export const ViewTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/View");
 
 /**
  * Runtime value stored for a view slot.
@@ -195,8 +197,8 @@ export interface ViewMetadata {
 /** Extract the runtime slot handle map from a `View<Slots>`. */
 export type SlotsOf<T> = T extends View<infer Slots> ? Slots : never;
 
-export const SlotTypeId: unique symbol = Symbol.for("affe/View/Slot");
-export const SlotsTypeId: unique symbol = Symbol.for("affe/View/Slots");
+export const SlotTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/View/Slot");
+export const SlotsTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/View/Slots");
 
 type SlotHandle = Element.Handle | Element.Collection<Element.Handle>;
 
@@ -395,6 +397,59 @@ export namespace Slot {
     handle: H & BindableHandle<S, H>,
   ): Bound<S, H> {
     return { slot, handle };
+  }
+
+  /** The ref callback `Slot.ref` returns: pass it to a JSX `ref` prop. */
+  export type Ref = (element: unknown) => void;
+
+  /**
+   * Bind the element this ref lands on to a slot of `slots` (DQ-073).
+   *
+   * Use it with the ordinary JSX `ref` prop. While the element is rendered,
+   * the slot handle is element-backed: styles attached with
+   * `Style.attachToSlots`, attributes set by behaviors, and listeners added
+   * with `on(...)` reach the element (on the server they serialize), the
+   * element is stamped `data-af-slot="<name>"`, and `focus()` / `blur()` call
+   * the element's. The binding is released when the ref's owner is cleaned up
+   * (the element leaves or the component unmounts).
+   *
+   * The handle resolves when `ref(...)` is called: the rendering component
+   * instance's handle for `slots` (including inside lazily rendered children
+   * such as `Show`), else the contract's shared define-time handle.
+   *
+   * A `Collection` slot binds per element: each element the ref lands on gets
+   * its own item handle, appended to the collection while that element is
+   * rendered (in render order) and removed when it leaves.
+   *
+   * @example
+   * const view = (_props, bindings) =>
+   *   View.fromSlots(FieldSlots,
+   *     <label ref={View.Slot.ref(FieldSlots, "root")}>
+   *       <input ref={View.Slot.ref(FieldSlots, "input")} />
+   *     </label>,
+   *   )
+   */
+  export function ref<S extends Slots.Any, const N extends Slots.NamesOf<S>>(
+    slots: S,
+    name: N,
+  ): Ref {
+    const handle = resolveSlotHandle(slots, name);
+    return (element) => {
+      if (element === null || element === undefined) return;
+      const bindable = element as Element.BindableElement;
+      if ((handle as Element.Collection<Element.Handle>)._tag === "Collection") {
+        const collection = handle as Element.Collection<Element.Handle>;
+        const item = Element.focusable();
+        collection.set([...collection.items(), item]);
+        const unbind = Element.bindElement(item, bindable, name);
+        onCleanup(() => {
+          unbind();
+          collection.set(collection.items().filter((current) => current !== item));
+        });
+        return;
+      }
+      onCleanup(Element.bindElement(handle as Element.Handle, bindable, name));
+    };
   }
 
   /** Pipeable transform that replaces a slot's capability. */
@@ -986,7 +1041,7 @@ export interface PlatformService {
   readonly onDiagnostic?: (diagnostic: ViewDiagnostic) => void;
 }
 
-export const PlatformTag = Context.Service<PlatformService>("ViewPlatform");
+export const PlatformTag = /*#__PURE__*/ Context.Service<PlatformService>("ViewPlatform");
 
 export type PlatformLayer<Metadata extends PlatformMetadata = PlatformMetadata> =
   & Layer.Layer<PlatformService>
@@ -1271,6 +1326,16 @@ let activeSlotInstance:
   | { readonly contract: object; readonly handles: Record<string, unknown> }
   | undefined;
 
+/**
+ * Instances recorded on the reactive owner a component view renders under,
+ * so `Slot.ref` calls made later by lazily rendered children (`Show`, `For`,
+ * reactive inserts) still resolve to their component instance's handles.
+ */
+const slotInstancesByOwner = /*#__PURE__*/ new WeakMap<
+  Owner,
+  { readonly contract: object; readonly handles: Record<string, unknown> }
+>();
+
 /** Run `fn` with `contract` resolving to `handles` inside `fromSlots`. */
 export function runWithSlotInstance<A>(
   contract: object | undefined,
@@ -1278,14 +1343,40 @@ export function runWithSlotInstance<A>(
   fn: () => A,
 ): A {
   const previous = activeSlotInstance;
-  activeSlotInstance = contract === undefined || handles === undefined
+  const instance = contract === undefined || handles === undefined
     ? undefined
     : { contract, handles };
+  activeSlotInstance = instance;
   try {
-    return fn();
+    const owner = getOwner();
+    if (instance === undefined || owner === null) return fn();
+    // A child owner scoped to this render carries the instance; it is
+    // disposed with its parent (the render computation's run owner).
+    const instanceOwner = new Owner(owner);
+    slotInstancesByOwner.set(instanceOwner, instance);
+    return runWithOwner(instanceOwner, fn);
   } finally {
     activeSlotInstance = previous;
   }
+}
+
+function resolveSlotHandle(slots: Slots.Any, name: string): SlotValue {
+  if (activeSlotInstance !== undefined && activeSlotInstance.contract === (slots as object)) {
+    const handle = activeSlotInstance.handles[name];
+    if (handle !== undefined) return handle as SlotValue;
+  }
+  for (let owner = getOwner(); owner !== null; owner = owner.parent) {
+    const instance = slotInstancesByOwner.get(owner);
+    if (instance !== undefined && instance.contract === (slots as object)) {
+      const handle = instance.handles[name];
+      if (handle !== undefined) return handle as SlotValue;
+    }
+  }
+  const bound = slots.bound[name];
+  if (bound === undefined) {
+    throw new Error(`[View.Slot.ref] slot "${name}" is not declared by this contract.`);
+  }
+  return bound.handle;
 }
 
 export function fromSlots<S extends Slots.Any>(

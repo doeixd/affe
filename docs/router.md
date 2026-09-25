@@ -85,6 +85,34 @@ Route pipes are orthogonal:
 - `Route.guard(...)`, `Route.transition(...)`, and `Route.sitemapParams(...)`
   attach navigation, transition, and SSG metadata.
 
+### Match ranking
+
+When sibling routes match the same path, the most specific one wins and the
+others are treated as unmatched: their guards and loaders do not run and they
+are absent from `snapshot.appMatches`. Patterns are compared segment by
+segment, left to right:
+
+```text
+static  >  :param  >  :param?  >  *
+```
+
+So with siblings `/users/new` and `/users/:id`, `/users/new` renders the "new"
+branch and `/users/42` the detail branch, whichever is declared first. A branch
+that consumes the whole path beats one that only prefix-matches, and equally
+specific siblings keep declaration order. `ServerRoute.find` and
+`ServerRoute.dispatch` use the same ordering, so `/api/users/me` beats
+`/api/users/:id`.
+
+Ranking applies wherever the router sees the whole tree: `runMatchedLoaders`,
+`renderRequest` / `renderRequestStream` loader pre-runs, guards, head
+resolution, the client `RouterRuntime`, `Route.Switch`, and
+`Component.route` components rendered side by side under a router. For those,
+routes compete only when neither pattern is a segment prefix of the other:
+`/users/new` and `/users/:id` compete, while `/users` and `/users/:id` are a
+layout and its child and both render. A routed component is created only
+while it wins its URL, so a page mounted on another URL appears once
+navigation reaches it, and a page that loses never runs its loader.
+
 ## Component-First Tier
 
 Use component-first routes when adapting existing component code or when a route
@@ -98,6 +126,27 @@ const UserPage = Component.from<{ readonly id: string }>(() => null).pipe(
   Route.loader((params) => Effect.succeed({ id: params.userId })),
 );
 ```
+
+To render one of several sibling pages, hand the components to `Route.Switch`.
+It renders the most specific match (same ranking as above) or `fallback`:
+
+```tsx
+<WithLayer layer={Route.Router.Browser}>
+  {() => (
+    <Route.Switch
+      fallback={<p>Not found</p>}
+      children={[Home, NewUser, UserPage]}
+    />
+  )}
+</WithLayer>
+```
+
+Pass the components themselves, not calls such as `UserPage({})`: `Switch`
+then creates only the winner, so the other pages' setup and loaders never run.
+Calls are accepted too, but each has already started its own setup. Moving
+between URLs of the same route (`/users/1` to `/users/2`) keeps the mounted
+instance; its params update in place. `Route.componentOf(node)` values work
+the same way.
 
 This tier is supported, but route-node APIs are clearer for application route
 trees.
@@ -159,6 +208,10 @@ const User = Route.page("/users/:userId", UserPage).pipe(
     }),
 );
 ```
+
+Durations (`staleTime`, `cacheTime`, `timeout`) take milliseconds or a string
+such as `"500ms"`, `"1.5s"`, `"30 seconds"`, `"5 minutes"`, or `"2 hours"`. An
+unparseable string throws when `Route.loader(...)` is called, naming the option.
 
 Preload warms matched route loaders without navigation:
 
@@ -269,6 +322,29 @@ Server helpers:
 - `Route.hydrateSingleFlightPayload(...)`
 - `Route.serializeLoaderData(...)`
 - `Route.deserializeLoaderData(...)`
+
+## Cross-Site Request Protection
+
+`ServerRoute.execute` and `ServerRoute.dispatch` refuse a state-changing
+request (anything but GET, HEAD, OPTIONS) that a browser says came from
+another site, with a 403 and `result.forbidden.reason`, before the handler
+runs:
+
+- `Sec-Fetch-Site: same-origin` passes, whatever the URL looks like behind a
+  proxy;
+- otherwise the `Origin` header must equal the request's origin or one of
+  `csrf.trustedOrigins`;
+- a request with neither header is not from a browser page and passes.
+
+```ts
+ServerRoute.dispatch(routes, request, {
+  csrf: { trustedOrigins: ["https://admin.example.com"] },
+});
+```
+
+Pass `csrf: false` only for an endpoint that must accept cross-site form
+posts and checks its own token. For a POST endpoint you route yourself, such
+as a single-flight handler, call `ServerRoute.checkOrigin(request)` first.
 
 ## SSR, Streaming, And Sitemaps
 

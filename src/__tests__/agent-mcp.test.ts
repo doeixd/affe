@@ -72,7 +72,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
     expect((tools[0]!.inputSchema as { readonly type: string }).type).toBe("object");
     expect(JSON.parse(JSON.stringify(tools[0]))).toEqual(tools[0]);
 
-    const server = await run(mcpServer(catalog));
+    const server = await run(mcpServer(catalog, { auth: "none" }));
     const viaMcp = await run(
       server.callTool({ name: "addTodo", arguments: { text: "milk" } }),
     );
@@ -97,7 +97,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
 
   it("hiding is enforcement: a UI-only tool is refused by exact name, distinctly from a typo", async () => {
     const { calls, catalog } = makeMixedCatalog();
-    const server = await run(mcpServer(catalog));
+    const server = await run(mcpServer(catalog, { auth: "none" }));
 
     const hidden = await run(
       server.callTool({ name: "focusInput", arguments: { text: "x" } }),
@@ -113,6 +113,22 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
       String((value as { readonly _tag?: unknown })?._tag);
     expect(tagOf(hidden.structuredContent)).toBe("McpToolNotExposedError");
     expect(tagOf(missing.structuredContent)).toBe("McpUnknownToolError");
+  });
+
+  it("requires authentication by default: no McpAuth means every call is refused", async () => {
+    const { calls, catalog } = makeMixedCatalog();
+    const server = await run(mcpServer(catalog));
+    const refused = await run(server.callTool({ name: "addTodo", arguments: { text: "milk" } }));
+    expect(refused.isError).toBe(true);
+    expect((refused.structuredContent as { readonly _tag: string })._tag).toBe(
+      "McpAuthenticationRequiredError",
+    );
+    // Refused before the name is checked: an unknown tool gets the same answer.
+    const unknown = await run(server.callTool({ name: "nope", arguments: {} }));
+    expect((unknown.structuredContent as { readonly _tag: string })._tag).toBe(
+      "McpAuthenticationRequiredError",
+    );
+    expect(calls).toEqual([]);
   });
 
   it("auth is pluggable and refuses before anything runs; the authenticated identity reaches the result", async () => {
@@ -156,7 +172,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
   it("drift is inherited from dispatch: a stale buildId is refused through the MCP surface", async () => {
     const stale = makeMixedCatalog();
     const staleServer = await run(
-      mcpServer(stale.catalog, { buildId: "build-stale" }),
+      mcpServer(stale.catalog, { auth: "none", buildId: "build-stale" }),
     );
     const refused = await run(
       staleServer.callTool({ name: "addTodo", arguments: { text: "milk" } }),
@@ -168,7 +184,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
     expect(stale.calls).toEqual([]);
 
     const current = makeMixedCatalog();
-    const currentServer = await run(mcpServer(current.catalog, { buildId: BUILD }));
+    const currentServer = await run(mcpServer(current.catalog, { auth: "none", buildId: BUILD }));
     const ok = await run(
       currentServer.callTool({ name: "addTodo", arguments: { text: "milk" } }),
     );
@@ -177,7 +193,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
   });
 
   it("an MCP tool error is a typed discriminated value, not a stringified message", async () => {
-    class QuotaError extends Schema.TaggedErrorClass<QuotaError>(
+    class QuotaError extends Schema.TaggedError<QuotaError>(
       "agent-mcp-test/QuotaError",
     )("QuotaError", { limit: Schema.Number }) {}
 
@@ -199,7 +215,7 @@ describe("@doeixd/affe-ui-agent MCP projection", () => {
       ),
     });
 
-    const server = await run(mcpServer(c));
+    const server = await run(mcpServer(c, { auth: "none" }));
     const result = await run(server.callTool({ name: "addTodo", arguments: {} }));
 
     expect(result.isError).toBe(true);

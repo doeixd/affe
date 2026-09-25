@@ -49,7 +49,7 @@ export interface Registry {
 export const isRegistry = (u: unknown): u is Registry =>
   typeof u === "object" && u !== null && TypeId in u;
 
-const ownerRegistries = new WeakMap<Owner, Registry>();
+const ownerRegistries = /*#__PURE__*/ new WeakMap<Owner, Registry>();
 let detachedRegistry: Registry | null = null;
 
 const createRegistry = (): Registry => {

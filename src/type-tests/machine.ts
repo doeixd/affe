@@ -9,32 +9,26 @@ type Equal<A, B> =
     : false;
 type Expect<T extends true> = T;
 
+class OpenEvent extends Schema.TaggedClass<OpenEvent>()("OpenEvent", {}) {}
+class CloseEvent extends Schema.TaggedClass<CloseEvent>()("CloseEvent", {}) {}
+
 class Idle extends Schema.TaggedClass<Idle>()("Idle", {}) {}
 class Open extends Schema.TaggedClass<Open>()("Open", {
   highlighted: Schema.NullOr(Schema.Number),
 }) {}
-class OpenEvent extends Schema.TaggedClass<OpenEvent>()("OpenEvent", {}) {}
-class CloseEvent extends Schema.TaggedClass<CloseEvent>()("CloseEvent", {}) {}
 
-const states = Machine.defineStates({ Idle, Open });
+const Root = Machine.state({ states: { Idle, Open } });
+const targets = Machine.targets(Root);
 
 const Disclosure = Machine.make({
   id: "disclosure",
-  states: states.states,
-  events: [OpenEvent, CloseEvent],
-  initial: () => states.initial.Idle(new Idle()),
+  root: Root,
+  events: Machine.eventsFromSchemas(OpenEvent, CloseEvent),
 }).handle({
-  Idle: {
-    on: {
-      OpenEvent: ({ target }: { target: any }) =>
-        Effect.succeed(target.full.Open(new Open({ highlighted: null }))),
-    },
-  },
-  Open: {
-    on: {
-      CloseEvent: ({ target }: { target: any }) =>
-        Effect.succeed(target.full.Idle(new Idle())),
-    },
+  initial: { target: targets.root.Idle },
+  states: {
+    Idle: { on: { OpenEvent: { target: targets.root.Open, data: { highlighted: null } } } },
+    Open: { on: { CloseEvent: { target: targets.root.Idle } } },
   },
 });
 
@@ -66,7 +60,8 @@ void policy;
 const decoded: Machine.EncodedSnapshotValue =
   Schema.decodeUnknownSync(Machine.EncodedSnapshotSchema)({
     _tag: "MachineSnapshot",
-    active: [{ path: "Idle", value: { _tag: "Idle" } }],
+    version: 2,
+    active: [{ path: "" }, { path: "Idle", value: { _tag: "Idle" } }],
   });
 
 void decoded;

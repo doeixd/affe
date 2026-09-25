@@ -1,0 +1,55 @@
+name: Release
+
+# Publishes @doeixd/affe and @doeixd/create-affe (which release in step)
+# when a version tag (v1.2.3, v0.6.0-rc.1) is pushed.
+# Requires the NPM_TOKEN repository secret (an npm automation token with
+# publish rights to the @doeixd scope). Provenance links the published
+# package to this workflow run.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - name: Tag matches package version
+        run: |
+          VERSION="v$(node -p 'require("./package.json").version')"
+          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $VERSION" >&2
+            exit 1
+          fi
+      - run: npm run build
+      - run: npm run typecheck:all
+      - run: npm test
+      - run: npm run verify:package
+      # Prerelease versions (anything with a hyphen) publish under the "next"
+      # dist-tag so `npm install @doeixd/affe` never picks them up by accident.
+      - name: Publish @doeixd/affe
+        run: |
+          VERSION="$(node -p 'require("./package.json").version')"
+          TAG=latest
+          case "$VERSION" in *-*) TAG=next ;; esac
+          npm publish --provenance --access public --tag "$TAG"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish @doeixd/create-affe
+        run: |
+          VERSION="$(node -p 'require("./package.json").version')"
+          TAG=latest
+          case "$VERSION" in *-*) TAG=next ;; esac
+          npm publish --provenance --access public --tag "$TAG" --workspace packages/create-affe
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

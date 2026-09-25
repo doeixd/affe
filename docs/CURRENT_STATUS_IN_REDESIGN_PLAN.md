@@ -8,8 +8,8 @@ specs; no open design question in any lane)
 
 - **Renamed to Affe.** The package is `@doeixd/affe`, with
   `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and `@doeixd/affe-permissive`;
-  `deprecated/effect-atom-jsx` is the re-exporting alias. What landed and
-  what is still open (logo, domain, alias window, repo rename) is recorded in
+  the old `effect-atom-jsx` npm package is left as it is (no alias). What landed and
+  what is still open (logo, domain, repo rename) is recorded in
   `docs/RENAME_AFFE.md`.
 - **The suite now passes on Linux.** 28 tests in
   `resume-extract-plugin.test.ts`, `resume-extract-vite.test.ts`, and
@@ -18,6 +18,52 @@ specs; no open design question in any lane)
   the cwd and never matched `root`, and every generated identity fell back
   to the basename. The fixtures now take a platform-absolute root (still `C:/app` on
   Windows); the plugin was already correct for the absolute roots Vite passes.
+- **Review fixes (2026-09-25).**
+  - Agent governance now fails closed. Plain `dispatch` refuses an entry that
+    declares `access.approval` when no `Approval` is provided, and an `audited`
+    catalog refuses a mutation when no `AuditLog` is provided (unless it opted
+    into `onFailure: "proceed"`), both with `GovernanceUnsatisfiedError`.
+    `singleFlightHandler` only reaches `access.http` entries.
+  - `effect` is a peer and dev dependency only, no longer also a runtime
+    dependency, and the docs quote the pinned version.
+  - CI runs the Playwright suite; `npm run test:all` passes on the empty
+    `future/` suite.
+  - The README covers resumability and the agent surface, and states that slot
+    handles are not yet bound to rendered DOM elements (see below).
+- **Launch readiness (2026-09-25).** `@doeixd/affe/vite` and
+  `@doeixd/create-affe` give a working first run; `verify:package` installs
+  and builds a scaffolded app under a 35 kB gzip budget, and `npm run size` holds per-feature budgets (atoms 5 kB, one component 25 kB). Every served example
+  now runs in Playwright (`browser-tests/examples.spec.ts`), which found:
+  control-flow components frozen in JSX, a broken `Route.Link`, mounted pages
+  ignoring new loader data, actions without context, `renderToString`
+  failing in browsers, and `withLayer` services leaking to siblings — all
+  fixed with tests. `ServerRoute` refuses cross-site state-changing requests
+  by default. Resumability and the agent surface are marked experimental.
+- **0.6.0 (2026-09-25).** Rendering the router examples end to end found
+  that `WithLayer` never rendered its children (it waited on
+  `Layer.launch`, which never completes) and `Route.Switch` always rendered
+  its first child. Both are fixed (`router-switch.test.ts`); `Switch` ranks
+  siblings by specificity and, given components, creates only the winner.
+- **Release audit (2026-09-25).** Five subsystem audits found 47 bugs
+  (router 8, reactive core 10, rendering/SSR/components/hydration 14,
+  resumability 10 plus one found while fixing, styles/themes/elements 5);
+  all are fixed with regression tests (`*-audit-fixes.test.ts`,
+  `reactive-core-fixes.test.ts`). A packed-tarball consumer check (all 47
+  subpaths import; strict typecheck under `bundler` and `nodenext`; Babel JSX
+  + SSR; the `create-af-ui` scaffold compiles) found three more: comment
+  placeholders crashed SSR, stale `Style.forSlots` in the scaffold and docs,
+  and source maps pointing at unshipped files.
+- **Slot handles bind to rendered elements (DQ-073, implemented).**
+  `ref={View.Slot.ref(Slots, "name")}` (or `Element.ref(handle)` outside a
+  contract) makes the slot's handle element-backed while that element is
+  rendered: attached styles become inline styles, behavior attributes and
+  listeners reach the element (`press` = click plus Enter/Space without
+  native activation), `focus()`/`blur()` forward, the element is stamped
+  `data-af-slot`, and SSR serializes the same. `Style.extractStatic`
+  defaults to `[data-af-slot="<slot>"]`. Collection slots bind one item
+  handle per element; resumed components bind on activation re-render (no
+  in-place adoption of server markup). Slots without a ref stay in-memory.
+  Covered by `src/__tests__/slot-binding.test.ts`.
 - **Gates** (verified 2026-09-25, Linux): `npm run typecheck:all` **0
   errors** across every leg, `npm test` (**1416 passing**, 110 files, plus
   7 in `@doeixd/affe-permissive`), `npm run build`, the four example builds,
@@ -87,27 +133,27 @@ specs; no open design question in any lane)
 
 The sections below predate the agent lane and describe the 2026-07/08
 redesign era; they remain accurate for the surfaces they cover.
-Plan reference: `docs/DESIGN_OVERHAUL_V1_PLAN.md`, `docs/V1_API_CONTRACT_DRAFT.md`, `docs/EFFECT_NATIVE_ENHANCEMENT_PLAN.md`, `docs/new_ideas.md`
+Plan reference: `docs/archive/DESIGN_OVERHAUL_V1_PLAN.md`, `docs/archive/V1_API_CONTRACT_DRAFT.md`, `docs/archive/EFFECT_NATIVE_ENHANCEMENT_PLAN.md`, `docs/archive/new_ideas.md`
 
 V1 scope authority (**ratified 2026-07-06**): `docs/V1_SCOPE.md`
 
-Current Affe source of truth: `docs/AF_UI_CONTRACT.md`
+Current Affe source of truth: `docs/archive/AF_UI_CONTRACT.md`
 
-Current slot-design plan: `docs/SLOT_CONTRACT_UNIFICATION_PLAN.md`
+Current slot-design plan: `docs/archive/SLOT_CONTRACT_UNIFICATION_PLAN.md`
 
 Slot contract golden path: `docs/SLOT_CONTRACT_GOLDEN_PATH.md`
 
-Current optimistic/action design plan: `docs/OPTIMISTIC_ACTION_DESIGN_PLAN.md`
+Current optimistic/action design plan: `docs/archive/OPTIMISTIC_ACTION_DESIGN_PLAN.md`
 
-Component ownership model: `docs/PROPS_BINDINGS_SLOTS.md`
+Component ownership model: `docs/archive/PROPS_BINDINGS_SLOTS.md`
 
-Component state ownership: `docs/COMPONENT_STATE_OWNERSHIP.md`
+Component state ownership: `docs/archive/COMPONENT_STATE_OWNERSHIP.md`
 
-Async binding boundary: `docs/BINDINGS_ASYNC_COMMIT_BOUNDARY.md`
+Async binding boundary: `docs/archive/BINDINGS_ASYNC_COMMIT_BOUNDARY.md`
 
-Setup/view comparison: `docs/SETUP_VIEW_COMPARISON.md`
+Setup/view comparison: `docs/archive/SETUP_VIEW_COMPARISON.md`
 
-Component setup builder plan: `docs/COMPONENT_SETUP_BUILDER_PLAN.md`
+Component setup builder plan: `docs/archive/COMPONENT_SETUP_BUILDER_PLAN.md`
 
 Resumability implementation: `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md`
 

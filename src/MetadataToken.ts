@@ -1,4 +1,4 @@
-export const MetadataTokenTypeId: unique symbol = Symbol.for("affe/MetadataToken");
+export const MetadataTokenTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/MetadataToken");
 
 export interface MetadataToken<Kind extends string, Name extends string> {
   readonly [MetadataTokenTypeId]: {

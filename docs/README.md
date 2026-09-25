@@ -1,68 +1,79 @@
 # Documentation
 
-Start here when you are reading the repository docs directly.
+New to Affe? Read the [README](../README.md), run
+`npm create @doeixd/affe@latest my-app`, then use the guides below. Everything
+under "Design records" is history and reasoning for contributors, not
+something you need to use the library.
 
-## Current Reference Docs
+## Guides
 
-| Doc | Purpose |
+| Guide | What it covers |
 | --- | --- |
-| `../README.md` | Quick product overview, setup, and end-to-end examples. |
-| `API.md` | Broad API reference across atoms, components, styles, routing, server, diagnostics, and testing. |
-| `SLOT_CONTRACT_GOLDEN_PATH.md` | The shortest authored slot-contract component path. |
-| `component.md` | Current component model: setup as Effect, bindings, slot contracts, layers, and transforms. |
-| `view.md` | Current `View`, `View.Slots`, slot metadata, tree metadata, and diagnostics. |
-| `style.md` | Current style/theme system, attachment tiers, global styles, platform diagnostics, and recipes. |
-| `router.md` | Current route-node router, loaders, preload, lazy components, head metadata, single flight, and SSR helpers. |
-| `reactivity.md` | Semantic reactivity keys and invalidation. |
-| `SERVICES_AND_LAYERS.md` | Effect service/layer architecture, provision tiers, and request scoping. |
-| `TESTING.md` | DOM-free tests, layer swapping, behavior drivers, stories/scenes, and diagnostics. |
-| `RELEASE_CHECKLIST.md` | Release gates and prerelease/stable criteria. |
-| `V1_SCOPE.md` | Ships/deferred authority for the current prerelease scope. |
-| `afui.md` | Long-form Affe narrative and architecture explanation. |
+| [`SLOT_CONTRACT_GOLDEN_PATH.md`](SLOT_CONTRACT_GOLDEN_PATH.md) | The shortest path to an authored component with slots, a style and a behavior. |
+| [`component.md`](component.md) | Components: setup as an Effect, bindings, slot contracts, layers, transforms. |
+| [`view.md`](view.md) | `View`, `View.Slots`, slot metadata, tree metadata, diagnostics. |
+| [`style.md`](style.md) | Styles and themes, attachment tiers, global styles, recipes. |
+| [`reactivity.md`](reactivity.md) | Semantic reactivity keys and invalidation. |
+| [`router.md`](router.md) | Routes, loaders, preload, lazy components, head metadata, single flight, SSR, cross-site request protection. |
+| [`SERVICES_AND_LAYERS.md`](SERVICES_AND_LAYERS.md) | Services and layers: provision tiers and request scoping. |
+| [`TESTING.md`](TESTING.md) | DOM-free tests, layer swapping, behavior drivers, stories and scenes. |
+| [`RESUMABILITY_GUIDE.md`](RESUMABILITY_GUIDE.md) | Resumability (experimental): markers, manifests, strict and permissive modes. |
+| [`AGENT_SURFACE_GUIDE.md`](AGENT_SURFACE_GUIDE.md) | The agent surface (experimental): catalogs, governance, MCP, `ViewSpec`. |
+| [`API.md`](API.md) | The API reference across every module, including `A11y`, `Form`, `Devtools`, `Diagnostics`, `Serialization` and `SafeHtml`. |
+| [`afui.md`](afui.md) | The long-form narrative: the inside-out model, the runtime, routing. |
 
-The broad `API.md` reference also covers the smaller exported modules:
-`A11y`, `Form`, `Devtools`, `Diagnostics`, `Serialization`, and `SafeHtml`.
+Runnable examples live in [`../examples`](../examples); `npm run examples`
+serves them all.
 
-## Status And Planning
+## Current golden paths
 
-- `CURRENT_STATUS_IN_REDESIGN_PLAN.md` is the active status ledger. It is useful
-  for maintainers, but not the first doc new users should read.
-- `EVENT_RUNTIME_PLAN.md` is the proposed typed logical-event contract design;
-  it is not ratified release scope.
-- `archive/` contains historical plans, design notes, and superseded API
-  sketches. Do not treat archive snippets as current unless a live doc links to
-  a specific historical decision.
-- `adr/` contains architecture decision records.
-- `af-ui-json-render/` contains renderer/generator notes.
-
-## Current Golden Paths
-
-- State: `Atom.make`, `Atom.derived`, `Atom.runtime(layer).atom(...)`, and
+- State: `Atom.make`, `Atom.derived`, `Atom.runtime(layer).atom(...)` and
   `Atom.runtime(layer).action(...)`.
-- Async state: the unified `Result` model (`Loading`, `Refreshing`, `Success`,
-  `Failure`, `Stale`, `Defect`).
-- Components: `Component.make(...)` with setup as `Effect`, plus
+- Async state: the unified `Result` model (`Loading`, `Refreshing`,
+  `Success`, `Failure`, `Stale`, `Defect`), rendered with `Async`,
+  `Loading`, `Errored` or `MatchTag`.
+- Components: `Component.make(...)` with setup as an `Effect`, plus
   `Component.withSlots(...)` for slot-bearing components.
-- Views: `View.Slots.define(...)` plus `View.fromSlots(...)`.
-- Styles: `Style.forSlots(slots)(...)` plus `Style.attachToSlots(...)`.
-- Behaviors: `Behavior.forSlots(slots)(...)` plus
-  `Behavior.attachToSlots(...)`.
+- Views: `View.Slots.define(...)` plus `View.fromSlots(...)`, with
+  `ref={View.Slot.ref(Slots, "name")}` binding each slot to its element.
+- Styles: `Style.make(slots, ...)` plus `Style.attachToSlots(...)`.
+- Behaviors: `Behavior.forSlots(slots)(...)` plus `Behavior.attachToSlots(...)`.
 - Routing: `Route.page(...)`, `Route.layout(...)`, `Route.index(...)`,
-  `Route.define(...)`, `Route.loader(...)`, and `Route.link(...)`.
+  `Route.define(...)`, `Route.loader(...)`, `Route.link(...)` and
+  `Route.Link`; `Route.Switch` for component-first pages.
 - Services: one composition root shared by `Atom.runtime(...)` and
-  `Component.mount(...)` or passed as `runtime`.
-- Events: `Event.channel(...)`, `Event.layer(...)`, `Event.publish(...)`, and
-  `Event.stream(...)`; use direct Effect `PubSub` for private channels.
+  `mount(...)`, or a `WithLayer` boundary.
+- Events: `Event.channel(...)`, `Event.layer(...)`, `Event.publish(...)` and
+  `Event.stream(...)`; use Effect `PubSub` directly for private channels.
 
-## Validation Commands
+## Releasing and scope
 
-Run these before claiming a doc/code release pass is complete:
+- [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md) — how to release, and the gates.
+- [`V1_SCOPE.md`](V1_SCOPE.md) — what ships and what is deliberately deferred.
+- [`../CHANGELOG.md`](../CHANGELOG.md) — every release, with migration notes.
+- [`../SECURITY.md`](../SECURITY.md) — reporting, and what the library protects.
+
+## Design records
+
+For contributors. These explain why things are the way they are; code
+snippets in them can be out of date.
+
+- [`CURRENT_STATUS_IN_REDESIGN_PLAN.md`](CURRENT_STATUS_IN_REDESIGN_PLAN.md) — the maintainers' status ledger.
+- [`design-questions/`](design-questions) — open and ratified design questions (DQ-###).
+- [`adr/`](adr) — architecture decision records.
+- Plans and audits: `*_PLAN.md`, `RESUMABILITY_*`, `ROUTER_*`,
+  `TEST_SUITE_AUDIT.md`, `KIT_LAYER_SPEC_FINDINGS.md`,
+  `EXIT_ANIMATION_OWNERSHIP.md`, `DESIGN_IMPROVEMENT_NOTES.md`,
+  `AGENT_NATIVE_NOTES.md`, `ARCHITECTURE_REFERENCE.md`, `RENAME_AFFE.md`.
+- [`archive/`](archive) — superseded plans and API sketches.
+- `af-ui-json-render/` — renderer and generator notes.
+
+## Checking a change
 
 ```sh
+npm run build
 npm run typecheck:all
 npm test
-npm run build
+npm run verify:package   # the packed package, as a user installs it
+npm run test:browser     # Playwright: every example plus the resumability demos
 ```
-
-For doc-only edits, at least run a markdown/link sanity check if one is added
-to the project. The current repository does not require a markdown build step.

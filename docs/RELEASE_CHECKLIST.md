@@ -2,7 +2,7 @@
 
 Status: **prerelease / beta-ready** as of 2026-07-09.
 Hard external gate for a true **1.0 stable**: Effect 4 stable (currently
-`effect ^4.0.0-beta.29` dep + peer). Until then ship prerelease tags only.
+`effect 4.0.0-rc.117`, an exact peer dependency). Until then ship prerelease tags only.
 
 Authority: `docs/V1_SCOPE.md` (ships vs deferred).
 
@@ -37,7 +37,7 @@ Authority: `docs/V1_SCOPE.md` (ships vs deferred).
 
 ## Packaging
 
-- [x] `package.json` version on prerelease line (`0.5.0`)
+- [x] `package.json` version on prerelease line (`0.6.0`)
 - [x] `main` / `types` / `exports` / `bin` verified
 - [x] Build outputs under `dist/` (clean build)
 - [x] Lockfile committed
@@ -66,8 +66,9 @@ Re-run and capture under the release evidence scratch before cutting a tag:
 
 ### Effect compatibility
 
-- Dependency / peer: `effect ^4.0.0-beta.29`
-- Release class while Effect remains beta: **0.x prerelease / beta**
+- Peer: exactly `effect 4.0.0-rc.117` (also the dev dependency). Effect is a
+  peer only, so an app never installs a second copy.
+- Release class while Effect remains a prerelease (beta or RC): **0.x prerelease / beta**
 - `1.0.0` stable requires Effect 4 stable pin + this checklist re-run
 
 ### TypeScript toolchain
@@ -80,8 +81,26 @@ Re-run and capture under the release evidence scratch before cutting a tag:
 ### Intentionally deferred (not release blockers for prerelease)
 
 Shipped in-tree (backlog closed 2026-07-09): P9 `Form`, P11 Devtools/MCP
-session MVP, P12 gated streams + `Component.subscription`, D3 `create-af-ui`.
+session MVP, P12 gated streams + `Component.subscription`, D3 `create-affe` (was `create-af-ui`).
 
 Still deferred depth: multi-renderer (TUI/RN), package split execution (P7
 stays single package), full browser Devtools panel chrome, WAI-ARIA
 certification theater. See `docs/V1_SCOPE.md` Deferred.
+
+## How to release
+
+1. On `main`, with CI green, bump `version` in `package.json` and in
+   `packages/create-affe/package.json` (they release together; a test
+   enforces it), and move the `CHANGELOG.md` "Unreleased" entries under the new version heading.
+2. Run locally: `npm run build && npm run typecheck:all && npm test &&
+   npm run verify:package` (and `npm run test:browser` if Chromium is
+   available). `verify:package` installs the packed tarball into a throwaway
+   project, imports every subpath, and type-checks a golden-path file against
+   the shipped types.
+3. Commit, then tag and push: `git tag v<version> && git push origin v<version>`.
+   `.github/workflows/release.yml` re-runs the gates and publishes
+   `@doeixd/affe` and `@doeixd/create-affe` with npm provenance. Versions containing a hyphen
+   (`0.7.0-rc.1`) publish under the `next` dist-tag. The workflow needs the
+   `NPM_TOKEN` repository secret.
+4. Leave the old `effect-atom-jsx` package on npm untouched: do not publish
+   to it or deprecate it.

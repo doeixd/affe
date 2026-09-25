@@ -10,13 +10,14 @@ import {
   Stream as FxStream,
   Context,
 } from "effect";
-import { createEffect, createSignal, onCleanup, useContext, type Accessor, type Setter } from "./api.js";
+import { contextMap, createEffect, createSignal, onCleanup, useContext, type Accessor, type Setter } from "./api.js";
 import { Owner, getOwner, runWithOwner } from "./owner.js";
 import * as Atom from "./Atom.js";
 import type * as Behavior from "./Behavior.js";
 import * as Element from "./Element.js";
 import * as Portable from "./Portable.js";
 import * as Route from "./Route.js";
+import { gateRoutedCall, type RouteGate } from "./route-siblings.js";
 import * as View from "./View.js";
 import {
   annotateHandle,
@@ -35,26 +36,35 @@ import {
   observeCommittedComponentBindings,
   observeRenderedComponentBoundary,
   withRenderedComponentOwner,
-} from "./resume-session.js";
+} from "./resume-hooks.js";
 import {
   defineMutation,
   defineQuery,
   ManagedRuntimeContext,
   mount as mountRuntime,
   mountWithManagedRuntime,
+  useService,
   type BridgeError,
   type MutationSupersededError,
   type Result,
   type RuntimeLike,
 } from "./effect-ts.js";
-import { currentComponentScope } from "./component-scope.js";
+import {
+  ComponentInvocationSource,
+  ComponentScopeContext,
+  closeComponentScope,
+  currentComponentScope,
+  forkComponentScope,
+  currentComponentServices,
+  publishComponentServices,
+} from "./component-scope.js";
 import { normalizeReactivityKeys } from "./reactivity-runtime.js";
-import { currentLoaderCacheStore } from "./router-runtime.js";
+import { currentLoaderCacheStore, getLoaderCacheEntry, makeLoaderCacheKey } from "./router-runtime.js";
 
-export const ComponentTypeId: unique symbol = Symbol.for("affe/Component");
+export const ComponentTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Component");
 
-const ComponentImplTypeId: unique symbol = Symbol.for("affe/ComponentImpl");
-const ComponentSetupTypeId: unique symbol = Symbol.for("affe/ComponentSetup");
+const ComponentImplTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/ComponentImpl");
+const ComponentSetupTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/ComponentSetup");
 
 /**
  * Runtime slot handle map exposed by legacy bindings-based components.
@@ -76,8 +86,8 @@ type SlotsFromBindings<Bindings> = Bindings extends { readonly slots: infer Slot
 
 type ViewSlotRecord = Record<string, Element.Handle | Element.Collection<Element.Handle>>;
 
-const viewSlotRegistry = new WeakMap<Component<any, any, any, any, any>, ViewSlotRecord>();
-const slotContractRegistry = new WeakMap<Component<any, any, any, any, any>, AnySlotContract>();
+const viewSlotRegistry = /*#__PURE__*/ new WeakMap<Component<any, any, any, any, any>, ViewSlotRecord>();
+const slotContractRegistry = /*#__PURE__*/ new WeakMap<Component<any, any, any, any, any>, AnySlotContract>();
 
 export function registerViewSlots(slots: ViewSlotRecord, component: Component<any, any, any, any, any>): void {
   viewSlotRegistry.set(component, slots);
@@ -131,7 +141,7 @@ type SetupStep<Props> = {
   ) => Effect.Effect<Readonly<Record<string, unknown>>, unknown, unknown>;
 };
 
-const opaqueSetupPlan: SetupPlan = Object.freeze({ kind: "opaque" as const });
+const opaqueSetupPlan: SetupPlan = /*#__PURE__*/ Object.freeze({ kind: "opaque" as const });
 
 function setupPlanFromSteps<Props>(steps: ReadonlyArray<SetupStep<Props>>): SetupPlan {
   return Object.freeze({
@@ -220,7 +230,7 @@ export interface BindOptions<A> {
   readonly resume?: BindingResumePolicy<A>;
 }
 
-const BindingSourceTypeId: unique symbol = Symbol.for(
+const BindingSourceTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Component/BindingSource",
 );
 
@@ -381,6 +391,11 @@ type InternalComponent<Props, Req, E, Bindings> = {
   readonly loading?: () => unknown;
   readonly boundary?: ErrorHandlers;
   readonly memo?: (prev: Props, next: Props) => boolean;
+  /**
+   * Set by `Component.route`: a call made under a router is created only
+   * while its pattern wins the URL among its siblings (`route-siblings.ts`).
+   */
+  readonly routeGate?: RouteGate;
 };
 
 function freezeDefinition(
@@ -428,6 +443,11 @@ function appendTransform(
     transforms: [...definition.transforms, transform],
     metadata: definition.metadata,
   });
+}
+
+/** Whether `value` is a component created by this module. */
+export function isComponent(value: unknown): value is Component<any, any, any, any, any> {
+  return isInternalComponent(value);
 }
 
 function isInternalComponent<Props, Req, E, Bindings>(
@@ -539,12 +559,20 @@ function makeSetup<Props, Bindings, E, R>(
   return out;
 }
 
-function runForkWithAmbient<R, A, E>(effect: Effect.Effect<A, E, R>): Fiber.Fiber<A, E> {
+function runForkWithAmbient<R, A, E>(
+  effect: Effect.Effect<A, E, R>,
+  scope: Scope.Scope | null = currentComponentScope(),
+): Fiber.Fiber<A, E> {
   const ambient = useContext(ManagedRuntimeContext);
-  const scope = currentComponentScope();
-  const scoped = scope === null
+  // Services an ancestor's `Component.withLayer` built reach this component's
+  // setup (docs/API.md: a parent `withLayer` satisfies child requirements).
+  const services = currentComponentServices();
+  const withServices = services === null
     ? effect
-    : Scope.provide(scope)(effect as Effect.Effect<A, E, R | Scope.Scope>) as Effect.Effect<A, E, R>;
+    : Effect.provideContext(effect, services) as Effect.Effect<A, E, R>;
+  const scoped = scope === null
+    ? withServices
+    : Scope.provide(scope)(withServices as Effect.Effect<A, E, R | Scope.Scope>) as Effect.Effect<A, E, R>;
   if (ambient !== null) {
     return ambient.runFork(scoped as Effect.Effect<A, E, never>) as Fiber.Fiber<A, E>;
   }
@@ -565,16 +593,32 @@ function matchBoundary(boundary: ErrorHandlers | undefined, error: unknown): unk
 function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<Bindings>>(
   internal: InternalComponent<Props, Req, E, Bindings>,
 ): Component<Props, Req, E, Bindings, SlotContract> {
-  const component = ((unsafeProps: Props) => {
+  const instantiate = (unsafeProps: Props): unknown => {
     const props = internal.props.parse(unsafeProps);
     const [bindings, setBindings] = createSignal<Bindings | null>(null);
     const [error, setError] = createSignal<unknown | null>(null);
     const [platform, setPlatform] = createSignal<View.PlatformService | undefined>(undefined);
     const [diagnosticsReporter, setDiagnosticsReporter] = createSignal<DiagnosticsReporterService | undefined>(undefined);
 
+    // The instance's own owner, a child of the caller's: `withLayer`
+    // publishes the services it builds here — not on the caller's owner,
+    // which the instance's siblings share — and the view evaluates under an
+    // owner that carries this owner's context so its descendants inherit it.
+    const callerOwner = getOwner();
+    const componentOwner = callerOwner === null ? null : new Owner(callerOwner);
+    const setup = withSetupOwner(
+      componentOwner,
+      () => runComponentSetup(out, internal, props),
+    );
+    // Each instance owns a child of the ambient component scope: resources
+    // its setup acquires are released when THIS instance is disposed (a
+    // route stops matching, a conditional flips), not when the whole mount
+    // closes. Its view's descendants fork from it in turn.
+    const instanceScope = forkComponentScope(currentComponentScope());
+    onCleanup(() => closeComponentScope(instanceScope));
     const fiber = runForkWithAmbient(
       Effect.all({
-        bindings: runComponentSetup(out, internal, props),
+        bindings: setup,
         platform: Effect.serviceOption(View.PlatformTag),
         diagnostics: Effect.serviceOption(DiagnosticsReporterTag),
       }).pipe(
@@ -594,13 +638,14 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
           },
         }),
       ),
+      instanceScope,
     );
 
     onCleanup(() => {
       Effect.runFork(Fiber.interrupt(fiber));
     });
 
-    return () => {
+    const invocation = () => {
       const failure = error();
       if (failure !== null) {
         const rendered = matchBoundary(internal.boundary, failure);
@@ -612,15 +657,33 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
         return internal.loading?.() ?? null;
       }
 
-      if (internal.view === undefined) {
-        const renderProp = (props as RenderPropChildren<Bindings>).children;
-        return typeof renderProp === "function"
-          ? renderViewResult(out, renderProp(ready), ready, platform(), diagnosticsReporter())
-          : null;
-      }
-      const result = internal.view(props, ready);
-      return renderViewResult(out, result, ready, platform(), diagnosticsReporter());
+      const currentPlatform = platform();
+      const currentReporter = diagnosticsReporter();
+      return runInComponentViewOwner(componentOwner, instanceScope, () => {
+        if (
+          internal.view === undefined
+          && typeof (props as RenderPropChildren<Bindings>).children !== "function"
+        ) {
+          return null;
+        }
+        // DQ-050: the same committed-view path as `renderEffect`, so the
+        // view renders against this instance's slot handles (the ones
+        // `bindings.slots` carries), not the shared define-time handles.
+        const result = invokeCommittedView(internal, props, ready);
+        return renderViewResult(out, result, ready, currentPlatform, currentReporter);
+      });
     };
+    (invocation as { [ComponentInvocationSource]?: unknown })[ComponentInvocationSource] = out;
+    return invocation;
+  };
+
+  const component = ((unsafeProps: Props) => {
+    const gate = internal.routeGate;
+    const router = gate === undefined ? undefined : ambientRouter();
+    if (gate === undefined || router === undefined) return instantiate(unsafeProps);
+    const gated = gateRoutedCall(router, gate, () => instantiate(unsafeProps));
+    (gated as { [ComponentInvocationSource]?: unknown })[ComponentInvocationSource] = out;
+    return gated;
   }) as Component<Props, Req, E, Bindings, SlotContract>;
 
   const out = Object.assign(component, {
@@ -641,10 +704,20 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
     loading: internal.loading,
     boundary: internal.boundary,
     memo: internal.memo,
+    routeGate: internal.routeGate,
   });
 
   out.pipe = ((...fns: ReadonlyArray<(value: any) => any>) => pipeSelf(out, fns)) as typeof out["pipe"];
   return out;
+}
+
+/** The router a component call can see (mount runtime or `WithLayer`), if any. */
+function ambientRouter(): Route.RouterService | undefined {
+  try {
+    return useService(Route.RouterTag);
+  } catch {
+    return undefined;
+  }
 }
 
 function internals<Props, Req, E, Bindings, SlotContract>(
@@ -656,6 +729,64 @@ function internals<Props, Req, E, Bindings, SlotContract>(
   return component;
 }
 
+/**
+ * The owner of the component instance whose setup effect is being
+ * constructed (set synchronously by `toComponent`); `null` for direct
+ * `setupEffect`/`renderEffect` calls, which have no instance owner.
+ */
+let activeSetupOwner: Owner | null = null;
+
+function withSetupOwner<A>(owner: Owner | null, f: () => A): A {
+  const previous = activeSetupOwner;
+  activeSetupOwner = owner;
+  try {
+    return f();
+  } finally {
+    activeSetupOwner = previous;
+  }
+}
+
+/**
+ * Evaluate a component view under a fresh child of the CURRENT owner (so the
+ * view's children keep the evaluating computation's lifetime) that also
+ * carries the instance owner's context entries — its component scope and any
+ * `withLayer` services. Views are evaluated lazily at the insertion site, not
+ * under the instance owner, so without this descendants would never see them.
+ */
+/**
+ * Every context entry visible from `owner` (nearest wins). Views are often
+ * evaluated under a different owner than the one the component was called
+ * under, so they carry the call site's whole context, not just the entries
+ * set directly on the instance.
+ */
+function effectiveContext(owner: Owner | null): Map<symbol, unknown> {
+  const entries = new Map<symbol, unknown>();
+  for (let current = owner; current !== null; current = current.parent) {
+    const map = contextMap.get(current);
+    if (map === undefined) continue;
+    for (const [key, value] of map) {
+      if (!entries.has(key)) entries.set(key, value);
+    }
+  }
+  return entries;
+}
+
+function runInComponentViewOwner<A>(
+  componentOwner: Owner | null,
+  instanceScope: Scope.Closeable | null,
+  f: () => A,
+): A {
+  const entries = effectiveContext(componentOwner);
+  const current = getOwner();
+  if (current === null) return f();
+  if (entries.size === 0 && instanceScope === null) return f();
+  const viewOwner = new Owner(current);
+  const viewEntries = new Map(entries);
+  if (instanceScope !== null) viewEntries.set(ComponentScopeContext.id, instanceScope);
+  contextMap.set(viewOwner, viewEntries);
+  return runWithOwner(viewOwner, f);
+}
+
 function provideLayerToSetup<Props, Req, E, Bindings, SlotContract, ROut, E2, RIn>(
   component: Component<Props, Req, E, Bindings, SlotContract>,
   layer: Layer.Layer<ROut, E2, RIn>,
@@ -663,7 +794,33 @@ function provideLayerToSetup<Props, Req, E, Bindings, SlotContract, ROut, E2, RI
   const i = internals(component);
   return toComponentLike(component, {
     ...i,
-    setup: (props) => i.setup(props).pipe(Effect.provide(layer as any)) as any,
+    setup: (props) => {
+      const owner = activeSetupOwner;
+      const inner = i.setup(props);
+      // Build the layer into the COMPONENT's scope, not a scope that closes
+      // when setup completes: scoped resources live as long as the mounted
+      // instance. The built services are published on the instance owner so
+      // descendant components' setup can use them too.
+      return Effect.flatMap(Effect.serviceOption(Scope.Scope), (maybeScope) => {
+        let scope: Scope.Scope | undefined = maybeScope._tag === "Some" ? maybeScope.value : undefined;
+        if (scope === undefined && owner !== null) {
+          const owned = Scope.makeUnsafe();
+          owner.addCleanup(() => closeComponentScope(owned));
+          scope = owned;
+        }
+        if (scope === undefined) return inner.pipe(Effect.provide(layer as any));
+        return Layer.buildWithScope(layer as Layer.Layer<ROut, E2, RIn>, scope).pipe(
+          Effect.tap((context) =>
+            Effect.sync(() => {
+              if (owner !== null) {
+                publishComponentServices(owner, context as Context.Context<never>);
+              }
+            })
+          ),
+          Effect.flatMap((context) => Effect.provideContext(inner, context)),
+        );
+      }) as any;
+    },
   }) as Component<Props, Exclude<Req, ROut> | RIn, E | E2, Bindings, SlotContract>;
 }
 
@@ -1081,7 +1238,7 @@ type DiagnosticsReporterService = {
  * Context resolves by string id, so Component can auto-report without
  * importing Diagnostics (avoids a Component ↔ Diagnostics cycle).
  */
-const DiagnosticsReporterTag = Context.Service<DiagnosticsReporterService>("DiagnosticsReporter");
+const DiagnosticsReporterTag = /*#__PURE__*/ Context.Service<DiagnosticsReporterService>("DiagnosticsReporter");
 
 function toAutoReportDiagnostics(
   component: Component<any, any, any, any, any>,
@@ -1146,7 +1303,7 @@ function renderViewResult(
   return observeRenderedComponentBoundary(View.node(result), bindings);
 }
 
-const SlotInstanceContractTypeId: unique symbol = Symbol.for(
+const SlotInstanceContractTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Component/SlotInstanceContract",
 );
 
@@ -2455,6 +2612,76 @@ function routeErrorTag(error: unknown): string {
 }
 
 /**
+ * Keep a mounted route component's loader result in step with its cache
+ * entry. Without this, the result was fixed at setup: a single-flight seed or
+ * a reactivity invalidation never reached a page already on screen, and
+ * moving between URLs of the same route (`/users/1` → `/users/2`) kept the
+ * first URL's data.
+ *
+ * - new params: run the loader for them;
+ * - the entry was invalidated (`staleAt` 0): run it again;
+ * - someone else wrote a fresh entry (a single-flight seed, a preload):
+ *   show it.
+ *
+ * Loads run in the setup's own Effect context, so loader requirements are
+ * satisfied exactly as they were for the first load.
+ */
+function followLoaderEntry(input: {
+  readonly component: Component<any, any, any, any, any>;
+  readonly meta: Route.RouteMeta<any, any, any>;
+  readonly routeId: string;
+  readonly router: Route.RouterService;
+  readonly matched: Atom.ReadonlyAtom<boolean>;
+  readonly result: Atom.WritableAtom<any>;
+}): Effect.Effect<() => void> {
+  return Effect.gen(function* () {
+    const { component, meta, routeId, router, matched, result } = input;
+    const store = yield* currentLoaderCacheStore;
+    const context = yield* Effect.context<never>();
+    const paramsOf = (url: URL) => Route.extractParams(meta.fullPattern, url.pathname) ?? {};
+    let params = paramsOf(router.url());
+    let paramsKey = makeLoaderCacheKey(routeId, params).key;
+    let seen = getLoaderCacheEntry(routeId, params, store);
+    let sequence = 0;
+
+    const reload = (url: URL): void => {
+      const current = ++sequence;
+      Effect.runForkWith(context)(
+        Route.runRouteLoader(component, meta, url).pipe(
+          Effect.tap((next) => Effect.sync(() => {
+            if (current !== sequence) return;
+            seen = getLoaderCacheEntry(routeId, params, store);
+            result.set(next);
+          })),
+        ),
+      );
+    };
+
+    const signal = Atom.derived(() => [router.url(), store.revision(), matched()] as const);
+    return Atom.subscribe(signal, ([url, , isMatched]) => {
+      if (!isMatched) return;
+      const nextParams = paramsOf(url);
+      const nextKey = makeLoaderCacheKey(routeId, nextParams).key;
+      if (nextKey !== paramsKey) {
+        params = nextParams;
+        paramsKey = nextKey;
+        seen = undefined;
+        reload(url);
+        return;
+      }
+      const entry = getLoaderCacheEntry(routeId, params, store);
+      if (entry === undefined || entry === seen) return;
+      seen = entry;
+      if (entry.staleAt === 0) {
+        reload(url);
+        return;
+      }
+      if (entry.result !== result()) result.set(entry.result);
+    }, { immediate: false });
+  });
+}
+
+/**
  * Component-first routing (Tier 1): attach route context, params/query/hash,
  * loader, and guards to an **already-composed** component in place. Use this
  * when the routing decision is local to a component — e.g. retrofitting
@@ -2493,6 +2720,7 @@ export function route<P = Record<string, string>, Q = Record<string, string | un
     );
     wrapped = toComponent({
       ...i,
+      routeGate: { pattern: Route.resolvePattern("", pattern), exact: options?.exact === true },
       definition: routeDefinition,
       setup: (props) => Effect.gen(function* () {
         const router = yield* Route.RouterTag;
@@ -2600,29 +2828,46 @@ export function route<P = Record<string, string>, Q = Record<string, string | un
         let loaderDataAtom: Atom.ReadonlyAtom<unknown> | undefined;
         let loaderResultAtom: Atom.ReadonlyAtom<any> | undefined;
         if (wrappedRoute.__routeLoader) {
-          if (loaderOptions.streaming) {
-            const resultState = yield* state(loaderResult);
-            loaderResultAtom = resultState;
-            loaderDataAtom = Atom.derived(() => {
-              const current = resultState();
-              return current._tag === "Success" ? current.value : undefined;
-            });
-          } else {
-            if (loaderResult._tag === "Failure") {
-              const cases = wrappedRoute.__routeLoaderError;
-              if (cases) {
-                const tag = routeErrorTag(loaderResult.error);
-                const handler = cases[tag] ?? cases._;
-                if (handler) {
-                  const fallbackView = handler(loaderResult.error, paramsAtom());
-                  return { __routeMatched: routeMatched, __routeInner: { __routeLoaderErrorView: fallbackView }, __routeCtx: ctx, __routeHeadId: headId, __routeHeadStore: headStore, __routePattern: fullPattern } satisfies RouteBindings<P, Q, H>;
-                }
+          if (!loaderOptions.streaming && loaderResult._tag === "Failure") {
+            const cases = wrappedRoute.__routeLoaderError;
+            if (cases) {
+              const tag = routeErrorTag(loaderResult.error);
+              const handler = cases[tag] ?? cases._;
+              if (handler) {
+                const fallbackView = handler(loaderResult.error, paramsAtom());
+                return { __routeMatched: routeMatched, __routeInner: { __routeLoaderErrorView: fallbackView }, __routeCtx: ctx, __routeHeadId: headId, __routeHeadStore: headStore, __routePattern: fullPattern } satisfies RouteBindings<P, Q, H>;
               }
-              throw loaderResult.error;
             }
-            const loaded = loaderResult._tag === "Success" ? loaderResult.value : undefined;
-            loaderDataAtom = Atom.value(loaded);
-            loaderResultAtom = Atom.value(loaderResult);
+            throw loaderResult.error;
+          }
+          const resultState = yield* state(loaderResult);
+          loaderResultAtom = resultState;
+          // Data stays on the last success while a new load is in flight.
+          let lastData: unknown = loaderResult._tag === "Success" ? loaderResult.value : undefined;
+          loaderDataAtom = Atom.derived(() => {
+            const current = resultState();
+            if (current._tag === "Success") lastData = current.value;
+            return lastData;
+          });
+          const unfollow = yield* followLoaderEntry({
+            component: wrapped,
+            meta: {
+              pattern,
+              fullPattern,
+              paramsSchema: options?.params,
+              querySchema: options?.query,
+              hashSchema: options?.hash,
+              exact: options?.exact,
+              id: routeId,
+            },
+            routeId,
+            router,
+            matched: routeMatched,
+            result: resultState,
+          });
+          const instanceScope = yield* Effect.serviceOption(Scope.Scope);
+          if (instanceScope._tag === "Some") {
+            yield* Scope.addFinalizer(instanceScope.value, Effect.sync(unfollow));
           }
         }
 
@@ -2767,7 +3012,7 @@ export function guard<Req, E>(
  * and a silently doubled `press` handler is indistinguishable from a bug in
  * the behavior itself.
  */
-const attachmentRegistryKey = Symbol.for(
+const attachmentRegistryKey = /*#__PURE__*/ Symbol.for(
   "affe/Component/attachmentRegistry",
 );
 
@@ -2776,7 +3021,7 @@ const attachmentRegistryKey = Symbol.for(
  * wrapper spreads like the attachment registry. Maps binding name to the
  * COMPONENT-owned atom and its initial value (for shape compatibility).
  */
-const providedStateRegistryKey = Symbol.for(
+const providedStateRegistryKey = /*#__PURE__*/ Symbol.for(
   "affe/Component/providedStateRegistry",
 );
 

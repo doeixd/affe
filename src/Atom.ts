@@ -5,6 +5,8 @@ import {
   type Accessor,
   createEffect,
   onCleanup,
+  untrack,
+  useContext,
 } from "./api.js";
 import { Owner, getOwner, runWithOwner } from "./owner.js";
 import {
@@ -23,6 +25,8 @@ import {
   type ResultDefectError,
   type MutationSupersededError,
   type OptimisticRef,
+  type QueryRef,
+  ManagedRuntimeContext,
 } from "./effect-ts.js";
 import {
   flushReactivityRuntime,
@@ -32,11 +36,12 @@ import {
   type ReactivityKeysInput as RuntimeReactivityKeysInput,
 } from "./reactivity-runtime.js";
 import { SingleFlightTransportTag, type SingleFlightTransportService } from "./SingleFlightTransport.js";
+import { decodeSingleFlightResponse, fetchSingleFlight, hydrateSingleFlightResult } from "./single-flight-wire.js";
 
 const TypeId = "~affe/Atom" as const;
 const WritableTypeId = "~affe/Atom/Writable" as const;
 const ReadonlyTypeId = "~affe/Atom/Readonly" as const;
-const TypeVarianceId: unique symbol = Symbol.for("affe/Atom/TypeVariance");
+const TypeVarianceId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Atom/TypeVariance");
 
 type RefreshRef = {
   readonly get: Accessor<number>;
@@ -64,8 +69,8 @@ type DeepWiden<T> =
 
 type WithFallbackValue<A, Fallback> = Exclude<A, null | undefined> | Fallback;
 
-const refreshMap = new WeakMap<ReadonlyAtom<any, any, any>, RefreshRef>();
-const selfWriteMap = new WeakMap<Writable<any, any>, (value: any) => void>();
+const refreshMap = /*#__PURE__*/ new WeakMap<ReadonlyAtom<any, any, any>, RefreshRef>();
+const selfWriteMap = /*#__PURE__*/ (() => new WeakMap<Writable<any, any>, (value: any) => void>())();
 
 function ensureRefresh<A>(atom: ReadonlyAtom<A, any, any>): RefreshRef {
   const existing = refreshMap.get(atom);
@@ -74,6 +79,23 @@ function ensureRefresh<A>(atom: ReadonlyAtom<A, any, any>): RefreshRef {
   const next = { get, bump: () => set((n) => n + 1) };
   refreshMap.set(atom, next);
   return next;
+}
+
+/**
+ * Build shared, lazily-created atom machinery (a query computation, a watcher)
+ * outside of whichever reader happens to touch the atom first.
+ *
+ * Atoms are shared: their internal computations must not become children of
+ * the first reader's per-run owner (the reader's next re-run would dispose
+ * them, freezing the value or interrupting an in-flight fiber), and their
+ * creation must not register dependencies on the reader. The returned owner
+ * is the machinery's lifetime owner; nothing disposes it today because atoms
+ * have no dispose path, so the machinery lives as long as the atom.
+ */
+function createDetached<T>(fn: () => T): { readonly value: T; readonly owner: Owner } {
+  const owner = new Owner(null);
+  const value = runWithOwner(owner, () => untrack(fn));
+  return { value, owner };
 }
 
 /**
@@ -407,7 +429,7 @@ function evaluate<A>(atom: ReadonlyAtom<A, any, any>, ctx: Context): A {
   return impl.read(ctx);
 }
 
-const defaultContext: Context = Object.assign(
+const defaultContext: Context = /*#__PURE__*/ (() => Object.assign(
   ((atom: ReadonlyAtom<any>) => evaluate(atom, defaultContext)) as Context,
   {
     get<A>(atom: ReadonlyAtom<A, any, any>): A {
@@ -429,7 +451,7 @@ const defaultContext: Context = Object.assign(
       onCleanup(finalizer);
     },
   },
-);
+))();
 
 function makeWriteContext<A>(self: Writable<A, any>): WriteContext<A> {
   return {
@@ -669,8 +691,17 @@ export function family<Args extends ReadonlyArray<unknown>, T>(
     node.value = undefined;
     node.children.clear();
   };
-  const sameArgs = (a: Args, b: Args) =>
-    a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
+  // `evictArgs` clears the whole trie subtree under `args`, so every member
+  // whose args extend `args` is gone from the index too; drop it from
+  // `members` so `size` / `keys()` / `entries()` stay truthful.
+  const removeMembersUnder = (args: Args) => {
+    for (let i = members.length - 1; i >= 0; i--) {
+      const candidate = members[i]!.args;
+      if (candidate.length >= args.length && args.every((v, j) => v === candidate[j])) {
+        members.splice(i, 1);
+      }
+    }
+  };
 
   const getOrCreate = ((...args: Args) => {
     const node = familyPath(root, args, true) as FamilyNode<T>;
@@ -682,7 +713,10 @@ export function family<Args extends ReadonlyArray<unknown>, T>(
     if (capacity !== undefined) {
       while (members.length > capacity) {
         const oldest = members.shift();
-        if (oldest !== undefined) evictArgs(oldest.args);
+        if (oldest !== undefined) {
+          evictArgs(oldest.args);
+          removeMembersUnder(oldest.args);
+        }
       }
     }
     return next;
@@ -690,8 +724,7 @@ export function family<Args extends ReadonlyArray<unknown>, T>(
 
   getOrCreate.evict = (...args: Args) => {
     evictArgs(args);
-    const index = members.findIndex((entry) => sameArgs(entry.args, args));
-    if (index >= 0) members.splice(index, 1);
+    removeMembersUnder(args);
   };
   getOrCreate.clear = () => {
     root.children.clear();
@@ -878,6 +911,31 @@ export function optimistic<A, R>(
  *
  * On typed `Failure`, schedules refreshes according to the provided schedule.
  */
+/**
+ * Lifetime of a background policy (polling, stale refresh, retry): it runs
+ * while at least one reactive reader holds the atom, not per read. `hold()`
+ * registers the current reader (returning false for an untracked read, which
+ * starts nothing); when the last reader's owner is cleaned up, `onIdle` runs a
+ * microtask later, so a reader that merely re-runs keeps the policy alive
+ * instead of restarting it.
+ */
+function policyLifetime(onIdle: () => void): { readonly hold: () => boolean } {
+  let readers = 0;
+  return {
+    hold: () => {
+      if (getOwner() === null) return false;
+      readers += 1;
+      onCleanup(() => {
+        readers -= 1;
+        queueMicrotask(() => {
+          if (readers === 0) onIdle();
+        });
+      });
+      return true;
+    },
+  };
+}
+
 export function withRetry<A, E, R = never>(schedule: Schedule.Schedule<unknown, any, any>): (self: ResultAtom<A, E, R>) => ResultAtom<A, E, R>;
 export function withRetry<A, E, R = never>(self: ResultAtom<A, E, R>, schedule: Schedule.Schedule<unknown, any, any>): ResultAtom<A, E, R>;
 export function withRetry<A, E, R = never>(
@@ -902,8 +960,11 @@ export function withRetry<A, E, R = never>(
     }
   };
 
+  const lifetime = policyLifetime(stop);
+
   return readable((get) => {
     const result = get(self);
+    if (!lifetime.hold()) return result;
     if (result._tag === "Failure") {
       if (retryFiber === null || !Object.is(retryFailure, result.error)) {
         stop();
@@ -918,8 +979,6 @@ export function withRetry<A, E, R = never>(
     } else {
       stop();
     }
-
-    onCleanup(stop);
     return result;
   });
 }
@@ -961,9 +1020,10 @@ export function withPolling<A, E, R = never>(
     }
   };
 
+  const lifetime = policyLifetime(stop);
+
   return readable((get) => {
-    ensure();
-    onCleanup(stop);
+    if (lifetime.hold()) ensure();
     return get(self);
   });
 }
@@ -988,28 +1048,43 @@ export function withStaleTime<A, E, R = never>(
   const duration = arg2;
   let staleFiber: Fiber.Fiber<unknown, never> | null = null;
 
+  // The settled result the running timer was scheduled for: a re-read of the
+  // same result keeps the timer; only a newly settled result restarts it.
+  let scheduledFor: unknown = undefined;
+
   const stop = (): void => {
     if (staleFiber !== null) {
       Effect.runFork(Fiber.interrupt(staleFiber));
       staleFiber = null;
     }
+    scheduledFor = undefined;
   };
+
+  const lifetime = policyLifetime(stop);
 
   return readable((get) => {
     const result = get(self);
-    stop();
+    if (!lifetime.hold()) return result;
     if (result._tag === "Success" || result._tag === "Failure" || result._tag === "Defect") {
-      const sleepFor = (typeof duration === "number"
-        ? `${duration} millis`
-        : duration) as any;
-      staleFiber = Effect.runFork(
-        Effect.sleep(sleepFor).pipe(
-          Effect.flatMap(() => Effect.sync(() => defaultContext.refresh(self))),
-          Effect.catchCause(() => Effect.void),
-        ),
-      );
+      if (staleFiber === null || !Object.is(scheduledFor, result)) {
+        stop();
+        scheduledFor = result;
+        const sleepFor = (typeof duration === "number"
+          ? `${duration} millis`
+          : duration) as any;
+        staleFiber = Effect.runFork(
+          Effect.sleep(sleepFor).pipe(
+            Effect.flatMap(() => Effect.sync(() => {
+              staleFiber = null;
+              defaultContext.refresh(self);
+            })),
+            Effect.catchCause(() => Effect.void),
+          ),
+        );
+      }
+    } else {
+      stop();
     }
-    onCleanup(stop);
     return result;
   });
 }
@@ -1164,7 +1239,6 @@ function runSingleFlightWithTransport<Input, A>(
 ): Effect.Effect<A, ResultDefectError, any> {
   return Effect.gen(function* () {
     const config = options === false ? undefined : options;
-    const Route = yield* Effect.promise(() => import("./Route.js"));
     const response = yield* transport.execute(
       {
         name: mutationName,
@@ -1183,20 +1257,17 @@ function runSingleFlightWithTransport<Input, A>(
     // One wire contract for every transport: the envelope is schema-validated
     // and loader results rehydrate through the canonical Result projection,
     // exactly as `invokeSingleFlight` does (R5.1).
-    const payload = yield* Route.decodeSingleFlightResponse<A>(response).pipe(
+    const payload = yield* decodeSingleFlightResponse<A>(response).pipe(
       Effect.mapError((error) => ({
         _tag: "ResultDefectError",
         defect: error.message,
       } as const)),
     );
     if (config?.hydrate !== false) {
-      const source = yield* Route.resolveRouteSource(config?.app as import("./Route.js").RouteSource | undefined);
-      if (source !== undefined) {
-        yield* Route.hydrateSingleFlightPayload(
-          payload as import("./Route.js").SingleFlightPayload<unknown>,
-          source,
-        );
-      }
+      yield* hydrateSingleFlightResult(
+        payload as import("./Route.js").SingleFlightPayload<unknown>,
+        config?.app as import("./Route.js").RouteSource | undefined,
+      );
     }
     return payload.mutation;
   });
@@ -1218,20 +1289,20 @@ function runSingleFlightWithDirectFetch<Input, A>(
 ): Effect.Effect<A, ResultDefectError> {
   return Effect.tryPromise({
     try: async () => {
-      const Route = await import("./Route.js");
-      const payload = await Effect.runPromise(Route.invokeSingleFlight<[Input], A>(
-        options.endpoint ?? mutationName ?? "",
-        {
-          name: mutationName,
-          args: [input],
-          url: resolveSingleFlightUrl(input, options.url),
-        },
-        {
-          fetch: options.fetch,
-          hydrate: options.hydrate,
-          app: options.app as import("./Route.js").RouteSource | undefined,
-        },
-      ));
+      const payload = await Effect.runPromise(
+        fetchSingleFlight<[Input], A>(
+          options.endpoint ?? mutationName ?? "",
+          { name: mutationName, args: [input], url: resolveSingleFlightUrl(input, options.url) },
+          options.fetch,
+        ).pipe(
+          Effect.tap((result) => options.hydrate === false
+            ? Effect.void
+            : hydrateSingleFlightResult(
+              result as import("./Route.js").SingleFlightPayload<unknown>,
+              options.app as import("./Route.js").RouteSource | undefined,
+            )),
+        ),
+      );
       return payload.mutation;
     },
     catch: (error) => ({
@@ -1346,7 +1417,7 @@ export const runtime: {
   addGlobalLayer<R, E>(layer: Layer.Layer<R, E, never>): void;
   /** Clear previously registered global runtime Layers. */
   clearGlobalLayers(): void;
-} = Object.assign(runtimeImpl, {
+} = /*#__PURE__*/ Object.assign(runtimeImpl, {
   addGlobalLayer<R, E>(layer: Layer.Layer<R, E, never>): void {
     globalRuntimeLayers = [...globalRuntimeLayers, layer as unknown as Layer.Layer<any, any, never>];
   },
@@ -1372,7 +1443,7 @@ export const runtimeEffect = <R, E>(layer: Layer.Layer<R, E, never>): Effect.Eff
 export type ReactivityKeysInput =
   RuntimeReactivityKeysInput;
 
-const ReactivityKeysSymbol: unique symbol = Symbol.for("affe/ReactivityKeys");
+const ReactivityKeysSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/ReactivityKeys");
 
 type ReactivityTagged = {
   [ReactivityKeysSymbol]?: ReadonlyArray<string>;
@@ -1411,22 +1482,45 @@ export function withReactivity<A, E = never, R = never>(
 ): ReadonlyAtom<A, E, R> | ((self: ReadonlyAtom<A, E, R>) => ReadonlyAtom<A, E, R>) {
   if (arg2 === undefined) {
     const keys = normalizeReactivityKeys(arg1 as ReactivityKeysInput);
-    return (self: ReadonlyAtom<A, E, R>) => {
-      const wrapped = readable<A, E, R>((get) => {
-        trackReactivityRuntime(keys);
-        return get(self);
-      }) as Atom<A, E, R> & ReactivityTagged;
-      wrapped[ReactivityKeysSymbol] = keys;
-      return wrapped;
-    };
+    return (self: ReadonlyAtom<A, E, R>) => wrapWithReactivity(self, keys);
   }
+  return wrapWithReactivity(arg1 as ReadonlyAtom<A, E, R>, normalizeReactivityKeys(arg2));
+}
 
-  const self = arg1 as ReadonlyAtom<A, E, R>;
-  const keys = normalizeReactivityKeys(arg2);
-  const wrapped = readable<A, E, R>((get) => {
+function wrapWithReactivity<A, E, R>(
+  self: ReadonlyAtom<A, E, R>,
+  keys: ReadonlyArray<string>,
+): ReadonlyAtom<A, E, R> {
+  // Tracking the keys in the wrapper's read only re-runs the wrapper's
+  // readers; a query atom underneath would keep serving its cached result.
+  // A detached watcher turns each key invalidation into a real refresh of the
+  // wrapped atom (re-running a query's effect). It is created on first read
+  // so an unread atom does no work.
+  let watching = false;
+  const ensureWatcher = (): void => {
+    if (watching) return;
+    watching = true;
+    createDetached(() => {
+      let first = true;
+      createEffect(() => {
+        trackReactivityRuntime(keys);
+        if (first) {
+          first = false;
+          return;
+        }
+        untrack(() => defaultContext.refresh(self));
+      });
+    });
+  };
+  const wrapped = readable<A, E, R>(
+    (get) => {
+      ensureWatcher();
       trackReactivityRuntime(keys);
       return get(self);
-  }) as Atom<A, E, R> & ReactivityTagged;
+    },
+    // `Atom.refresh(wrapped)` forwards to the wrapped atom.
+    (refreshAtom) => refreshAtom(toAtom(self)),
+  ) as Atom<A, E, R> & ReactivityTagged;
   wrapped[ReactivityKeysSymbol] = keys;
   return wrapped;
 }
@@ -1998,7 +2092,7 @@ type KvsCodec<A> = {
   readonly encode?: (value: A) => unknown;
 };
 
-const memoryKvs = new Map<string, string>();
+const memoryKvs = /*#__PURE__*/ new Map<string, string>();
 
 function getDefaultStorage(): KeyValueStorage {
   if (typeof localStorage !== "undefined") return localStorage;
@@ -2373,12 +2467,20 @@ export const subscribe = <A>(
   const owner = new Owner();
   runWithOwner(owner, () => {
     let first = true;
+    let previous: A;
     createEffect(() => {
       const next = defaultContext.get(self);
       if (first) {
         first = false;
+        previous = next;
         if (options?.immediate === false) return;
+        f(next);
+        return;
       }
+      // The effect can re-run without the value changing (e.g. a derived atom
+      // recomputed to the same value); only report actual changes.
+      if (Object.is(previous, next)) return;
+      previous = next;
       f(next);
     });
   });
@@ -2499,19 +2601,32 @@ export function query<A, E, R>(
   arg1: RuntimeLike<R, unknown> | (() => Effect.Effect<A, E, R>),
   arg2?: () => Effect.Effect<A, E, R>,
 ): ResultAtom<A, E, R> {
-  let accessor: Accessor<Result<A, E>> | null = null;
+  let ref: QueryRef<A, E> | null = null;
 
-  const getAccessor = (): Accessor<Result<A, E>> => {
-    if (accessor !== null) return accessor;
-    if (arg2 === undefined) {
-      accessor = defineQuery(arg1 as () => Effect.Effect<A, E, R>).result;
-    } else {
-      accessor = defineQuery(arg2, { runtime: arg1 as RuntimeLike<R, unknown> }).result;
-    }
-    return accessor as Accessor<Result<A, E>>;
+  const getRef = (): QueryRef<A, E> => {
+    if (ref !== null) return ref;
+    // Resolve the ambient runtime under the reader (it is owner-context
+    // scoped), then build the query detached from the reader's owner so a
+    // reader re-run never disposes the shared query or interrupts its fiber.
+    const runtime = arg2 === undefined
+      ? useContext(ManagedRuntimeContext) as RuntimeLike<R, unknown> | null
+      : arg1 as RuntimeLike<R, unknown>;
+    const fn = (arg2 ?? arg1) as () => Effect.Effect<A, E, R>;
+    ref = createDetached(() =>
+      runtime === null ? defineQuery(fn) : defineQuery(fn, { runtime })
+    ).value as QueryRef<A, E>;
+    return ref;
   };
 
-  return readable<Result<A, E>, E, R>(() => getAccessor()());
+  return readable<Result<A, E>, E, R>(
+    () => getRef().result(),
+    // `Atom.refresh` (and withStaleTime/withRetry/withPolling/withReactivity,
+    // which refresh through it) re-runs the query's effect. An atom that was
+    // never read has no query yet and nothing to refresh.
+    () => {
+      ref?.refresh();
+    },
+  );
 }
 
 /**
@@ -2524,10 +2639,24 @@ export const effect = <A, E>(
   fn: () => Effect.Effect<A, E, never>,
 ): ResultAtom<A, E> => {
   let accessor: Accessor<Result<A, E>> | null = null;
+  // Bumped by `Atom.refresh`; read inside the effect's computation so a
+  // refresh re-runs `fn`.
+  const [version, setVersion] = createSignal(0);
   const getAccessor = (): Accessor<Result<A, E>> => {
     if (accessor !== null) return accessor;
-    accessor = atomEffect(fn);
+    // Detached from the reader's owner: see `createDetached`.
+    accessor = createDetached(() =>
+      atomEffect(() => {
+        version();
+        return fn();
+      })
+    ).value;
     return accessor;
   };
-  return readable<Result<A, E>, E>(() => getAccessor()());
+  return readable<Result<A, E>, E>(
+    () => getAccessor()(),
+    () => {
+      if (accessor !== null) setVersion((n) => n + 1);
+    },
+  );
 };

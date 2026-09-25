@@ -1,4 +1,5 @@
 import { Context, Effect, Fiber, Layer, Schema } from "effect";
+import { createSignal, type Accessor } from "./api.js";
 import { Result as CoreResult, type Result as CoreResultType } from "./effect-ts.js";
 import { makeResourceCacheIdentity } from "./cache-identity.js";
 import {
@@ -54,6 +55,13 @@ export interface LoaderCacheStore {
   /** Set once {@link LoaderCacheStore.dispose} has run; refuses late writes. */
   disposed: boolean;
   /**
+   * Reactive revision, bumped on every entry write, invalidation and clear.
+   * Mounted route components read it to follow their entry: a single-flight
+   * seed or an invalidation reaches a page that is already on screen.
+   */
+  readonly revision: Accessor<number>;
+  readonly bumpRevision: () => void;
+  /**
    * Set when a matched route guard refused this request (R3's server half).
    * The route setup path consults it to render the denied route as blocked —
    * without it, a render-time cache miss would run the protected loader that
@@ -79,7 +87,7 @@ export interface LoaderCacheStore {
 
 // Live stores are tracked weakly: reactivity invalidation must reach every
 // store that is still in use, without pinning per-request stores in memory.
-const trackedStores = new Set<WeakRef<LoaderCacheStore>>();
+const trackedStores = /*#__PURE__*/ new Set<WeakRef<LoaderCacheStore>>();
 
 function forEachLoaderCacheStore(f: (store: LoaderCacheStore) => void): void {
   for (const ref of [...trackedStores]) {
@@ -94,7 +102,10 @@ function forEachLoaderCacheStore(f: (store: LoaderCacheStore) => void): void {
 
 /** Create an isolated loader cache store (one per server request, typically). */
 export function makeLoaderCacheStore(): LoaderCacheStore {
+  const [revision, setRevision] = createSignal(0);
   const store: LoaderCacheStore = {
+    revision,
+    bumpRevision: () => setRevision((n) => n + 1),
     cache: new Map(),
     reactivityToCache: new Map(),
     reactivitySubscriptions: new Map(),
@@ -118,10 +129,10 @@ export function makeLoaderCacheStore(): LoaderCacheStore {
 }
 
 /** The process-wide default store; this is the client/document-level cache. */
-export const defaultLoaderCacheStore: LoaderCacheStore = makeLoaderCacheStore();
+export const defaultLoaderCacheStore: LoaderCacheStore = /*#__PURE__*/ makeLoaderCacheStore();
 
 /** Injectable loader cache service. */
-export const LoaderCacheTag = Context.Service<LoaderCacheStore>("LoaderCache");
+export const LoaderCacheTag = /*#__PURE__*/ Context.Service<LoaderCacheStore>("LoaderCache");
 
 /**
  * Ambient supervisor for SWR refresh fibers (`DQ-032`, the navigation-scope
@@ -134,7 +145,7 @@ export interface SwrRefreshSupervisor {
 }
 
 export const SwrRefreshSupervisorTag =
-  Context.Service<SwrRefreshSupervisor>("SwrRefreshSupervisor");
+  /*#__PURE__*/ Context.Service<SwrRefreshSupervisor>("SwrRefreshSupervisor");
 
 /**
  * Default loader-cache layer: the process-wide store, i.e. exactly today's
@@ -171,18 +182,35 @@ export function resolveLoaderCacheStore(store?: LoaderCacheStore): LoaderCacheSt
  * the ambient store, then the default store. Never adds a requirement, so
  * loader plumbing keeps its `R = never` signatures.
  */
-export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = Effect.serviceOption(LoaderCacheTag).pipe(
+export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = /*#__PURE__*/ (() => Effect.serviceOption(LoaderCacheTag).pipe(
   Effect.map((option) => (option._tag === "Some" ? option.value : resolveLoaderCacheStore())),
-);
+))();
+
+// When each reactivity key was last invalidated, per store, on one monotonic
+// sequence. A loader run compares it with the sequence at its start: an
+// invalidation that lands while the loader is in flight must leave the result
+// stale, not be erased by the result's fresh `staleAt`.
+let invalidationSequence = 0;
+const lastInvalidated = /*#__PURE__*/ new WeakMap<LoaderCacheStore, Map<string, number>>();
 
 function markStaleByReactivityKey(store: LoaderCacheStore, key: string): void {
+  invalidationSequence += 1;
+  let seen = lastInvalidated.get(store);
+  if (seen === undefined) {
+    seen = new Map();
+    lastInvalidated.set(store, seen);
+  }
+  seen.set(key, invalidationSequence);
   const cacheKeys = store.reactivityToCache.get(key);
   if (!cacheKeys) return;
+  let changed = false;
   for (const cacheKey of cacheKeys) {
     const existing = store.cache.get(cacheKey);
     if (!existing) continue;
     store.cache.set(cacheKey, { ...existing, staleAt: 0 });
+    changed = true;
   }
+  if (changed) store.bumpRevision();
 }
 
 function ensureReactivitySubscription(store: LoaderCacheStore, key: string): void {
@@ -217,19 +245,32 @@ onReactivityInvalidation((keys) => {
   });
 });
 
+/**
+ * Convert a duration option (`number` of ms, or a string such as `"30s"`,
+ * `"1.5 seconds"`, `"5 minutes"`) to milliseconds. `undefined` yields
+ * `fallbackMs`.
+ *
+ * An unparseable string is a programming error, not a silent `0`: it throws
+ * a descriptive `Error` naming the input, so a typo like `"5 mintues"` fails
+ * where it is used instead of quietly disabling caching.
+ */
 export function durationToMillis(input: DurationInput, fallbackMs: number): number {
+  if (input === undefined) return fallbackMs;
   if (typeof input === "number") return input;
   if (typeof input !== "string") return fallbackMs;
   const s = input.trim().toLowerCase();
-  const m = s.match(/^(\d+)\s*(ms|millis|millisecond|milliseconds|s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours)$/);
-  if (!m) return fallbackMs;
+  const m = s.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(ms|millis|millisecond|milliseconds|s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours)$/);
+  if (!m) {
+    throw new Error(
+      `[affe/router] Invalid duration "${input}": expected a number of milliseconds or a string like "500ms", "1.5s", "5 minutes", or "2 hours".`,
+    );
+  }
   const n = Number(m[1]);
-  const unit = m[2];
+  const unit = m[2]!;
   if (unit.startsWith("ms") || unit.startsWith("milli")) return n;
   if (unit === "s" || unit.startsWith("sec") || unit.startsWith("second")) return n * 1000;
   if (unit === "m" || unit.startsWith("min") || unit.startsWith("minute")) return n * 60_000;
-  if (unit === "h" || unit.startsWith("hr") || unit.startsWith("hour")) return n * 3_600_000;
-  return fallbackMs;
+  return n * 3_600_000;
 }
 
 export function makeLoaderCacheKey(routeId: string, params: unknown): { readonly key: string; readonly paramsKey: string } {
@@ -286,6 +327,7 @@ export function setLoaderCacheEntry(routeId: string, params: unknown, result: Co
     target.reactivityToCache.set(rk, set);
     ensureReactivitySubscription(target, rk);
   }
+  target.bumpRevision();
   return entry;
 }
 
@@ -336,11 +378,13 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
   if (!routeId) {
     target.cache.clear();
     target.reactivityToCache.clear();
+    target.bumpRevision();
     return;
   }
   for (const [k, v] of target.cache.entries()) {
     if (v.routeId === routeId) target.cache.delete(k);
   }
+  target.bumpRevision();
 }
 
 /**
@@ -349,12 +393,12 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
  * Schema-tagged like the resumability layer's errors: a real `Error` with a
  * stack, carrying which route and against which budget.
  */
-export class RouteLoaderTimeoutError extends Schema.TaggedErrorClass<RouteLoaderTimeoutError>(
+export class RouteLoaderTimeoutError extends /*#__PURE__*/ (() => Schema.TaggedError<RouteLoaderTimeoutError>(
   "affe/RouteLoaderTimeoutError",
 )("RouteLoaderTimeoutError", {
   routeId: Schema.String,
   timeoutMs: Schema.Number,
-}) {}
+}))() {}
 
 export function runCachedLoader<A, E>(
   routeId: string,
@@ -441,8 +485,8 @@ function executeAndCache<A, E>(
         }),
       )
     : run;
-  return Effect.sync(() => beginReactivityReadCapture()).pipe(
-    Effect.flatMap((capture) => timedRun.pipe(
+  return Effect.sync(() => ({ capture: beginReactivityReadCapture(), startedAt: invalidationSequence })).pipe(
+    Effect.flatMap(({ capture, startedAt }) => timedRun.pipe(
       Effect.exit,
       Effect.map((exit) => {
         // Keep-stale on failure: a loader that fails while the cache still
@@ -459,7 +503,11 @@ function executeAndCache<A, E>(
         // most of them, but a refresh completing in the same tick as dispose
         // must not resurrect the entry.
         if (!store.disposed) {
-          setLoaderCacheEntry(routeId, params, out, { ...options, reactivityKeys: mergedKeys }, store);
+          const entry = setLoaderCacheEntry(routeId, params, out, { ...options, reactivityKeys: mergedKeys }, store);
+          const seen = lastInvalidated.get(store);
+          if (seen !== undefined && mergedKeys.some((key) => (seen.get(key) ?? 0) > startedAt)) {
+            store.cache.set(entry.key, { ...entry, staleAt: 0 });
+          }
         }
         return out;
       }),
