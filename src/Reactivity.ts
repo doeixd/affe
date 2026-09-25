@@ -79,7 +79,7 @@ export interface ReactivityService {
   readonly lastInvalidated?: () => Effect.Effect<ReadonlyArray<ReactivityKey>>;
 }
 
-export const ReactivityTag = Context.Service<ReactivityService>("Reactivity");
+export const ReactivityTag = /*#__PURE__*/ Context.Service<ReactivityService>("Reactivity");
 
 /**
  * Mark an Effectful read as participating in Reactivity-driven dependency capture.
@@ -183,9 +183,9 @@ function makeLive(options?: { readonly autoFlush?: boolean; readonly captureLast
   };
 }
 
-export const live: Layer.Layer<ReactivityService> = Layer.succeed(ReactivityTag, makeLive({ autoFlush: true }));
+export const live: Layer.Layer<ReactivityService> = /*#__PURE__*/ Layer.succeed(ReactivityTag, makeLive({ autoFlush: true }));
 
-export const test: Layer.Layer<ReactivityService> = Layer.succeed(
+export const test: Layer.Layer<ReactivityService> = /*#__PURE__*/ Layer.succeed(
   ReactivityTag,
   makeLive({ autoFlush: false, captureLastInvalidated: true }),
 );

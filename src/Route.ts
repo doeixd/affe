@@ -63,7 +63,7 @@ export interface RouterService {
   readonly onNavigationError?: (error: unknown) => Effect.Effect<void>;
 }
 
-export const RouterTag = Context.Service<RouterService>("Router");
+export const RouterTag = /*#__PURE__*/ Context.Service<RouterService>("Router");
 
 export interface RouteContext<P = unknown, Q = unknown, H = unknown> {
   readonly prefix: Atom.ReadonlyAtom<string>;
@@ -77,9 +77,9 @@ export interface RouteContext<P = unknown, Q = unknown, H = unknown> {
   readonly loaderResult?: Atom.ReadonlyAtom<CoreResultType<unknown, unknown>>;
 }
 
-export const RouteContextTag = Context.Service<RouteContext<any, any, any>>("RouteContext");
-export const ServerRequestTag = Context.Service<{ readonly request: Request; readonly url: URL }>("ServerRequest");
-export const ServerResponseTag = Context.Service<{
+export const RouteContextTag = /*#__PURE__*/ Context.Service<RouteContext<any, any, any>>("RouteContext");
+export const ServerRequestTag = /*#__PURE__*/ Context.Service<{ readonly request: Request; readonly url: URL }>("ServerRequest");
+export const ServerResponseTag = /*#__PURE__*/ Context.Service<{
   readonly setStatus: (status: number) => void;
   readonly setHeader: (name: string, value: string) => void;
   readonly appendHeader: (name: string, value: string) => void;
@@ -88,10 +88,10 @@ export const ServerResponseTag = Context.Service<{
   readonly snapshot: () => { readonly status: number; readonly headers: ReadonlyMap<string, ReadonlyArray<string>> };
 }>("ServerResponse");
 
-export const RouteMetaSymbol: unique symbol = Symbol.for("affe/RouteMeta");
-export const RouteLoaderMetaSymbol: unique symbol = Symbol.for("affe/RouteLoaderMeta");
-export const RouteNodeSymbol: unique symbol = Symbol.for("affe/RouteNode");
-export const RouteRegistrySymbol: unique symbol = Symbol.for("affe/RouteRegistry");
+export const RouteMetaSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/RouteMeta");
+export const RouteLoaderMetaSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/RouteLoaderMeta");
+export const RouteNodeSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/RouteNode");
+export const RouteRegistrySymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/RouteRegistry");
 
 export interface RouteMeta<P, Q, H> {
   readonly pattern: string;
@@ -103,7 +103,7 @@ export interface RouteMeta<P, Q, H> {
   readonly id?: string;
 }
 
-export const UnifiedRouteSymbol: unique symbol = Symbol.for("affe/UnifiedRoute");
+export const UnifiedRouteSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/UnifiedRoute");
 
 type Pipeable<Self> = {
   pipe(): Self;
@@ -471,7 +471,7 @@ export type SingleFlightResponse<A, E = unknown> =
 // a loader produced on the server is a `Date` again in the client cache.
 
 /** The transport failed: network, endpoint, or the action itself. */
-export class SingleFlightInvokeError extends Schema.TaggedError<SingleFlightInvokeError>(
+export class SingleFlightInvokeError extends /*#__PURE__*/ Schema.TaggedError<SingleFlightInvokeError>(
   "affe/SingleFlightInvokeError",
 )("SingleFlightInvokeError", {
   message: Schema.String,
@@ -485,18 +485,18 @@ export class SingleFlightInvokeError extends Schema.TaggedError<SingleFlightInvo
  * a malformed payload is deploy skew or tampering, a failed transport is a
  * retry.
  */
-export class SingleFlightDecodeError extends Schema.TaggedError<SingleFlightDecodeError>(
+export class SingleFlightDecodeError extends /*#__PURE__*/ Schema.TaggedError<SingleFlightDecodeError>(
   "affe/SingleFlightDecodeError",
 )("SingleFlightDecodeError", {
   message: Schema.String,
 }) {}
 
-export const SingleFlightWireLoaderEntrySchema = Schema.Struct({
+export const SingleFlightWireLoaderEntrySchema = /*#__PURE__*/ Schema.Struct({
   routeId: Schema.String,
   result: Serialization.ResultWire,
 });
 
-export const SingleFlightWirePayloadSchema = Schema.Struct({
+export const SingleFlightWirePayloadSchema = /*#__PURE__*/ Schema.Struct({
   // `undefined` mutation values (void actions) are dropped by JSON, so the
   // field is optional on the wire.
   mutation: Schema.optional(Schema.Unknown),
@@ -513,7 +513,7 @@ export const SingleFlightWirePayloadSchema = Schema.Struct({
  */
 export const singleFlightWireVersion = 1 as const;
 
-export const SingleFlightResponseSchema = Schema.Union([
+export const SingleFlightResponseSchema = /*#__PURE__*/ Schema.Union([
   Schema.Struct({
     version: Schema.Literal(singleFlightWireVersion),
     ok: Schema.Literal(true),
@@ -1135,7 +1135,7 @@ export interface RouteSourceService {
 }
 
 /** Injectable route source, consumed by `RouterService.preload`. */
-export const RouteSourceTag = Context.Service<RouteSourceService>("RouteSource");
+export const RouteSourceTag = /*#__PURE__*/ Context.Service<RouteSourceService>("RouteSource");
 
 /** Provide the app's route source to router layers and preloads. */
 export function routeSourceLayer(source: RouteSource): Layer.Layer<RouteSourceService> {
@@ -1243,10 +1243,10 @@ export function makeRouteHeadStore(options?: { readonly applyToDocument?: boolea
 }
 
 /** Injectable per-request head store. */
-export const RouteHeadTag = Context.Service<RouteHeadStore>("RouteHead");
+export const RouteHeadTag = /*#__PURE__*/ Context.Service<RouteHeadStore>("RouteHead");
 
 /** The client/document head store, used when nothing scopes it. */
-export const clientRouteHeadStore: RouteHeadStore = makeRouteHeadStore({ applyToDocument: true });
+export const clientRouteHeadStore: RouteHeadStore = /*#__PURE__*/ makeRouteHeadStore({ applyToDocument: true });
 
 let ambientRouteHeadStore: RouteHeadStore | undefined;
 
@@ -1270,7 +1270,7 @@ export function resolveRouteHeadStore(store?: RouteHeadStore): RouteHeadStore {
  * Resolve the head store inside an Effect: provided service, then ambient, then
  * the client store. Adds no requirement.
  */
-export const currentRouteHeadStore: Effect.Effect<RouteHeadStore> = Effect.serviceOption(RouteHeadTag).pipe(
+export const currentRouteHeadStore: Effect.Effect<RouteHeadStore> = /*#__PURE__*/ Effect.serviceOption(RouteHeadTag).pipe(
   Effect.map((option) => (option._tag === "Some" ? option.value : resolveRouteHeadStore())),
 );
 
@@ -2633,10 +2633,10 @@ export type RouteLink<P, Q> = ((paramsValue: P, options?: { readonly query?: Par
 };
 
 /** Access the current server request inside SSR/server handlers. */
-export const serverRequest = Effect.service(ServerRequestTag);
+export const serverRequest = /*#__PURE__*/ Effect.service(ServerRequestTag);
 
 /** Access just the current request URL inside SSR/server handlers. */
-export const serverUrl = Effect.service(ServerRequestTag).pipe(Effect.map((value) => value.url));
+export const serverUrl = /*#__PURE__*/ Effect.service(ServerRequestTag).pipe(Effect.map((value) => value.url));
 
 /** Set the current server response status. */
 export const setStatus = (status: number) =>
@@ -2680,22 +2680,22 @@ export function matchPattern(pattern: string, pathname: string, exact?: boolean)
   return matchPatternSegments(pattern, pathname, exact === true);
 }
 
-export const params = Effect.gen(function* () {
+export const params = /*#__PURE__*/ Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.params();
 });
 
-export const query = Effect.gen(function* () {
+export const query = /*#__PURE__*/ Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.query();
 });
 
-export const hash = Effect.gen(function* () {
+export const hash = /*#__PURE__*/ Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.hash();
 });
 
-export const prefix = Effect.gen(function* () {
+export const prefix = /*#__PURE__*/ Effect.gen(function* () {
   const ctx = yield* RouteContextTag;
   return ctx.prefix();
 });
@@ -3030,7 +3030,7 @@ export function loaderError(
   };
 }
 
-export const reload: Effect.Effect<void, never, RouterService> = Effect.gen(function* () {
+export const reload: Effect.Effect<void, never, RouterService> = /*#__PURE__*/ Effect.gen(function* () {
   const router = yield* RouterTag;
   const current = router.url();
   yield* router.navigate(current.pathname + current.search + current.hash, { replace: true }).pipe(
@@ -3836,14 +3836,14 @@ export const loaderEntryScriptAttribute = "data-af-loader" as const;
  * the client caches under the same identity the server used), and the canonical
  * result wire shape.
  */
-export const LoaderHandoffEntry = Schema.Struct({
+export const LoaderHandoffEntry = /*#__PURE__*/ Schema.Struct({
   routeId: Schema.String,
   params: Schema.Record(Schema.String, Schema.String),
   result: Serialization.ResultWire,
 });
 
 /** The versioned envelope accumulated on `window[loaderHandoffGlobalKey]`. */
-export const LoaderHandoff = Schema.Struct({
+export const LoaderHandoff = /*#__PURE__*/ Schema.Struct({
   version: Schema.Literal(loaderHandoffVersion),
   entries: Schema.Array(LoaderHandoffEntry),
 });
@@ -4231,9 +4231,9 @@ export function browser(options: BrowserRouterOptions = {}): Layer.Layer<RouterS
 }
 
 /** The browser router at the site root. Same as `browser()`. */
-export const Browser: Layer.Layer<RouterService> = browser();
+export const Browser: Layer.Layer<RouterService> = /*#__PURE__*/ browser();
 
-export const Hash: Layer.Layer<RouterService> = Layer.effect(
+export const Hash: Layer.Layer<RouterService> = /*#__PURE__*/ Layer.effect(
   RouterTag,
   Effect.gen(function* () {
     const read = () => new URL(window.location.hash.slice(1) || "/", window.location.origin);

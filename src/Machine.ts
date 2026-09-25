@@ -70,17 +70,17 @@ export type AnyMachine = EffectMachine.Machine.Any;
 
 // ─── Encoded snapshot schema (JSON-safe wire / Component.state payload) ───────
 
-const EncodedActiveState = Schema.Struct({
+const EncodedActiveState = /*#__PURE__*/ Schema.Struct({
   path: Schema.String,
   value: Schema.optionalKey(Schema.Unknown),
 });
 
-const EncodedCompletion = Schema.Struct({
+const EncodedCompletion = /*#__PURE__*/ Schema.Struct({
   path: Schema.String,
   output: Schema.optionalKey(Schema.Unknown),
 });
 
-const EncodedHistoryEntry = Schema.Struct({
+const EncodedHistoryEntry = /*#__PURE__*/ Schema.Struct({
   mode: Schema.Literals(["shallow", "deep"]),
   active: Schema.Array(Schema.String),
   values: Schema.Record(Schema.String, Schema.Unknown),
@@ -93,7 +93,7 @@ const EncodedHistoryEntry = Schema.Struct({
  * Use with `Resume.snapshotState(Machine.EncodedSnapshotSchema)` on the
  * `state` atom returned by `spawn`.
  */
-export const EncodedSnapshotSchema = Schema.Struct({
+export const EncodedSnapshotSchema = /*#__PURE__*/ Schema.Struct({
   _tag: Schema.Literal("MachineSnapshot"),
   version: Schema.Literal(2),
   active: Schema.Array(EncodedActiveState),

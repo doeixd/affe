@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { createSignal, type Accessor } from "./api.js";
 import type { ReactivityService } from "./Reactivity.js";
 
-export const ReactivityKeyTypeId: unique symbol = Symbol.for("affe/Reactivity/Key");
+export const ReactivityKeyTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Reactivity/Key");
 export type ReactivityKeyTypeId = typeof ReactivityKeyTypeId;
 
 /**
@@ -89,9 +89,9 @@ export type ReactivityKeysInput =
 export type NormalizedReactivityKey = string;
 
 let installedService: ReactivityService | null = null;
-const installListeners = new Set<(service: ReactivityService | null) => void>();
-const invalidationListeners = new Set<(keys: ReadonlyArray<NormalizedReactivityKey>) => void>();
-const keyUnsubscribers = new Map<NormalizedReactivityKey, () => void>();
+const installListeners = /*#__PURE__*/ new Set<(service: ReactivityService | null) => void>();
+const invalidationListeners = /*#__PURE__*/ new Set<(keys: ReadonlyArray<NormalizedReactivityKey>) => void>();
+const keyUnsubscribers = /*#__PURE__*/ new Map<NormalizedReactivityKey, () => void>();
 const readCaptureStack: Array<Set<NormalizedReactivityKey>> = [];
 const invalidationCaptureStack: Array<Set<NormalizedReactivityKey>> = [];
 
@@ -131,8 +131,8 @@ export function onReactivityInvalidation(listener: (keys: ReadonlyArray<Normaliz
   };
 }
 
-const reactivityVersionMap = new Map<NormalizedReactivityKey, Accessor<number>>();
-const reactivityBumpMap = new Map<NormalizedReactivityKey, () => void>();
+const reactivityVersionMap = /*#__PURE__*/ new Map<NormalizedReactivityKey, Accessor<number>>();
+const reactivityBumpMap = /*#__PURE__*/ new Map<NormalizedReactivityKey, () => void>();
 
 /**
  * Normalize AUTHORED reactivity keys — the single choke point every

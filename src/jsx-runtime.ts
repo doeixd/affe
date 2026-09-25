@@ -36,7 +36,7 @@ export const jsxs = jsx;
 export const jsxDEV = jsx;
 
 /** Fragment marker. */
-export const Fragment: unknown = Symbol.for("affe/Fragment");
+export const Fragment: unknown = /*#__PURE__*/ Symbol.for("affe/Fragment");
 
 export namespace JSX {
   /** The result of a JSX expression (a DOM node or reactive node at runtime). */

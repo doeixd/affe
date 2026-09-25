@@ -20,7 +20,7 @@ import { Effect, Schema } from "effect";
 import * as Portable from "./Portable.js";
 import type { ResumeSession } from "./resume-session.js";
 
-export const StreamRegionRecordSchema = Schema.Struct({
+export const StreamRegionRecordSchema = /*#__PURE__*/ Schema.Struct({
   version: Schema.Literal(5),
   buildId: Schema.String,
   installationId: Schema.optional(Schema.String),
@@ -29,7 +29,7 @@ export const StreamRegionRecordSchema = Schema.Struct({
 });
 export type StreamRegionRecord = typeof StreamRegionRecordSchema.Type;
 
-export const StreamTerminalRecordSchema = Schema.Struct({
+export const StreamTerminalRecordSchema = /*#__PURE__*/ Schema.Struct({
   version: Schema.Literal(5),
   buildId: Schema.String,
   installationId: Schema.optional(Schema.String),
@@ -38,7 +38,7 @@ export const StreamTerminalRecordSchema = Schema.Struct({
 });
 export type StreamTerminalRecord = typeof StreamTerminalRecordSchema.Type;
 
-export const StreamRecordSchema = Schema.Union([
+export const StreamRecordSchema = /*#__PURE__*/ Schema.Union([
   StreamRegionRecordSchema,
   StreamTerminalRecordSchema,
 ]);
@@ -50,7 +50,7 @@ export type StreamRecord = typeof StreamRecordSchema.Type;
  * the record that blew the budget — one shared tag would make "which record"
  * unanswerable.
  */
-export class ResumeStreamPayloadTooLargeError extends Schema.TaggedError<ResumeStreamPayloadTooLargeError>(
+export class ResumeStreamPayloadTooLargeError extends /*#__PURE__*/ Schema.TaggedError<ResumeStreamPayloadTooLargeError>(
   "affe/ResumeStreamPayloadTooLargeError",
 )("ResumeStreamPayloadTooLargeError", {
   region: Schema.String,
@@ -60,7 +60,7 @@ export class ResumeStreamPayloadTooLargeError extends Schema.TaggedError<ResumeS
 }) {}
 
 /** A streamed record referenced code from a different build. */
-export class ResumeStreamRecordBuildError extends Schema.TaggedError<ResumeStreamRecordBuildError>(
+export class ResumeStreamRecordBuildError extends /*#__PURE__*/ Schema.TaggedError<ResumeStreamRecordBuildError>(
   "affe/ResumeStreamRecordBuildError",
 )("ResumeStreamRecordBuildError", {
   region: Schema.String,

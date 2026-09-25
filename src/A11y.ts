@@ -114,7 +114,7 @@ export function validate<Slots extends View.Slots.Any, ViewSlots>(
 }
 
 /** Slot contract required by the built-in dialog pattern. */
-export const DialogSlots = View.Slots.define({
+export const DialogSlots = /*#__PURE__*/ View.Slots.define({
   root: {
     capability: Element.Capability.Container,
   },
@@ -128,7 +128,7 @@ export const DialogSlots = View.Slots.define({
 });
 
 /** Built-in dialog pattern contract. */
-export const Dialog = pattern("dialog", DialogSlots);
+export const Dialog = /*#__PURE__*/ pattern("dialog", DialogSlots);
 
 /** Two-tier taxonomy (F7): stateful patterns vs pure attachment helpers. */
 export type PatternTier = "stateful" | "stateless";
@@ -141,55 +141,55 @@ export interface CatalogEntry<Slots extends View.Slots.Any = View.Slots.Any> {
 }
 
 /** Slot contract required by the built-in tooltip pattern. */
-export const TooltipSlots = View.Slots.define({
+export const TooltipSlots = /*#__PURE__*/ View.Slots.define({
   trigger: { capability: Element.Capability.Interactive, allowedEvents: [View.Event.Hover, View.Event.Focus] },
   content: { capability: Element.Capability.Container },
 });
 /** Built-in tooltip pattern contract. */
-export const Tooltip = pattern("tooltip", TooltipSlots);
+export const Tooltip = /*#__PURE__*/ pattern("tooltip", TooltipSlots);
 
 /** Slot contract required by the built-in popover pattern. */
-export const PopoverSlots = View.Slots.define({
+export const PopoverSlots = /*#__PURE__*/ View.Slots.define({
   trigger: { capability: Element.Capability.Interactive, allowedEvents: [View.Event.Press] },
   content: { capability: Element.Capability.Container },
 });
 /** Built-in popover pattern contract. */
-export const Popover = pattern("popover", PopoverSlots);
+export const Popover = /*#__PURE__*/ pattern("popover", PopoverSlots);
 
 /** Slot contract required by the built-in tabs pattern. */
-export const TabsSlots = View.Slots.define({
+export const TabsSlots = /*#__PURE__*/ View.Slots.define({
   list: { capability: Element.Capability.Container },
   tab: { capability: Element.Capability.Interactive, allowedEvents: [View.Event.Press] },
   panel: { capability: Element.Capability.Container },
 });
 /** Built-in tabs pattern contract. */
-export const Tabs = pattern("tabs", TabsSlots);
+export const Tabs = /*#__PURE__*/ pattern("tabs", TabsSlots);
 
 /** Slot contract required by the built-in slider pattern. */
-export const SliderSlots = View.Slots.define({
+export const SliderSlots = /*#__PURE__*/ View.Slots.define({
   root: { capability: Element.Capability.Container },
   thumb: { capability: Element.Capability.Interactive, allowedEvents: [View.Event.Press] },
   track: { capability: Element.Capability.Container },
 });
 /** Built-in slider pattern contract. */
-export const Slider = pattern("slider", SliderSlots);
+export const Slider = /*#__PURE__*/ pattern("slider", SliderSlots);
 
 /** Slot contract required by the built-in calendar pattern. */
-export const CalendarSlots = View.Slots.define({
+export const CalendarSlots = /*#__PURE__*/ View.Slots.define({
   root: { capability: Element.Capability.Container },
   grid: { capability: Element.Capability.Container },
   day: { capability: Element.Capability.Interactive, allowedEvents: [View.Event.Press] },
 });
 /** Built-in calendar pattern contract. */
-export const Calendar = pattern("calendar", CalendarSlots);
+export const Calendar = /*#__PURE__*/ pattern("calendar", CalendarSlots);
 
 /** Slot contract required by the built-in drag-and-drop pattern. */
-export const DragAndDropSlots = View.Slots.define({
+export const DragAndDropSlots = /*#__PURE__*/ View.Slots.define({
   source: { capability: Element.Capability.Draggable },
   target: { capability: Element.Capability.Container },
 });
 /** Built-in drag-and-drop pattern contract. */
-export const DragAndDrop = pattern("drag-and-drop", DragAndDropSlots);
+export const DragAndDrop = /*#__PURE__*/ pattern("drag-and-drop", DragAndDropSlots);
 
 /** Built-in pattern catalog for tooling and diagnostics UIs. */
 export const catalog: readonly CatalogEntry[] = [

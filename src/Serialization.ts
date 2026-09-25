@@ -186,7 +186,7 @@ function parseJson(wire: string): Effect.Effect<unknown, Schema.SchemaError> {
  * Default `Serialization` layer: Effect-`Schema`-backed JSON codec with
  * HTML-safe escaping. Zero dependencies beyond `effect`.
  */
-export const layer: Layer.Layer<SerializationService> = Layer.succeed(Tag, schemaCodec);
+export const layer: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.succeed(Tag, schemaCodec);
 
 /** Alias for {@link layer}, matching the `live`/`test` naming used elsewhere. */
 export const live = layer;

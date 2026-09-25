@@ -247,8 +247,8 @@ function currentResumeSession(): ResumeSession | undefined {
   if (activeSession !== undefined) return activeSession;
   return currentServerRenderState()?.session;
 }
-const noMarkers: Readonly<Record<string, string>> = Object.freeze({});
-const componentActivations = new WeakMap<object, Portable.AnyCode>();
+const noMarkers: Readonly<Record<string, string>> = /*#__PURE__*/ Object.freeze({});
+const componentActivations = /*#__PURE__*/ new WeakMap<object, Portable.AnyCode>();
 
 export function registerComponentActivation(
   component: object,
@@ -706,7 +706,7 @@ export interface ObservedExpressionTarget {
   readonly value: unknown;
 }
 
-const refusedExpressionTarget: ObservedExpressionTarget = Object.freeze({
+const refusedExpressionTarget: ObservedExpressionTarget = /*#__PURE__*/ Object.freeze({
   write: false,
   value: undefined,
 });

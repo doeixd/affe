@@ -784,7 +784,7 @@ export type RuntimeEventHandler =
     unknown,
   ];
 
-const delegatedEvents = new WeakMap<Document, Set<string>>();
+const delegatedEvents = /*#__PURE__*/ new WeakMap<Document, Set<string>>();
 
 /**
  * Attach an event through the compiler-facing runtime ABI.
@@ -977,7 +977,7 @@ export function render(
   return dispose;
 }
 
-const containerMounts = new WeakMap<Element, () => void>();
+const containerMounts = /*#__PURE__*/ new WeakMap<Element, () => void>();
 
 export interface ViteHotContext {
   readonly data: Record<string, unknown>;
@@ -1039,7 +1039,7 @@ export const isServer: boolean =
 /** Minimal attributes map. */
 type Attrs = Record<string, string>;
 
-const VOID_ELEMENTS = new Set([
+const VOID_ELEMENTS = /*#__PURE__*/ new Set([
   "area", "base", "br", "col", "embed", "hr", "img", "input",
   "link", "meta", "param", "source", "track", "wbr",
 ]);

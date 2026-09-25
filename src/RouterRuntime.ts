@@ -189,9 +189,9 @@ export interface NavigationService {
   readonly cancel: RouterRuntimeInstance["cancel"];
 }
 
-export const HistoryTag = Context.Service<HistoryService>("History");
-export const NavigationTag = Context.Service<NavigationService>("Navigation");
-export const RouterRuntimeTag = Context.Service<RouterRuntimeInstance>("RouterRuntime");
+export const HistoryTag = /*#__PURE__*/ Context.Service<HistoryService>("History");
+export const NavigationTag = /*#__PURE__*/ Context.Service<NavigationService>("Navigation");
+export const RouterRuntimeTag = /*#__PURE__*/ Context.Service<RouterRuntimeInstance>("RouterRuntime");
 
 /** Configuration for a router runtime instance. */
 export interface RouterRuntimeConfig {

@@ -6,7 +6,7 @@ import { renderToString } from "./dom.js";
 import { extractPatternParams, matchPatternSegments, mostSpecific } from "./route-pattern.js";
 import type { AnyRoute, AppRouteNode } from "./Route.js";
 
-export const ServerRouteNodeSymbol: unique symbol = Symbol.for("affe/ServerRouteNode");
+export const ServerRouteNodeSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/ServerRouteNode");
 
 /** Kind of server route handled by the Affe server bridge. */
 export type ServerRouteKind = "action" | "document" | "json" | "resource";
@@ -143,7 +143,7 @@ export interface ServerExecuteOptions {
   readonly csrf?: CsrfOptions;
 }
 
-const safeMethods = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+const safeMethods = /*#__PURE__*/ new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 
 /**
  * Decide whether a request may change state, the way browsers let servers

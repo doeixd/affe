@@ -29,7 +29,7 @@ interface Registry {
   readonly remove: (entry: RouteGate) => void;
 }
 
-const registries = new WeakMap<object, Registry>();
+const registries = /*#__PURE__*/ new WeakMap<object, Registry>();
 
 function registryFor(router: object): Registry {
   let registry = registries.get(router);

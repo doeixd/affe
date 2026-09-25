@@ -40,7 +40,7 @@ import { SingleFlightTransportTag, type SingleFlightTransportService } from "./S
 const TypeId = "~affe/Atom" as const;
 const WritableTypeId = "~affe/Atom/Writable" as const;
 const ReadonlyTypeId = "~affe/Atom/Readonly" as const;
-const TypeVarianceId: unique symbol = Symbol.for("affe/Atom/TypeVariance");
+const TypeVarianceId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Atom/TypeVariance");
 
 type RefreshRef = {
   readonly get: Accessor<number>;
@@ -68,8 +68,8 @@ type DeepWiden<T> =
 
 type WithFallbackValue<A, Fallback> = Exclude<A, null | undefined> | Fallback;
 
-const refreshMap = new WeakMap<ReadonlyAtom<any, any, any>, RefreshRef>();
-const selfWriteMap = new WeakMap<Writable<any, any>, (value: any) => void>();
+const refreshMap = /*#__PURE__*/ new WeakMap<ReadonlyAtom<any, any, any>, RefreshRef>();
+const selfWriteMap = /*#__PURE__*/ new WeakMap<Writable<any, any>, (value: any) => void>();
 
 function ensureRefresh<A>(atom: ReadonlyAtom<A, any, any>): RefreshRef {
   const existing = refreshMap.get(atom);
@@ -428,7 +428,7 @@ function evaluate<A>(atom: ReadonlyAtom<A, any, any>, ctx: Context): A {
   return impl.read(ctx);
 }
 
-const defaultContext: Context = Object.assign(
+const defaultContext: Context = /*#__PURE__*/ Object.assign(
   ((atom: ReadonlyAtom<any>) => evaluate(atom, defaultContext)) as Context,
   {
     get<A>(atom: ReadonlyAtom<A, any, any>): A {
@@ -1238,7 +1238,7 @@ function runSingleFlightWithTransport<Input, A>(
 ): Effect.Effect<A, ResultDefectError, any> {
   return Effect.gen(function* () {
     const config = options === false ? undefined : options;
-    const Route = yield* Effect.promise(() => import("./Route.js"));
+    const Route = yield* Effect.promise(() => import("./single-flight-client.js"));
     const response = yield* transport.execute(
       {
         name: mutationName,
@@ -1292,7 +1292,7 @@ function runSingleFlightWithDirectFetch<Input, A>(
 ): Effect.Effect<A, ResultDefectError> {
   return Effect.tryPromise({
     try: async () => {
-      const Route = await import("./Route.js");
+      const Route = await import("./single-flight-client.js");
       const payload = await Effect.runPromise(Route.invokeSingleFlight<[Input], A>(
         options.endpoint ?? mutationName ?? "",
         {
@@ -1446,7 +1446,7 @@ export const runtimeEffect = <R, E>(layer: Layer.Layer<R, E, never>): Effect.Eff
 export type ReactivityKeysInput =
   RuntimeReactivityKeysInput;
 
-const ReactivityKeysSymbol: unique symbol = Symbol.for("affe/ReactivityKeys");
+const ReactivityKeysSymbol: unique symbol = /*#__PURE__*/ Symbol.for("affe/ReactivityKeys");
 
 type ReactivityTagged = {
   [ReactivityKeysSymbol]?: ReadonlyArray<string>;
@@ -2095,7 +2095,7 @@ type KvsCodec<A> = {
   readonly encode?: (value: A) => unknown;
 };
 
-const memoryKvs = new Map<string, string>();
+const memoryKvs = /*#__PURE__*/ new Map<string, string>();
 
 function getDefaultStorage(): KeyValueStorage {
   if (typeof localStorage !== "undefined") return localStorage;

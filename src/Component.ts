@@ -61,10 +61,10 @@ import {
 import { normalizeReactivityKeys } from "./reactivity-runtime.js";
 import { currentLoaderCacheStore, getLoaderCacheEntry, makeLoaderCacheKey } from "./router-runtime.js";
 
-export const ComponentTypeId: unique symbol = Symbol.for("affe/Component");
+export const ComponentTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/Component");
 
-const ComponentImplTypeId: unique symbol = Symbol.for("affe/ComponentImpl");
-const ComponentSetupTypeId: unique symbol = Symbol.for("affe/ComponentSetup");
+const ComponentImplTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/ComponentImpl");
+const ComponentSetupTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/ComponentSetup");
 
 /**
  * Runtime slot handle map exposed by legacy bindings-based components.
@@ -86,8 +86,8 @@ type SlotsFromBindings<Bindings> = Bindings extends { readonly slots: infer Slot
 
 type ViewSlotRecord = Record<string, Element.Handle | Element.Collection<Element.Handle>>;
 
-const viewSlotRegistry = new WeakMap<Component<any, any, any, any, any>, ViewSlotRecord>();
-const slotContractRegistry = new WeakMap<Component<any, any, any, any, any>, AnySlotContract>();
+const viewSlotRegistry = /*#__PURE__*/ new WeakMap<Component<any, any, any, any, any>, ViewSlotRecord>();
+const slotContractRegistry = /*#__PURE__*/ new WeakMap<Component<any, any, any, any, any>, AnySlotContract>();
 
 export function registerViewSlots(slots: ViewSlotRecord, component: Component<any, any, any, any, any>): void {
   viewSlotRegistry.set(component, slots);
@@ -141,7 +141,7 @@ type SetupStep<Props> = {
   ) => Effect.Effect<Readonly<Record<string, unknown>>, unknown, unknown>;
 };
 
-const opaqueSetupPlan: SetupPlan = Object.freeze({ kind: "opaque" as const });
+const opaqueSetupPlan: SetupPlan = /*#__PURE__*/ Object.freeze({ kind: "opaque" as const });
 
 function setupPlanFromSteps<Props>(steps: ReadonlyArray<SetupStep<Props>>): SetupPlan {
   return Object.freeze({
@@ -230,7 +230,7 @@ export interface BindOptions<A> {
   readonly resume?: BindingResumePolicy<A>;
 }
 
-const BindingSourceTypeId: unique symbol = Symbol.for(
+const BindingSourceTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Component/BindingSource",
 );
 
@@ -1238,7 +1238,7 @@ type DiagnosticsReporterService = {
  * Context resolves by string id, so Component can auto-report without
  * importing Diagnostics (avoids a Component ↔ Diagnostics cycle).
  */
-const DiagnosticsReporterTag = Context.Service<DiagnosticsReporterService>("DiagnosticsReporter");
+const DiagnosticsReporterTag = /*#__PURE__*/ Context.Service<DiagnosticsReporterService>("DiagnosticsReporter");
 
 function toAutoReportDiagnostics(
   component: Component<any, any, any, any, any>,
@@ -1303,7 +1303,7 @@ function renderViewResult(
   return observeRenderedComponentBoundary(View.node(result), bindings);
 }
 
-const SlotInstanceContractTypeId: unique symbol = Symbol.for(
+const SlotInstanceContractTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Component/SlotInstanceContract",
 );
 
@@ -3012,7 +3012,7 @@ export function guard<Req, E>(
  * and a silently doubled `press` handler is indistinguishable from a bug in
  * the behavior itself.
  */
-const attachmentRegistryKey = Symbol.for(
+const attachmentRegistryKey = /*#__PURE__*/ Symbol.for(
   "affe/Component/attachmentRegistry",
 );
 
@@ -3021,7 +3021,7 @@ const attachmentRegistryKey = Symbol.for(
  * wrapper spreads like the attachment registry. Maps binding name to the
  * COMPONENT-owned atom and its initial value (for shape compatibility).
  */
-const providedStateRegistryKey = Symbol.for(
+const providedStateRegistryKey = /*#__PURE__*/ Symbol.for(
   "affe/Component/providedStateRegistry",
 );
 

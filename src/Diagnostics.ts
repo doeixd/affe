@@ -52,7 +52,7 @@ export interface ReporterService {
   readonly reporter: Reporter;
 }
 
-export const ReporterTag = Context.Service<ReporterService>("DiagnosticsReporter");
+export const ReporterTag = /*#__PURE__*/ Context.Service<ReporterService>("DiagnosticsReporter");
 
 /**
  * Create a diagnostic reporter.

@@ -1,7 +1,7 @@
 import { Effect, Context, Schema } from "effect";
 
 /** The transport failed to move the envelope at all (network, endpoint). */
-export class SingleFlightTransportError extends Schema.TaggedError<SingleFlightTransportError>(
+export class SingleFlightTransportError extends /*#__PURE__*/ Schema.TaggedError<SingleFlightTransportError>(
   "affe/SingleFlightTransportError",
 )("SingleFlightTransportError", {
   message: Schema.String,
@@ -42,4 +42,4 @@ export interface SingleFlightTransportService {
 }
 
 /** Runtime service tag used by mutation handles to discover single-flight support. */
-export const SingleFlightTransportTag = Context.Service<SingleFlightTransportService>("SingleFlightTransport");
+export const SingleFlightTransportTag = /*#__PURE__*/ Context.Service<SingleFlightTransportService>("SingleFlightTransport");

@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import * as Portable from "./Portable.js";
 
-export const EventHandlerTypeId: unique symbol = Symbol.for(
+export const EventHandlerTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Resume/EventHandler",
 );
 
@@ -11,12 +11,12 @@ export type EventInvocation =
   | typeof DeferredNoArgs
   | typeof ActivationProjection;
 
-export const EventTargetKey = Schema.String.check(
+export const EventTargetKey = /*#__PURE__*/ Schema.String.check(
   Schema.isPattern(/^[A-Za-z][A-Za-z0-9_.:-]*$/),
 );
 export type EventTargetKey = typeof EventTargetKey.Type;
 
-export const MouseEventProjectionSchema = Schema.Struct({
+export const MouseEventProjectionSchema = /*#__PURE__*/ Schema.Struct({
   kind: Schema.Literal("mouse-v1"),
   altKey: Schema.Boolean,
   button: Schema.Finite,
@@ -40,7 +40,7 @@ export interface EventProjection<Id extends string, Value> {
   readonly capture: (event: Event) => Value;
 }
 
-const mouseProjectionEventTypes = new Set([
+const mouseProjectionEventTypes = /*#__PURE__*/ new Set([
   "auxclick",
   "click",
   "contextmenu",

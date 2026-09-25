@@ -48,7 +48,7 @@ import { Result as CoreResult, type Result as CoreResultType } from "./effect-ts
 
 // ─── Wire schema ────────────────────────────────────────────────────────────
 
-const SuccessWire = Schema.Struct({
+const SuccessWire = /*#__PURE__*/ Schema.Struct({
   _tag: Schema.Literal("Success"),
   value: Schema.Unknown,
   waiting: Schema.Boolean,
@@ -65,7 +65,7 @@ const SuccessWire = Schema.Struct({
  * `Cause`/`Exit` — which is why the wire holds this rather than a core
  * `Result` directly.
  */
-export const ResultWire = Schema.Union([
+export const ResultWire = /*#__PURE__*/ Schema.Union([
   Schema.Struct({
     _tag: Schema.Literal("Initial"),
     waiting: Schema.Boolean,
@@ -80,7 +80,7 @@ export const ResultWire = Schema.Union([
 ]);
 
 /** Wire schema for a full loader-data payload keyed by route id. */
-export const ResultWireRecord = Schema.Record(Schema.String, ResultWire);
+export const ResultWireRecord = /*#__PURE__*/ Schema.Record(Schema.String, ResultWire);
 
 /** The flat, JSON-safe wire shape a loader `Result` is projected to. */
 export type ResultWireValue = typeof ResultWire.Type;

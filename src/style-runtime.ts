@@ -132,7 +132,7 @@ export function resolveTokenValue(
  * CSS properties whose numeric values are unitless. Every other numeric
  * value is a length and serializes with `px` in emitted CSS text.
  */
-const unitlessCssProperties = new Set([
+const unitlessCssProperties = /*#__PURE__*/ new Set([
   "animation-iteration-count",
   "aspect-ratio",
   "border-image-outset",

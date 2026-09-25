@@ -73,7 +73,7 @@ export interface PlatformService {
   readonly onDiagnostic?: (diagnostic: StyleDiagnostic) => void;
 }
 
-export const PlatformTag = Context.Service<PlatformService>("StylePlatform");
+export const PlatformTag = /*#__PURE__*/ Context.Service<PlatformService>("StylePlatform");
 
 /** Resolved global styles published by `Style.globalLayer`. */
 export interface GlobalStyleSheet {
@@ -87,7 +87,7 @@ export interface GlobalStyleService {
   readonly apply?: (sheet: GlobalStyleSheet) => Effect.Effect<void>;
 }
 
-export const GlobalStyleTag = Context.Service<GlobalStyleService>("StyleGlobal");
+export const GlobalStyleTag = /*#__PURE__*/ Context.Service<GlobalStyleService>("StyleGlobal");
 
 /** Layer returned by `Style.platform`, branded with its metadata for typing. */
 export type PlatformLayer<Metadata extends StylePlatformMetadata = StylePlatformMetadata> =
@@ -592,7 +592,7 @@ export function layers(names: ReadonlyArray<string>): readonly string[] {
  * enforced by the platform cascade. A closed, branded tuple so a typo like
  * `"compnents"` is a compile error, never a silently-wrong layer.
  */
-export const cssLayerOrder = Object.freeze([
+export const cssLayerOrder = /*#__PURE__*/ Object.freeze([
   "defaults",
   "components",
   "variants",
@@ -745,7 +745,7 @@ function resolveSlotTokens(style: SlotStyle, tokens: ThemeTokenSchema = defaultT
   return out;
 }
 
-const tokensWithDefaults = new WeakMap<object, ThemeTokenSchema>();
+const tokensWithDefaults = /*#__PURE__*/ new WeakMap<object, ThemeTokenSchema>();
 
 /**
  * The token schema runtime style resolution reads: the provided `Theme`
@@ -769,7 +769,7 @@ function effectiveTokens(service: Theme.ThemeService | undefined): ThemeTokenSch
 }
 
 /** Read the ambient `Theme` service (optional) as the resolution token schema. */
-const currentThemeTokens: Effect.Effect<ThemeTokenSchema> = Effect.map(
+const currentThemeTokens: Effect.Effect<ThemeTokenSchema> = /*#__PURE__*/ Effect.map(
   Effect.serviceOption(Theme.Theme),
   (maybeTheme) => effectiveTokens(maybeTheme._tag === "Some" ? maybeTheme.value : undefined),
 );
@@ -779,7 +779,7 @@ const currentThemeTokens: Effect.Effect<ThemeTokenSchema> = Effect.map(
  * the view-transform attachment paths (which run synchronously at render
  * time, outside the Effect context where the Theme service is visible).
  */
-const themeTokensByBindings = new WeakMap<object, ThemeTokenSchema>();
+const themeTokensByBindings = /*#__PURE__*/ new WeakMap<object, ThemeTokenSchema>();
 
 function captureThemeTokens(bindings: unknown): Effect.Effect<void> {
   return Effect.map(currentThemeTokens, (tokens) => {
@@ -1183,7 +1183,7 @@ function applyStylePieceToHandle(
 }
 
 type Overrides = Record<string, StyleValue>;
-const OverrideContext = createContext<Overrides>({});
+const OverrideContext = /*#__PURE__*/ createContext<Overrides>({});
 
 export const Provider = (props: { readonly overrides: Overrides; readonly children: unknown }) =>
   OverrideContext.Provider({ value: props.overrides, children: props.children });

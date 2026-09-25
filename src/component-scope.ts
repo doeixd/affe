@@ -7,7 +7,7 @@ import type { Owner } from "./owner.js";
  * component — so a parent such as `Route.Switch` can read the route metadata
  * of the children it was handed.
  */
-export const ComponentInvocationSource: unique symbol = Symbol.for("affe/ComponentInvocationSource");
+export const ComponentInvocationSource: unique symbol = /*#__PURE__*/ Symbol.for("affe/ComponentInvocationSource");
 
 /** The component whose call produced `value`, if `value` is such a call's result. */
 export function invocationSourceOf(value: unknown): unknown {
@@ -16,7 +16,7 @@ export function invocationSourceOf(value: unknown): unknown {
     : undefined;
 }
 
-export const ComponentScopeContext = createContext<Scope.Closeable | null>(null);
+export const ComponentScopeContext = /*#__PURE__*/ createContext<Scope.Closeable | null>(null);
 
 export function currentComponentScope(): Scope.Closeable | null {
   return useContext(ComponentScopeContext);
@@ -55,7 +55,7 @@ function setOwnerContext(owner: Owner, key: symbol, value: unknown): void {
  * Services built by `Component.withLayer` for a component instance, published
  * on that instance's owner so descendant components' setup runs with them.
  */
-export const ComponentServicesContext = createContext<Context.Context<never> | null>(null);
+export const ComponentServicesContext = /*#__PURE__*/ createContext<Context.Context<never> | null>(null);
 
 /** The nearest ancestor component's published layer services, if any. */
 export function currentComponentServices(): Context.Context<never> | null {

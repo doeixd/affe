@@ -185,7 +185,7 @@ interface HandleInternals {
   element(): BindableElement | undefined;
 }
 
-const handleInternals = new WeakMap<object, HandleInternals>();
+const handleInternals = /*#__PURE__*/ new WeakMap<object, HandleInternals>();
 
 /** CSS property name for a style key: camelCase to kebab-case, custom properties verbatim. */
 export const cssPropertyName = cssPropertyNameOf;

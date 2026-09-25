@@ -21,7 +21,7 @@
  */
 
 /** HTML boolean attributes: presence IS the value. */
-const booleanAttributes = new Set([
+const booleanAttributes = /*#__PURE__*/ new Set([
   "allowfullscreen",
   "async",
   "autofocus",
@@ -50,7 +50,7 @@ const booleanAttributes = new Set([
 ]);
 
 /** ARIA attributes whose value space is the enumerated `"true"`/`"false"`. */
-const ariaBooleanAttributes = new Set([
+const ariaBooleanAttributes = /*#__PURE__*/ new Set([
   "aria-atomic",
   "aria-busy",
   "aria-checked",
@@ -69,7 +69,7 @@ const ariaBooleanAttributes = new Set([
 ]);
 
 /** Attributes whose typed value is numeric. */
-const numberAttributes = new Set([
+const numberAttributes = /*#__PURE__*/ new Set([
   "aria-colcount",
   "aria-colindex",
   "aria-colspan",

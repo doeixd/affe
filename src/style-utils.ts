@@ -30,6 +30,6 @@ export const flexRow = (options?: { readonly gap?: StyleSpacing; readonly align?
 export const flexCol = (options?: { readonly gap?: StyleSpacing; readonly align?: string; readonly justify?: string }) =>
   Style.slot({ flex: { direction: "column", gap: options?.gap, align: options?.align, justify: options?.justify } });
 
-export const interactive = Style.slot({ cursor: "pointer", transition: "fast" });
+export const interactive = /*#__PURE__*/ Style.slot({ cursor: "pointer", transition: "fast" });
 
-export const truncated = Style.slot({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" });
+export const truncated = /*#__PURE__*/ Style.slot({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" });

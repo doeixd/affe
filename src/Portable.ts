@@ -11,29 +11,29 @@ import { jsonValueIssue } from "./wire-json.js";
 import * as Serialization from "./serialization-core.js";
 import { makeResourceCacheIdentity } from "./cache-identity.js";
 
-export const CodeTypeId: unique symbol = Symbol.for(
+export const CodeTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Portable/Code",
 );
-export const BoundCodeTypeId: unique symbol = Symbol.for(
+export const BoundCodeTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Portable/BoundCode",
 );
-export const ExecutableInspectionTypeId: unique symbol = Symbol.for(
+export const ExecutableInspectionTypeId: unique symbol = /*#__PURE__*/ Symbol.for(
   "affe/Portable/ExecutableInspection",
 );
 
 /** Stable logical code identity. This is an address, never executable source. */
-export const CodeId = Schema.String.check(Schema.isNonEmpty()).pipe(
+export const CodeId = /*#__PURE__*/ Schema.String.check(Schema.isNonEmpty()).pipe(
   Schema.brand("affe/Portable/CodeId"),
 );
 export type CodeId = typeof CodeId.Type;
 
 /** Deployment/build identity used to reject stale manifests. */
-export const BuildId = Schema.String.check(Schema.isNonEmpty()).pipe(
+export const BuildId = /*#__PURE__*/ Schema.String.check(Schema.isNonEmpty()).pipe(
   Schema.brand("affe/Portable/BuildId"),
 );
 export type BuildId = typeof BuildId.Type;
 
-export class PortableCodeNotFoundError extends Schema.TaggedError<PortableCodeNotFoundError>(
+export class PortableCodeNotFoundError extends /*#__PURE__*/ Schema.TaggedError<PortableCodeNotFoundError>(
   "affe/PortableCodeNotFoundError",
 )("PortableCodeNotFoundError", {
   id: CodeId,
@@ -44,7 +44,7 @@ export class PortableCodeNotFoundError extends Schema.TaggedError<PortableCodeNo
   }
 }
 
-export class PortableCodeLoadError extends Schema.TaggedError<PortableCodeLoadError>(
+export class PortableCodeLoadError extends /*#__PURE__*/ Schema.TaggedError<PortableCodeLoadError>(
   "affe/PortableCodeLoadError",
 )("PortableCodeLoadError", {
   id: CodeId,
@@ -55,7 +55,7 @@ export class PortableCodeLoadError extends Schema.TaggedError<PortableCodeLoadEr
   }
 }
 
-export class PortableCodeIdentityMismatchError extends Schema.TaggedError<PortableCodeIdentityMismatchError>(
+export class PortableCodeIdentityMismatchError extends /*#__PURE__*/ Schema.TaggedError<PortableCodeIdentityMismatchError>(
   "affe/PortableCodeIdentityMismatchError",
 )("PortableCodeIdentityMismatchError", {
   requested: CodeId,
@@ -67,7 +67,7 @@ export class PortableCodeIdentityMismatchError extends Schema.TaggedError<Portab
   }
 }
 
-export class PortableBuildMismatchError extends Schema.TaggedError<PortableBuildMismatchError>(
+export class PortableBuildMismatchError extends /*#__PURE__*/ Schema.TaggedError<PortableBuildMismatchError>(
   "affe/PortableBuildMismatchError",
 )("PortableBuildMismatchError", {
   id: CodeId,
@@ -80,7 +80,7 @@ export class PortableBuildMismatchError extends Schema.TaggedError<PortableBuild
   }
 }
 
-export class PortableCaptureEncodeError extends Schema.TaggedError<PortableCaptureEncodeError>(
+export class PortableCaptureEncodeError extends /*#__PURE__*/ Schema.TaggedError<PortableCaptureEncodeError>(
   "affe/PortableCaptureEncodeError",
 )("PortableCaptureEncodeError", {
   id: CodeId,
@@ -91,7 +91,7 @@ export class PortableCaptureEncodeError extends Schema.TaggedError<PortableCaptu
   }
 }
 
-export class PortableCaptureDecodeError extends Schema.TaggedError<PortableCaptureDecodeError>(
+export class PortableCaptureDecodeError extends /*#__PURE__*/ Schema.TaggedError<PortableCaptureDecodeError>(
   "affe/PortableCaptureDecodeError",
 )("PortableCaptureDecodeError", {
   id: CodeId,
@@ -322,7 +322,7 @@ export function inspectExecutable(
   return { kind: "opaque" };
 }
 
-export const DescriptorSchema = Schema.Struct({
+export const DescriptorSchema = /*#__PURE__*/ Schema.Struct({
   version: Schema.Literal(1),
   kind: Schema.Literal("portable.code"),
   id: CodeId,
@@ -494,7 +494,7 @@ export interface ResolverService {
   >;
 }
 
-export const Resolver = Context.Service<ResolverService>(
+export const Resolver = /*#__PURE__*/ Context.Service<ResolverService>(
   "affe/Portable/Resolver",
 );
 

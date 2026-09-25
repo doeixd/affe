@@ -87,7 +87,7 @@ export interface LoaderCacheStore {
 
 // Live stores are tracked weakly: reactivity invalidation must reach every
 // store that is still in use, without pinning per-request stores in memory.
-const trackedStores = new Set<WeakRef<LoaderCacheStore>>();
+const trackedStores = /*#__PURE__*/ new Set<WeakRef<LoaderCacheStore>>();
 
 function forEachLoaderCacheStore(f: (store: LoaderCacheStore) => void): void {
   for (const ref of [...trackedStores]) {
@@ -129,10 +129,10 @@ export function makeLoaderCacheStore(): LoaderCacheStore {
 }
 
 /** The process-wide default store; this is the client/document-level cache. */
-export const defaultLoaderCacheStore: LoaderCacheStore = makeLoaderCacheStore();
+export const defaultLoaderCacheStore: LoaderCacheStore = /*#__PURE__*/ makeLoaderCacheStore();
 
 /** Injectable loader cache service. */
-export const LoaderCacheTag = Context.Service<LoaderCacheStore>("LoaderCache");
+export const LoaderCacheTag = /*#__PURE__*/ Context.Service<LoaderCacheStore>("LoaderCache");
 
 /**
  * Ambient supervisor for SWR refresh fibers (`DQ-032`, the navigation-scope
@@ -145,7 +145,7 @@ export interface SwrRefreshSupervisor {
 }
 
 export const SwrRefreshSupervisorTag =
-  Context.Service<SwrRefreshSupervisor>("SwrRefreshSupervisor");
+  /*#__PURE__*/ Context.Service<SwrRefreshSupervisor>("SwrRefreshSupervisor");
 
 /**
  * Default loader-cache layer: the process-wide store, i.e. exactly today's
@@ -182,7 +182,7 @@ export function resolveLoaderCacheStore(store?: LoaderCacheStore): LoaderCacheSt
  * the ambient store, then the default store. Never adds a requirement, so
  * loader plumbing keeps its `R = never` signatures.
  */
-export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = Effect.serviceOption(LoaderCacheTag).pipe(
+export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = /*#__PURE__*/ Effect.serviceOption(LoaderCacheTag).pipe(
   Effect.map((option) => (option._tag === "Some" ? option.value : resolveLoaderCacheStore())),
 );
 
@@ -191,7 +191,7 @@ export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = Effect.s
 // invalidation that lands while the loader is in flight must leave the result
 // stale, not be erased by the result's fresh `staleAt`.
 let invalidationSequence = 0;
-const lastInvalidated = new WeakMap<LoaderCacheStore, Map<string, number>>();
+const lastInvalidated = /*#__PURE__*/ new WeakMap<LoaderCacheStore, Map<string, number>>();
 
 function markStaleByReactivityKey(store: LoaderCacheStore, key: string): void {
   invalidationSequence += 1;
@@ -393,7 +393,7 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
  * Schema-tagged like the resumability layer's errors: a real `Error` with a
  * stack, carrying which route and against which budget.
  */
-export class RouteLoaderTimeoutError extends Schema.TaggedError<RouteLoaderTimeoutError>(
+export class RouteLoaderTimeoutError extends /*#__PURE__*/ Schema.TaggedError<RouteLoaderTimeoutError>(
   "affe/RouteLoaderTimeoutError",
 )("RouteLoaderTimeoutError", {
   routeId: Schema.String,

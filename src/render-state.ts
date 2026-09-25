@@ -39,7 +39,7 @@ export interface ServerRenderState {
 }
 
 export const ServerRenderStateTag =
-  Context.Service<ServerRenderState>("ServerRenderState");
+  /*#__PURE__*/ Context.Service<ServerRenderState>("ServerRenderState");
 
 /**
  * The current fiber's render state, or `undefined` outside a

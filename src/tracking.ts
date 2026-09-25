@@ -57,8 +57,8 @@ export function runUntracked<T>(fn: () => T): T {
  * memo invalidated by the same change has recomputed.
  */
 let batchDepth = 0;
-const pureQueue: Set<IComputation> = new Set();
-const effectQueue: Set<IComputation> = new Set();
+const pureQueue: Set<IComputation> = /*#__PURE__*/ new Set();
+const effectQueue: Set<IComputation> = /*#__PURE__*/ new Set();
 let microtaskScheduled = false;
 
 export function isBatching(): boolean {

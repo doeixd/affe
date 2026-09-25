@@ -31,7 +31,7 @@ export function installResumeSessionHooks(next: ResumeSessionHooks): void {
   hooks = next;
 }
 
-const noMarkers: Readonly<Record<string, string>> = Object.freeze({});
+const noMarkers: Readonly<Record<string, string>> = /*#__PURE__*/ Object.freeze({});
 
 export function observeDirectEventHandler(target: object, eventType: string, handler: unknown): void {
   hooks?.observeDirectEventHandler(target, eventType, handler);

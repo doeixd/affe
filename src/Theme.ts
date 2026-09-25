@@ -30,7 +30,7 @@ export interface ThemeService {
   readonly resolve: (token: string) => string;
 }
 
-export const Theme = Context.Service<ThemeService>("Theme");
+export const Theme = /*#__PURE__*/ Context.Service<ThemeService>("Theme");
 
 /**
  * User-defined theme contract.
@@ -175,10 +175,10 @@ type MergedTokensOf<Definitions extends readonly ThemeDefinition<any>[]> =
     infer Merged extends ThemeTokenSchema ? Merged : ThemeTokenSchema;
 
 /** Default light theme layer. */
-export const ThemeLight: Layer.Layer<ThemeService> = layer(defaultThemeTokens);
+export const ThemeLight: Layer.Layer<ThemeService> = /*#__PURE__*/ layer(defaultThemeTokens);
 
 /** Default theme definition for path helpers and lookups. */
-export const ThemeDefault = define(defaultThemeTokens);
+export const ThemeDefault = /*#__PURE__*/ define(defaultThemeTokens);
 
 /** The default token schema, re-exported for foundation-stylesheet emitters. */
 export { defaultThemeTokens, type ThemeTokenSchema } from "./style-types.js";

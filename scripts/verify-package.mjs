@@ -16,6 +16,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -106,9 +107,21 @@ export const html = () => renderToString(() => <p>{count()} {doubled()}</p>);
   fs.writeFileSync(appPackagePath, JSON.stringify(appPackage, null, 2));
   run("npm", ["install", "--no-audit", "--no-fund"], app);
   run("npm", ["run", "build"], app);
-  const built = fs.readdirSync(path.join(app, "dist", "assets")).filter((file) => file.endsWith(".js"));
+  const assets = path.join(app, "dist", "assets");
+  const built = fs.readdirSync(assets).filter((file) => file.endsWith(".js"));
   if (built.length === 0) throw new Error("create-affe app built no JavaScript");
   console.log("✓ create-affe app installs, type-checks and builds");
+
+  // 4. Size budget for that app (Effect included). It was ~76 kB gzipped
+  //    before a dynamic `import("./Route.js")` stopped defeating tree-shaking;
+  //    a jump back past the budget means something reachable pulls in a whole
+  //    module again.
+  const gzipped = built.reduce((total, file) => total + zlib.gzipSync(fs.readFileSync(path.join(assets, file))).length, 0);
+  const budget = 68 * 1024;
+  if (gzipped > budget) {
+    throw new Error(`create-affe app is ${(gzipped / 1024).toFixed(1)} kB gzipped, over the ${budget / 1024} kB budget`);
+  }
+  console.log(`✓ create-affe app is ${(gzipped / 1024).toFixed(1)} kB gzipped (budget ${budget / 1024} kB)`);
   console.log(`✓ ${packed[0].filename} verified`);
 } finally {
   fs.rmSync(work, { recursive: true, force: true });

@@ -598,7 +598,7 @@ function staleDataFromPrevious<A, E>(
 
 // ─── Ambient ManagedRuntime context ───────────────────────────────────────────
 
-export const ManagedRuntimeContext = createContext<ManagedRuntime.ManagedRuntime<unknown, unknown> | null>(null);
+export const ManagedRuntimeContext = /*#__PURE__*/ createContext<ManagedRuntime.ManagedRuntime<unknown, unknown> | null>(null);
 
 function getAmbientManagedRuntime(): ManagedRuntime.ManagedRuntime<unknown, unknown> | null {
   return useContext(ManagedRuntimeContext);
@@ -958,7 +958,7 @@ function resultValueToEffect<A, E>(
   return resultAccessorToEffect(() => state);
 }
 
-const queryGet: QueryGet = Object.assign(
+const queryGet: QueryGet = /*#__PURE__*/ Object.assign(
   (<A>(atom: AtomTypes.ReadonlyAtom<A, any, any>): A => atom()),
   {
     get<A>(atom: AtomTypes.ReadonlyAtom<A, any, any>): A {
@@ -2060,7 +2060,7 @@ export function TypedBoundary<E>(props: {
 
 // ─── Switch / Match ───────────────────────────────────────────────────────────
 
-const MatchTypeId = Symbol.for("affe/Match");
+const MatchTypeId = /*#__PURE__*/ Symbol.for("affe/Match");
 
 type MatchCase<T> = {
   readonly [MatchTypeId]: true;

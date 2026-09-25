@@ -5,7 +5,7 @@ import * as SafeHtml from "./SafeHtml.js";
 import { onCleanup } from "./api.js";
 import { Owner, getOwner, runWithOwner } from "./owner.js";
 
-export const ViewTypeId: unique symbol = Symbol.for("affe/View");
+export const ViewTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/View");
 
 /**
  * Runtime value stored for a view slot.
@@ -197,8 +197,8 @@ export interface ViewMetadata {
 /** Extract the runtime slot handle map from a `View<Slots>`. */
 export type SlotsOf<T> = T extends View<infer Slots> ? Slots : never;
 
-export const SlotTypeId: unique symbol = Symbol.for("affe/View/Slot");
-export const SlotsTypeId: unique symbol = Symbol.for("affe/View/Slots");
+export const SlotTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/View/Slot");
+export const SlotsTypeId: unique symbol = /*#__PURE__*/ Symbol.for("affe/View/Slots");
 
 type SlotHandle = Element.Handle | Element.Collection<Element.Handle>;
 
@@ -1041,7 +1041,7 @@ export interface PlatformService {
   readonly onDiagnostic?: (diagnostic: ViewDiagnostic) => void;
 }
 
-export const PlatformTag = Context.Service<PlatformService>("ViewPlatform");
+export const PlatformTag = /*#__PURE__*/ Context.Service<PlatformService>("ViewPlatform");
 
 export type PlatformLayer<Metadata extends PlatformMetadata = PlatformMetadata> =
   & Layer.Layer<PlatformService>

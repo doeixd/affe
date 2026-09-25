@@ -81,8 +81,8 @@ function schemaError(message: string, value?: unknown): Schema.SchemaError {
 // transfer). Cross-process restore goes through the pluggable
 // `StateHandleResolver` below (S4); `@doeixd/affe-permissive`'s hydration registry
 // is the wiring that makes the keys the client's.
-const stateHandleKeys = new WeakMap<object, string>();
-const stateHandlesByKey = new Map<string, WeakRef<object>>();
+const stateHandleKeys = /*#__PURE__*/ new WeakMap<object, string>();
+const stateHandlesByKey = /*#__PURE__*/ new Map<string, WeakRef<object>>();
 let nextStateHandleOrdinal = 0;
 
 function hydrationKeyOf(handle: object): string {
@@ -439,7 +439,7 @@ export function seroval(options: SerovalOptions = {}): Layer.Layer<Serialization
  * `Serialization.ts` re-export each other, so the Tag must be read at layer
  * BUILD time, after both module bodies have evaluated.
  */
-export const serovalLayer: Layer.Layer<SerializationService> = Layer.suspend(
+export const serovalLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.suspend(
   () => seroval(),
 );
 
@@ -451,7 +451,7 @@ export const serovalLayer: Layer.Layer<SerializationService> = Layer.suspend(
  * with requirements, not a value, and crosses the boundary as a descriptor
  * or a typed `R` requirement instead.
  */
-export const serovalAsyncLayer: Layer.Layer<SerializationService> = Layer.suspend(
+export const serovalAsyncLayer: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.suspend(
   () =>
     Layer.effect(
       Tag,
@@ -471,7 +471,7 @@ export const serovalAsyncLayer: Layer.Layer<SerializationService> = Layer.suspen
  * JSON layer's, so a manifest produced here can never be decoded by the safe
  * codec by accident (`DQ-012`'s gate).
  */
-export const serovalUnsafeEval: Layer.Layer<SerializationService> = Layer.suspend(() => Layer.effect(
+export const serovalUnsafeEval: Layer.Layer<SerializationService> = /*#__PURE__*/ Layer.suspend(() => Layer.effect(
   Tag,
   Effect.promise(() => import("seroval")).pipe(
     Effect.map((module) => {
