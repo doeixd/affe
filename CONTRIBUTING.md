@@ -24,6 +24,7 @@ Run these before opening a pull request; CI runs the same ones.
 | `npm test` | Unit and integration tests (Vitest), plus the permissive package. |
 | `npm run verify:package` | The packed tarball: every subpath imports, strict consumer types, a `create-affe` app installs and builds within its size budget. |
 | `npm run size` | Gzipped bundle size per feature (atoms, component, router…); `-- --check` enforces budgets, `-- --modules <case>` shows what a case keeps. |
+| `npm run check:docs` | Every TypeScript block in the README and guides names only API that exists (run after `build`). |
 | `npm run test:browser` | Playwright: every example driven in Chromium, plus the resumability demos. |
 | `npm run bench` | Benchmarks (tracked, not a gate). |
 
@@ -46,6 +47,7 @@ Run these before opening a pull request; CI runs the same ones.
 - **Bug fixes** come with a test that fails without the fix.
 - **Public API changes** update `CHANGELOG.md` (with a migration note if
   anything breaks), the relevant guide, and a type test when types change.
+  `npm run check:docs` catches a guide that still names the old API.
 - **Design you would have to invent** (an API shape, a guarantee the code
   does not give) goes into `docs/design-questions/` with a provisional pick
   rather than straight into code. See the README there.

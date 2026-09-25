@@ -160,10 +160,10 @@ keys are the contract:
 ```ts
 const Users = Reactivity.Key.make("users");
 
-class UsersService extends Effect.Tag("UsersService")<UsersService, {
+class UsersService extends Context.Service<UsersService, {
   readonly list: () => Effect.Effect<ReadonlyArray<User>>;
   readonly add: (name: string) => Effect.Effect<User>;
-}>() {
+}>()("UsersService") {
   static live = Layer.succeed(UsersService, {
     // reads participate in dependency tracking
     list: () => Reactivity.tracked(fetchUsers(), { keys: [Users] }),
@@ -185,8 +185,8 @@ refresh. Prefer putting `tracked`/`invalidating` **inside service methods**
 
 Swapping implementations is layer substitution, nothing else:
 
-- `Reactivity.test` instead of `Reactivity.live` → manual `flush()`,
-  `lastInvalidated()` introspection.
+- `Reactivity.test` instead of `Reactivity.live` in the mount layer →
+  invalidations wait for `Atom.flushReactivity()`.
 - A `Layer.succeed(Api, fakeApi)` at whichever tier the real one occupied.
 - Per-dispatch layers in server tests give you request isolation for free.
 

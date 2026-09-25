@@ -44,6 +44,8 @@ jobs:
       - run: npm run verify:package
       # Per-feature bundle budgets (atoms, render, component, router).
       - run: npm run size -- --check
+      # Code blocks in the README and guides must not name missing API.
+      - run: npm run check:docs
 
   browser:
     name: Browser tests (Playwright)

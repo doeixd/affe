@@ -18,7 +18,7 @@ For authored slot-based components, use the slot-contract path in
 - **`QueryRef`** — Async read handle from `defineQuery`. Bundles `result`, `pending`, `latest`, `effect`, and invalidation APIs into one ergonomic object.
 - **`Mutation handle`** — Async write handle from `Atom.optimistic(...).action(...)`, `Atom.runtime(...).action(...)`, or callback-style `defineMutation(...)`. Exposes `run`, `effect`, `runEffect`, `result`, and `pending`; optimistic handles also expose `value`, `committed`, `optimistic`, `hasOptimistic`, `rollback`, and `clear`.
 - **`Action handle`** — Runtime-bound mutation handle from `Atom.action` / `Atom.runtime(...).action`. The preferred way to express mutations when you have Effect-native code.
-- **`Result`** — The six-state async type (`Loading`, `Refreshing`, `Success`, `Failure`, `Stale`, `Defect`). Distinguishing _initial load_, _revalidation_, _failed refresh with data_, typed failures, and defects makes UI states explicit rather than derived.
+- **`Result`** — The seven-state async type (`Idle`, `Loading`, `Refreshing`, `Success`, `Failure`, `Stale`, `Defect`). Distinguishing _initial load_, _revalidation_, _failed refresh with data_, typed failures, and defects makes UI states explicit rather than derived.
 - **`Effect`** (from the `effect` package) — A typed program `Effect<A, E, R>`. The `.effect(...)` methods on query/mutation handles convert reactive state into composable Effect values.
 - **`BridgeError`** — Tagged errors emitted when you compose a reactive atom into an Effect pipeline and the atom is still `Loading` (`ResultLoadingError`) or has a `Defect` (`ResultDefectError`). Makes the gap between reactive state and Effect's error channel explicit.
 - **`MutationSupersededError`** — Emitted when a newer mutation run interrupts an earlier one. Lets Effect pipelines react to cancellation rather than silently dropping results.
@@ -96,7 +96,7 @@ Layer<ApiService, never, HttpClient>
 
 These are the services the library owns and provides built-in layers for.
 
-#### `ReactivityService` (`Reactivity.Tag`)
+#### `ReactivityService` (`Reactivity.ReactivityTag`)
 
 Key-based invalidation and subscription. Used internally by single-flight to decide which loaders to revalidate after a mutation, and exposed via `Atom.withReactivity(...)` for application-level cache invalidation across module boundaries.
 
@@ -117,7 +117,7 @@ mount(App, document.body, Layer.merge(ApiLive, Reactivity.live));
 mount(App, document.body, Layer.merge(ApiLive, Reactivity.test));
 ```
 
-When `ReactivityService` is present in the layer passed to `mount()`, it is automatically installed as the global reactivity backend. Single-flight and `Atom.withReactivity` will use it without any further wiring.
+When `ReactivityService` is present in the layer passed to `mount()`, it is automatically installed as the global reactivity backend. Single-flight and `Atom.withReactivity` will use it without any further wiring. Providing it any other way (`Effect.provide`, `Atom.runtime`) does not install it. See [`reactivity.md`](reactivity.md).
 
 ---
 
@@ -134,7 +134,7 @@ URL state and navigation. Provides a reactive `url` atom and imperative navigati
 | `Route.Router.Browser`          | Wraps the browser History API. Listens to `popstate`. Use in client-rendered apps.                 |
 | `Route.Router.browser({ base })` | The browser router for an app served under a sub-path (`base: "/docs"`); routes and `url()` stay app-relative. |
 | `Route.Router.Hash`             | Hash-based routing (`#/path`). Listens to `hashchange`. Use when you can't control server routing. |
-| `Route.Router.Server(request)`  | Static URL from an incoming request. Use during SSR.                                               |
+| `Route.Router.Server({ url })`  | Static URL from an incoming request. Use during SSR (`Route.renderRequest` provides it for you).   |
 | `Route.Router.Memory(initial?)` | In-memory history stack. Use in tests and Node environments.                                       |
 
 ```ts
@@ -143,7 +143,7 @@ const AppLayer = Layer.mergeAll(ApiLive, Reactivity.live, Route.Router.Browser);
 
 // SSR handler
 const ssrLayer = (req: Request) =>
-  Layer.mergeAll(ApiLive, Reactivity.live, Route.Router.Server(req));
+  Layer.mergeAll(ApiLive, Reactivity.live, Route.Router.Server({ url: req.url }));
 
 // Tests
 const testLayer = Layer.mergeAll(
@@ -421,20 +421,18 @@ const TestLayer = Layer.mergeAll(
   Reactivity.test,
   Route.Router.Memory("/"),
 );
-const harness = new TestHarness(TestLayer);
+const harness = withTestLayer(TestLayer); // from "@doeixd/affe/testing"
 ```
 
 **SSR per-request layer:**
 
 ```ts
-function handleRequest(req: Request) {
-  const layer = Layer.mergeAll(
-    ApiLive,
-    Reactivity.live,
-    Route.Router.Server(req),
-  );
-  return Route.renderRequestWithRuntime(runtime, req, { layer });
-}
+// renderRequest provides the server router for the request's URL itself.
+const handleRequest = (request: Request) =>
+  Effect.runPromise(Route.renderRequest(app, {
+    request,
+    layer: Layer.mergeAll(ApiLive, Reactivity.live),
+  }));
 ```
 
 **Global observability (applied to all atom runtimes):**
@@ -951,7 +949,7 @@ Component wrappers like `Component.withLoading(...)`, `Component.withSpan(...)`,
 
 **Router layers:**
 
-- `Route.Router.Browser`, `Route.Router.Hash`, `Route.Router.Server(request)`, `Route.Router.Memory(initial?)`
+- `Route.Router.Browser`, `Route.Router.Hash`, `Route.Router.Server({ url })`, `Route.Router.Memory(initial?)`
 
 **Streaming:**
 
@@ -1044,7 +1042,7 @@ Internally, `Route.singleFlight` is composed from two lower-level pieces — und
 **`Route.createSingleFlightHandler(run, options)`** — the request/response adapter:
 
 1. Receives the request envelope from the client.
-2. Provides a `Route.Router.Server(url)` layer to the runner so loaders resolve against the right URL.
+2. Provides a `Route.Router.Server({ url })` layer to the runner so loaders resolve against the right URL.
 3. Wraps the result in a `SingleFlightResponse` envelope: `{ ok: true, payload }` or `{ ok: false, error }`.
 
 **3. Server: which loaders run — reactivity key matching**
@@ -1196,7 +1194,7 @@ const MySingleFlightLayer = Layer.succeed(Route.SingleFlightTransportTag, {
   execute: (request, options) =>
     myRpcChannel.call(request.name ?? "mutation", request).pipe(
       Effect.map((response) => ({ ok: true, payload: response })),
-      Effect.catchAll((err) => Effect.succeed({ ok: false, error: err })),
+      Effect.catch((err) => Effect.succeed({ ok: false, error: err })),
     ),
 });
 ```
@@ -1315,7 +1313,7 @@ The runtime that ties history, navigation state, loaders, and server dispatch to
 - Repeated navigation/fetch work enters `cancelled` state before the next task begins
 - In-flight task registry guards against stale superseded writes
 - SSR bridge: `Route.renderRequest(app, { request, layer? })`, `Route.ServerRequestTag`, `Route.ServerResponseTag`
-- `Route.renderRequestWithRuntime(runtime, request, ...)` — runtime-backed render
+- `Route.renderRequestStream(app, { request, layer? })` — the same render, streamed
 - Server convenience: `Route.serverRequest`, `Route.serverUrl`, `Route.setStatus(...)`, `Route.setHeader(...)`, `Route.appendHeader(...)`, `Route.serverRedirect(...)`, `Route.serverNotFound()`
 
 <br />
@@ -1923,8 +1921,10 @@ Three async APIs serve different use cases. The right choice depends on whether 
 
 ```ts
 // No services needed → Atom.effect
-const posts = Atom.effect(() => fetch("/posts").then((r) => r.json()));
-// posts() → Result<PostList, FetchError>
+const posts = Atom.effect(() =>
+  Effect.tryPromise(() => fetch("/posts").then((r) => r.json() as Promise<PostList>)),
+);
+// posts() → Result<PostList, UnknownError>
 
 // Needs an injected service → Atom.query or defineQuery
 const user = Atom.query(() =>
@@ -1933,7 +1933,7 @@ const user = Atom.query(() =>
 // user() → Result<User, ApiError>
 
 // Needs invalidation, polling, or observability → defineQuery
-const data = defineQuery(() => fetch("/data"), {
+const data = defineQuery(() => Effect.tryPromise(() => fetch("/data")), {
   name: "fetchData",
   onTransition: ({ phase }) => console.log("Phase:", phase),
   pollSchedule: Schedule.spaced("30 seconds"),
@@ -1973,10 +1973,11 @@ const data = defineQuery(() => fetch("/data"), {
 
 ### Result (Async State)
 
-`Result` has six states because UI needs to distinguish cases that are often collapsed together:
+`Result` has seven states because UI needs to distinguish cases that are often collapsed together:
 
 | Variant            | Description                              | Why separate?                                                               |
 | ------------------ | ---------------------------------------- | --------------------------------------------------------------------------- |
+| `Idle`             | Not started, and not starting until asked | A manual query before its first run is not "loading": nothing is in flight |
 | `Loading`          | Initial load, no value yet               | First load needs a full skeleton/spinner, not just a subtle indicator       |
 | `Refreshing<A, E>` | Revalidating with previous settled value | Can show stale data + subtle indicator instead of hiding content            |
 | `Success<A>`       | Settled with a value                     | Normal case                                                                 |
@@ -2011,7 +2012,7 @@ Result.builder(users())
   .render();  // JSX | undefined
 ```
 
-Handlers: `onLoading()`, `onRefreshing(previous)`, `onSuccess(value)`,
+Handlers: `onIdle()`, `onLoading()`, `onRefreshing(previous)`, `onSuccess(value)`,
 `onStale(error, data)`, `onFailure(error)`, `onDefect(cause, rawCause)`, then
 `render()`.
 

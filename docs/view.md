@@ -13,7 +13,7 @@ styles, behaviors, diagnostics, and renderers consume the same contract.
 - A **component** publishes its authored slot contract with
   `Component.withSlots(...)`.
 
-```ts
+```text
 Component<Props, Req, E, Bindings, SlotContract> -> View<Slots>
 ```
 
@@ -121,7 +121,7 @@ tooling reason about structure without requiring DOM access.
 const tree = View.element("article", {
   children: [
     View.element("h2"),
-    View.text("Body"),
+    View.textNode("Body"),
   ],
 });
 

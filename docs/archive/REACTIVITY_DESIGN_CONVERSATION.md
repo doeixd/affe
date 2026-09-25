@@ -1,3 +1,8 @@
+> **Archived design conversation.** This is the discussion that led to semantic
+> reactivity keys; much of it (framework bridges, `@effect/experimental`,
+> `Effect.Tag`) never shipped or has since changed. The current guide is
+> [`docs/reactivity.md`](../reactivity.md).
+
 clarify if it follows Solid 2.0's microtask model or Solid 1.x's synchronous model.
 From effect-atom: Atom.withReactivity and the Reactivity integration from @effect/experimental. This is a much cleaner invalidation model than manually wiring invalidates arrays.
 

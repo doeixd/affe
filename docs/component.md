@@ -6,7 +6,7 @@ committed setup snapshot.
 
 The current component shape is:
 
-```ts
+```text
 Component<Props, Req, E, Bindings, SlotContract> -> View<Slots> | JSX-like node
 ```
 
@@ -47,7 +47,7 @@ const UserCard = Component.make(
     View.fromSlots(UserSlots, (
       <article ref={View.Slot.ref(UserSlots, "root")}>
         {Result.builder(bindings.user())
-          .onInitial(() => "Loading")
+          .onLoading(() => "Loading")
           .onSuccess((user) => <h2>{user.name}</h2>)
           .onFailure(() => "Could not load user")
           .render()}
@@ -87,6 +87,38 @@ const SaveButton = Component.make(
   (_props, bindings) => (
     <button disabled={bindings.save.pending()}>Save</button>
   ),
+);
+```
+
+## Lifetime
+
+Each instance of a component has its own setup, owner and `Scope`. Render the
+same component three times and you get three independent sets of bindings.
+
+- **Setup runs once per instance.** The view does not re-run when state
+  changes; only the expressions that read an atom update.
+- **Unmount closes the instance's scope.** Its `Effect.addFinalizer`
+  callbacks run, its queries stop, and a fiber forked into the scope is
+  interrupted. Writing to its local state or calling its actions afterwards
+  throws, which catches handlers that outlive their component.
+- **Actions capture their context.** A `Component.action` keeps the services
+  and runtime its setup ran with. It can be passed to a child, stored or
+  called from a timeout, and it still runs against the same services.
+- **Siblings are isolated.** A layer given with `Component.withLayer(...)`
+  reaches that component and its children, never its siblings.
+
+```ts
+const Clock = Component.make(
+  Component.props<{}>(),
+  Component.require<never>(),
+  () =>
+    Effect.gen(function* () {
+      const now = yield* Component.state(new Date());
+      const timer = setInterval(() => now.set(new Date()), 1000);
+      yield* Effect.addFinalizer(() => Effect.sync(() => clearInterval(timer)));
+      return { now };
+    }),
+  (_props, { now }) => <time>{now().toLocaleTimeString()}</time>,
 );
 ```
 
@@ -137,9 +169,9 @@ const Field = Component.makeWithSlots(FieldSlots, {
   props: Component.props<{ readonly label: string }>(),
   setup: () => Effect.succeed({}),
   view: (props) => (
-    <label>
+    <label ref={View.Slot.ref(FieldSlots, "root")}>
       <span>{props.label}</span>
-      <input />
+      <input ref={View.Slot.ref(FieldSlots, "input")} />
     </label>
   ),
 });
@@ -271,6 +303,7 @@ For behavior, style, and interaction tests use `@doeixd/affe/testing`; see
 
 ## Related Docs
 
+- [`state.md`](state.md): atoms, queries, actions and `Result`
 - `docs/SLOT_CONTRACT_GOLDEN_PATH.md`
 - `docs/view.md`
 - `docs/style.md`

@@ -10,3 +10,5 @@ reactively-upstream/
 test-results/
 playwright-report/
 .size-*/
+.check-docs-*/
+.doc-verify/

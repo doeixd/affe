@@ -9,11 +9,12 @@ something you need to use the library.
 
 | Guide | What it covers |
 | --- | --- |
+| [`state.md`](state.md) | Atoms, async queries and actions, `Result`, and the control-flow components that render them. |
 | [`SLOT_CONTRACT_GOLDEN_PATH.md`](SLOT_CONTRACT_GOLDEN_PATH.md) | The shortest path to an authored component with slots, a style and a behavior. |
 | [`component.md`](component.md) | Components: setup as an Effect, bindings, slot contracts, layers, transforms. |
 | [`view.md`](view.md) | `View`, `View.Slots`, slot metadata, tree metadata, diagnostics. |
 | [`style.md`](style.md) | Styles and themes, attachment tiers, global styles, recipes. |
-| [`reactivity.md`](reactivity.md) | Semantic reactivity keys and invalidation. |
+| [`reactivity.md`](reactivity.md) | Reactivity keys: refreshing queries and loaders after a write, batching, testing. |
 | [`router.md`](router.md) | Routes, loaders, preload, lazy components, head metadata, single flight, SSR, cross-site request protection. |
 | [`SERVICES_AND_LAYERS.md`](SERVICES_AND_LAYERS.md) | Services and layers: provision tiers and request scoping. |
 | [`TESTING.md`](TESTING.md) | DOM-free tests, layer swapping, behavior drivers, stories and scenes. |
@@ -29,7 +30,7 @@ serves them all.
 
 - State: `Atom.make`, `Atom.derived`, `Atom.runtime(layer).atom(...)` and
   `Atom.runtime(layer).action(...)`.
-- Async state: the unified `Result` model (`Loading`, `Refreshing`,
+- Async state: the unified `Result` model (`Idle`, `Loading`, `Refreshing`,
   `Success`, `Failure`, `Stale`, `Defect`), rendered with `Async`,
   `Loading`, `Errored` or `MatchTag`.
 - Components: `Component.make(...)` with setup as an `Effect`, plus
