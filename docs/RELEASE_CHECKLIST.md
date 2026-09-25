@@ -81,7 +81,7 @@ Re-run and capture under the release evidence scratch before cutting a tag:
 ### Intentionally deferred (not release blockers for prerelease)
 
 Shipped in-tree (backlog closed 2026-07-09): P9 `Form`, P11 Devtools/MCP
-session MVP, P12 gated streams + `Component.subscription`, D3 `create-af-ui`.
+session MVP, P12 gated streams + `Component.subscription`, D3 `create-affe` (was `create-af-ui`).
 
 Still deferred depth: multi-renderer (TUI/RN), package split execution (P7
 stays single package), full browser Devtools panel chrome, WAI-ARIA
@@ -89,8 +89,9 @@ certification theater. See `docs/V1_SCOPE.md` Deferred.
 
 ## How to release
 
-1. On `main`, with CI green, bump `version` in `package.json` and
-   move the `CHANGELOG.md` "Unreleased" entries under the new version heading.
+1. On `main`, with CI green, bump `version` in `package.json` and in
+   `packages/create-affe/package.json` (they release together; a test
+   enforces it), and move the `CHANGELOG.md` "Unreleased" entries under the new version heading.
 2. Run locally: `npm run build && npm run typecheck:all && npm test &&
    npm run verify:package` (and `npm run test:browser` if Chromium is
    available). `verify:package` installs the packed tarball into a throwaway
@@ -98,7 +99,7 @@ certification theater. See `docs/V1_SCOPE.md` Deferred.
    the shipped types.
 3. Commit, then tag and push: `git tag v<version> && git push origin v<version>`.
    `.github/workflows/release.yml` re-runs the gates and publishes
-   `@doeixd/affe` with npm provenance. Versions containing a hyphen
+   `@doeixd/affe` and `@doeixd/create-affe` with npm provenance. Versions containing a hyphen
    (`0.7.0-rc.1`) publish under the `next` dist-tag. The workflow needs the
    `NPM_TOKEN` repository secret.
 4. Leave the old `effect-atom-jsx` package on npm untouched: do not publish

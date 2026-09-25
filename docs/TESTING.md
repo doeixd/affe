@@ -192,7 +192,7 @@ const AppLayer = Layer.mergeAll(
 Component.mount(App, { props: {}, layer: AppLayer, target });
 ```
 
-Production default remains explicit-only (`Diagnostics.collect*` / `af-ui doctor`).
+Production default remains explicit-only (`Diagnostics.collect*` / `affe doctor`).
 
 ## Notes
 

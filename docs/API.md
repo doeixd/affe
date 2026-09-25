@@ -132,6 +132,7 @@ URL state and navigation. Provides a reactive `url` atom and imperative navigati
 | Layer                           | Description                                                                                        |
 | ------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `Route.Router.Browser`          | Wraps the browser History API. Listens to `popstate`. Use in client-rendered apps.                 |
+| `Route.Router.browser({ base })` | The browser router for an app served under a sub-path (`base: "/docs"`); routes and `url()` stay app-relative. |
 | `Route.Router.Hash`             | Hash-based routing (`#/path`). Listens to `hashchange`. Use when you can't control server routing. |
 | `Route.Router.Server(request)`  | Static URL from an incoming request. Use during SSR.                                               |
 | `Route.Router.Memory(initial?)` | In-memory history stack. Use in tests and Node environments.                                       |
@@ -1274,7 +1275,8 @@ Server-side route handlers with typed request decoding, schema-based params/form
 
 - `ServerRoute.execute(route, request)` — Schema-based params/form/body decoding + basic response encoding
 - `ServerRoute.executeWithServices(...)`, `ServerRoute.executeFromServices(...)` — service-native variants
-- `ServerRoute.dispatch(routes, request, { layer? })` — full route dispatch with loader payload output
+- `ServerRoute.dispatch(routes, request, { layer?, csrf? })` — full route dispatch with loader payload output; refuses cross-site state-changing requests with a 403 unless `csrf: false` or the origin is in `csrf.trustedOrigins`
+- `ServerRoute.checkOrigin(request, csrf?)` — the same cross-site check, for endpoints you route yourself
 - `ServerRoute.dispatchWithRuntime(runtime, request, ...)` — runtime-backed dispatch
 - `ServerRoute.toResponse(...)` — convert dispatch results to a generic response shape (`status`, `headers`, `body`/`html`, redirect, notFound)
 
@@ -2042,6 +2044,8 @@ otherwise they degrade to `Failure` and `Loading` respectively.
 
 These components pattern-match `Result` or conditional values and render the appropriate slot. They are the reactive equivalent of `switch` statements over async state.
 
+Each returns an accessor: in JSX (`<Async result={query()} ... />`) the props are getters, and the component re-renders its branch when they change. A branch is rebuilt only when the selection changes (for `Loading`, only when loading flips), and the previous branch is disposed. Called as a plain function, read the accessor to get the current branch.
+
 - **`Async({ result, loading?, refreshing?, stale?, success, error?, defect? })`** — render slots based on `Result` state. `refreshing?` is optional; falls back to the previous settled state. `stale?` is optional; falls back to `error?` or the `success` slot with stale data.
 - **`Loading({ when, fallback?, children })`** — show children while loading
 - **`Errored({ result, children })`** — show children on error
@@ -2106,6 +2110,7 @@ Functions called by `babel-plugin-jsx-dom-expressions` compiled JSX output. You 
 - `render(fn, container)` — mount a component tree; returns dispose function
 - `renderWithHMR(fn, container, hot?, key?)` — mount with Vite HMR self-accept + previous dispose handling
 - `withViteHMR(dispose, hot?, key?)` — attach any disposer to Vite HMR lifecycle
+- `@doeixd/affe/vite` — `affe(options?)`, the Vite plugin that compiles `.tsx`/`.jsx` with `babel-plugin-jsx-dom-expressions` (options: `include`, `exclude`, `hydratable`, `jsx`, `babelPlugins`)
 
 ### SSR
 
@@ -2328,10 +2333,10 @@ if (Diagnostics.hasErrors(diagnostics)) {
 CLI:
 
 ```bash
-af-ui doctor ./dist/app-routes.js
-af-ui doctor ./dist/app-routes.js --export app --export serverRoutes
-af-ui doctor ./dist/app-routes.js --json
-af-ui doctor ./dist/app-routes.js --fail-on-warnings
+affe doctor ./dist/app-routes.js
+affe doctor ./dist/app-routes.js --export app --export serverRoutes
+affe doctor ./dist/app-routes.js --json
+affe doctor ./dist/app-routes.js --fail-on-warnings
 ```
 
 The imported module may export route trees, server route arrays, diagnostics

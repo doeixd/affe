@@ -64,7 +64,7 @@ Everything here is implemented today or is tracked release-blocking work.
 - Inference audit: no explicit generics in authored code (Finding 4) —
   release-blocking core done
 - Declared-vs-rendered diagnostics + platform validation; **diagnostics
-  pipeline + `af-ui doctor` CLI + opt-in dev auto-report (P3)** shipped
+  pipeline + `affe doctor` CLI + opt-in dev auto-report (P3)** shipped
 - Test kit on `@doeixd/affe/testing` (P5): `render`, `behaviorDriver`,
   `resolveQuery`/`resolveAction`, story/scene helpers — shipped
 
@@ -183,7 +183,7 @@ core is the only hard external blocker for cutting `1.0.0`.
   demo apps, and Effect-fiber interruption polish. **Shipped in-tree already:**
   P1/P3/P5 cores, P4 decision + schema, P8 catalog MVP, P9 `Form`, P10
   ownership note, P11 Devtools/MCP session MVP, P12 gated stream +
-  `Component.subscription`, P13 inputSchema, D3 `create-af-ui`.
+  `Component.subscription`, P13 inputSchema, D3 `create-affe` (was `create-af-ui`).
 - **`RouterRuntime` cancellation/supersession polish** beyond the current
   guarded in-flight model (deeper fiber interruption) remains optional depth.
 - **Schema-validated action inputs (P13)** boundary subset **shipped**;

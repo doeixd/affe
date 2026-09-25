@@ -82,8 +82,10 @@ noted:
 - **Docs identity.** "AF-UI" wording migrated to "Affe" outside
   `docs/archive/`; `docs/archive/AF_UI_CONTRACT.md` keeps its filename and
   wording with a rename note. File names such as `docs/afui.md` and
-  `docs/af-ui-json-render/` are unchanged, as are the `af-ui`, `af-ui-doctor`,
-  and `create-af-ui` CLI names, which this decision did not cover.
+  `docs/af-ui-json-render/` are unchanged.
+- **CLIs** (0.6.0): `af-ui` / `af-ui-doctor` became `affe` / `affe-doctor`,
+  and the `create-af-ui` stub became the `@doeixd/create-affe` package
+  (`npm create @doeixd/affe`), which scaffolds a working Vite project.
 - **Repository** (step 5): `doeixd/effect-atom-jsx` → `doeixd/affe`; the
   `repository`, `homepage`, and `bugs` URLs in `package.json` point at the new name, and GitHub redirects the old one.
 - **Not done yet:** the mascot/logo, the domain, and the npm dispute for bare

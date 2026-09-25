@@ -78,6 +78,18 @@ const Styled = Field.pipe(
 Component.mount(App, { props: {}, target: el, runtime });   // or { ..., layer: AppLayer }
 ```
 
+## Project setup
+
+- New project: `npm create @doeixd/affe@latest my-app`.
+- Vite: `import affe from "@doeixd/affe/vite"` and `plugins: [affe()]`. Do not
+  configure Vite's own JSX (`esbuild.jsx` / `oxc.jsx`) for Affe.
+- tsconfig: `"jsx": "preserve"`, `"jsxImportSource": "@doeixd/affe"`,
+  `"lib": ["ESNext", "DOM"]`.
+- Routed pages: pass components to `<Route.Switch children={[Home, User]} />`
+  (not calls); navigate with `<Route.Link to={link} params={...}>`.
+- Run actions that need services through a runtime:
+  `Atom.runtime(layer).action(...)`, then `action.run(input)` from handlers.
+
 ## Renamed / removed — do NOT emit these (they are gone or deprecated)
 
 | Wrong / old | Correct |
@@ -92,6 +104,8 @@ Component.mount(App, { props: {}, target: el, runtime });   // or { ..., layer: 
 | `View.Slot.make` x N + `Slot.bind` map (verbose) | `View.Slots.define({ name: { capability } })` |
 | hand-written `View.element(...)` trees as authored surface | JSX via `View.fromSlots(slots, <jsx/>)` |
 | top-level `Registry` import | `@doeixd/affe/Registry` (advanced) |
+| `create-af-ui`, `af-ui doctor` | `npm create @doeixd/affe`, `affe doctor` |
+| `effect-atom-jsx` package / imports | `@doeixd/affe` |
 | reactivity string keys as the authored path | `Reactivity.Key.make/family(...)` witnesses (strings still work as escape hatch) |
 
 ## When NOT to use this

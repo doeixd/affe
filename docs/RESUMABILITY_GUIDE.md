@@ -1,5 +1,8 @@
 # Resumability Guide
 
+> **Experimental.** Resumability works and is tested end to end, but its API may
+> still change in a 0.x minor release. The changelog marks every change.
+
 This guide explains what resumability means in Affe, how it differs from
 hydration, which APIs opt a component into it, and the security and deployment
 rules every adapter must follow. It documents the runtime protocol of

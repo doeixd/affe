@@ -2,6 +2,58 @@
 
 ## 0.6.0 (2026-09-25)
 
+### Getting started works
+
+- `npm create @doeixd/affe@latest my-app` (the new `@doeixd/create-affe`
+  package) scaffolds a Vite + TypeScript project that runs with
+  `npm install && npm run dev`. It replaces the `create-af-ui` stub, whose
+  dev script only printed "configure a bundler".
+- `@doeixd/affe/vite` compiles Affe JSX in Vite: `plugins: [affe()]`. The
+  Babel packages and Vite are optional peer dependencies.
+- The CLIs are now `affe` and `affe-doctor` (were `af-ui` / `af-ui-doctor`).
+
+### Every example now runs in the browser suite, and the bugs that hid
+
+Fourteen of twenty examples had never been run by a test. Driving each one in
+Chromium found:
+
+- **Control flow never updated in JSX.** `Show`, `Async`, `Loading`,
+  `Errored`, `TypedBoundary`, `Switch`/`Match`, `Optional`, `MatchOption` and
+  `MatchTag` read their props once, so `<Async result={query()} ...>` stayed
+  on its first state. They now return accessors and follow their props.
+  **Behaviour change:** calling one as a plain function returns an accessor;
+  call it to read the current branch.
+- **`Route.Link` threw**, could not find a router provided by `WithLayer`
+  (so clicks did nothing), never updated its active class, and hijacked
+  ctrl/⌘-clicks. It now renders a real anchor and fixes all four.
+- **Mounted pages ignored new loader data.** Moving `/users/1` →
+  `/users/2`, a single-flight seed, or an invalidation now reaches a page
+  already on screen.
+- **Actions lost their context** when run from a click handler:
+  `useService` and `WithLayer` services now resolve inside `Atom.action` /
+  `defineMutation`.
+- **`renderToString` threw in a browser** (`window.document` is read-only).
+- **`Component.withLayer` services leaked** to siblings rendered after the
+  component.
+
+### New
+
+- `Router.browser({ base })` serves an app under a sub-path; the hash router
+  gives links `#/path` hrefs. `RouterService` gains an optional `href(to)`.
+- `ServerRoute.execute` / `dispatch` refuse state-changing requests that a
+  browser marks as coming from another site (403, before the handler runs);
+  `ServerRoute.checkOrigin` is exported for hand-routed endpoints, and
+  `csrf: false` / `csrf.trustedOrigins` configure it. **Behaviour change**
+  for apps that accept cross-site form posts.
+- `SECURITY.md`, `CONTRIBUTING.md`, and a guides-first `docs/README.md`.
+
+### Smaller bundles
+
+- About 12 kB gzipped less in any app with a component: a dynamic
+  `import("./Route.js")` made bundlers keep every Route export. The
+  `create-affe` template is ~64 kB gzipped with Effect included, and
+  `verify:package` holds it to a 68 kB budget.
+
 ### `Route.Switch` and `WithLayer` work as documented
 
 - `WithLayer` never rendered its children: it waited on `Layer.launch`,

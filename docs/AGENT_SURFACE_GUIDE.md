@@ -1,5 +1,8 @@
 # Agent Surface Guide
 
+> **Experimental.** The agent surface works and is tested end to end, but its API may
+> still change in a 0.x minor release. The changelog marks every change.
+
 How an app exposes its actions to AI agents — and why the agent is **just
 another caller**, not a second system. This guide covers `src/Agent.ts`,
 `src/reactivity-push.ts`, `src/ViewSpec.ts` + `src/view-spec-json-render.ts`,

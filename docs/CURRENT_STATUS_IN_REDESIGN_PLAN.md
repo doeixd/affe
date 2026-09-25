@@ -30,6 +30,15 @@ specs; no open design question in any lane)
     `future/` suite.
   - The README covers resumability and the agent surface, and states that slot
     handles are not yet bound to rendered DOM elements (see below).
+- **Launch readiness (2026-09-25).** `@doeixd/affe/vite` and
+  `@doeixd/create-affe` give a working first run; `verify:package` installs
+  and builds a scaffolded app under a 68 kB gzip budget. Every served example
+  now runs in Playwright (`browser-tests/examples.spec.ts`), which found:
+  control-flow components frozen in JSX, a broken `Route.Link`, mounted pages
+  ignoring new loader data, actions without context, `renderToString`
+  failing in browsers, and `withLayer` services leaking to siblings — all
+  fixed with tests. `ServerRoute` refuses cross-site state-changing requests
+  by default. Resumability and the agent surface are marked experimental.
 - **0.6.0 (2026-09-25).** Rendering the router examples end to end found
   that `WithLayer` never rendered its children (it waited on
   `Layer.launch`, which never completes) and `Route.Switch` always rendered

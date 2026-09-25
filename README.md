@@ -1,11 +1,15 @@
 # Affe
 
-> Affe (German for "monkey", pronounced "AH-fuh") was called `effect-atom-jsx`
-> until this release. Install `@doeixd/affe` and replace `effect-atom-jsx` with
-> `@doeixd/affe` in imports and in `jsxImportSource`; the API is unchanged.
-
 Effect-native reactive state and inside-out UI. One algebra from a counter
 atom to a full-stack, schema-validated, single-flight application.
+
+```sh
+npm create @doeixd/affe@latest my-app
+cd my-app && npm install && npm run dev
+```
+
+> Affe is German for "monkey" (pronounced "AH-fuh"). It was published as
+> `effect-atom-jsx` before 0.6.
 
 ```ts
 import { Atom } from "@doeixd/affe";
@@ -41,8 +45,13 @@ router; the router works without the server runtime.
 
 ## Install
 
+The quickest start is `npm create @doeixd/affe@latest my-app` (Vite,
+TypeScript, a counter and a slot-contract component). To add Affe to an
+existing project:
+
 ```sh
 npm install @doeixd/affe effect@4.0.0-rc.117
+npm install -D vite @babel/core @babel/preset-typescript babel-plugin-jsx-dom-expressions
 ```
 
 **Effect compatibility:** this package peers on **Effect 4** (a release candidate), pinned to
@@ -57,7 +66,17 @@ package ships `.d.ts` from the TS7 toolchain.
 ### Setup
 
 JSX compiles to fine-grained DOM operations via
-`babel-plugin-jsx-dom-expressions`. Point `moduleName` at the
+`babel-plugin-jsx-dom-expressions`. With Vite, add the plugin:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import affe from "@doeixd/affe/vite";
+
+export default defineConfig({ plugins: [affe()] });
+```
+
+With another bundler, configure Babel yourself and point `moduleName` at the
 `@doeixd/affe/runtime` subpath (that is where the compiler-facing helpers
 live):
 
@@ -498,12 +517,43 @@ What you don't give up: incremental adoption inside an existing app, and SSR
 - `examples/` — router golden path, single flight (custom + fetch transport),
   styled combobox, optimistic counter, SSR hydration
 
+## Size
+
+Measured with Vite 8, minified and gzipped, **Effect included**:
+
+| App | Initial JavaScript |
+|---|---|
+| Atoms only | ~38 kB |
+| One component, `render` | ~58 kB |
+| The `create-affe` template | ~64 kB |
+| `examples/router-basic` (routing, loaders) | ~63 kB |
+
+Most of that is Effect's runtime, which an Effect app ships anyway (the
+runtime plus `Layer` and `Schema` alone is ~23 kB). Affe is not the choice
+for a page where every kilobyte counts; `verify:package` holds the template
+app to a 68 kB budget so the number does not creep.
+
 ## Status
 
-Pre-release, breaking-change-first redesign track. The API shown here is the
-current shipped surface; names from older docs/posts (e.g.
-`ServerRoute.make("json")`, `AsyncResult`, `Atom.fn`) are gone. See
-`CHANGELOG.md` and `docs/CURRENT_STATUS_IN_REDESIGN_PLAN.md`.
+**0.x prerelease.** Affe peers on Effect 4, which is itself a release
+candidate, so 1.0 waits for a stable Effect. Until then a minor version can
+change APIs; `CHANGELOG.md` lists every break with a migration note.
+
+| Area | Status |
+|---|---|
+| Atoms, `Result`, queries and actions | Stable surface |
+| Components, slots, styles, behaviors | Stable surface |
+| Router, loaders, single flight, server routes, SSR | Stable surface |
+| Resumability (`Resume`, `Portable`, the extract compiler) | Experimental |
+| Agent surface (`Agent`, `ViewSpec`, `@doeixd/affe-ui-agent`) | Experimental |
+
+"Stable surface" means it is exercised end to end (unit tests plus every
+example driven in a real browser) and changes only with a changelog entry.
+"Experimental" means it works and is tested, but its API may still move.
+
+Run the examples with `npm run examples`. Security reports go through
+[`SECURITY.md`](SECURITY.md); contributions through
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Events
 
