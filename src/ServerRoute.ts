@@ -122,6 +122,54 @@ export interface ExecuteResult<R> {
   readonly headers: ReadonlyMap<string, ReadonlyArray<string>>;
   readonly redirect?: { readonly location: string; readonly status: number };
   readonly notFound?: true;
+  /** Set when {@link checkOrigin} refused a cross-site request (status 403). */
+  readonly forbidden?: { readonly reason: string };
+}
+
+/**
+ * Cross-site request forgery protection for state-changing requests.
+ *
+ * `false` turns it off (only for endpoints that must accept cross-site form
+ * posts and carry their own token check). `trustedOrigins` lists other
+ * origins allowed to call in, such as `https://admin.example.com`, or the
+ * public origin when a proxy rewrites the request URL.
+ */
+export type CsrfOptions = false | { readonly trustedOrigins?: ReadonlyArray<string> };
+
+/** Options for {@link execute} and {@link dispatch}. */
+export interface ServerExecuteOptions {
+  readonly layer?: import("effect").Layer.Layer<any>;
+  /** On by default. See {@link CsrfOptions} and {@link checkOrigin}. */
+  readonly csrf?: CsrfOptions;
+}
+
+const safeMethods = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+
+/**
+ * Decide whether a request may change state, the way browsers let servers
+ * tell: safe methods always pass; `Sec-Fetch-Site: same-origin` (or `none`,
+ * a user-initiated navigation) passes; otherwise an `Origin` header must be
+ * the request's own origin or a trusted one. A request with neither header
+ * did not come from a browser page, so it cannot be a forgery and passes.
+ *
+ * `execute` and `dispatch` apply this to every request. Call it yourself for
+ * endpoints you route by hand, such as a single-flight POST handler.
+ */
+export function checkOrigin(
+  request: Request,
+  options: CsrfOptions = {},
+): { readonly ok: true } | { readonly ok: false; readonly reason: string } {
+  if (options === false || safeMethods.has(request.method.toUpperCase())) return { ok: true };
+  const trusted = new Set(options.trustedOrigins ?? []);
+  const site = request.headers.get("sec-fetch-site");
+  if (site === "same-origin" || site === "none") return { ok: true };
+  const origin = request.headers.get("origin");
+  if (origin !== null) {
+    if (origin === new URL(request.url).origin || trusted.has(origin)) return { ok: true };
+    return { ok: false, reason: `cross-origin ${request.method} from ${origin}` };
+  }
+  if (site !== null) return { ok: false, reason: `${request.method} with Sec-Fetch-Site: ${site}` };
+  return { ok: true };
 }
 
 /** Result of dispatching a request through document and data routes. */
@@ -604,7 +652,7 @@ export function find(
 export function execute<T extends AnyServerRouteNode>(
   route: T,
   request: Request,
-  options?: { readonly layer?: import("effect").Layer.Layer<any> },
+  options?: ServerExecuteOptions,
 ): Effect.Effect<ExecuteResult<ResponseOf<T>>, unknown> {
   const responseService = createResponseService();
   return executeWithServices(route, request, responseService, options);
@@ -646,10 +694,20 @@ export function executeWithServices<T extends AnyServerRouteNode>(
   route: T,
   request: Request,
   responseService: ResponseService,
-  options?: { readonly layer?: import("effect").Layer.Layer<any> },
+  options?: ServerExecuteOptions,
 ): Effect.Effect<ExecuteResult<ResponseOf<T>>, unknown> {
   return Effect.tryPromise({
     try: async () => {
+      const origin = checkOrigin(request, options?.csrf);
+      if (!origin.ok) {
+        return {
+          response: undefined,
+          encoded: { _tag: "CrossOriginRequestRefused", reason: origin.reason },
+          status: 403,
+          headers: new Map(),
+          forbidden: { reason: origin.reason },
+        } satisfies ExecuteResult<ResponseOf<T>>;
+      }
       const url = new URL(request.url);
       const paramsValue = decodeSchemaOrDefault(route.paramsSchema as Schema.Schema<ParamsOf<T>> | undefined, extractParams(route.path, url.pathname), {} as ParamsOf<T>);
       const queryValue = decodeSchemaOrDefault(route.querySchema as Schema.Schema<QueryOf<T>> | undefined, Object.fromEntries(url.searchParams.entries()), {} as QueryOf<T>);
@@ -748,7 +806,7 @@ export function runDocument(
 export function dispatch(
   routes: ReadonlyArray<ServerRouteNode<any, any, any, any>>,
   request: Request,
-  options?: { readonly layer?: import("effect").Layer.Layer<any> },
+  options?: ServerExecuteOptions,
 ): Effect.Effect<DispatchResult, unknown> {
   return Effect.gen(function* () {
     const url = new URL(request.url);
@@ -816,6 +874,7 @@ export function executeFromServices<T extends AnyServerRouteNode>(
 
 export const ServerRoute = {
   action,
+  checkOrigin,
   document,
   json,
   resource,

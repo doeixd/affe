@@ -323,6 +323,29 @@ Server helpers:
 - `Route.serializeLoaderData(...)`
 - `Route.deserializeLoaderData(...)`
 
+## Cross-Site Request Protection
+
+`ServerRoute.execute` and `ServerRoute.dispatch` refuse a state-changing
+request (anything but GET, HEAD, OPTIONS) that a browser says came from
+another site, with a 403 and `result.forbidden.reason`, before the handler
+runs:
+
+- `Sec-Fetch-Site: same-origin` passes, whatever the URL looks like behind a
+  proxy;
+- otherwise the `Origin` header must equal the request's origin or one of
+  `csrf.trustedOrigins`;
+- a request with neither header is not from a browser page and passes.
+
+```ts
+ServerRoute.dispatch(routes, request, {
+  csrf: { trustedOrigins: ["https://admin.example.com"] },
+});
+```
+
+Pass `csrf: false` only for an endpoint that must accept cross-site form
+posts and checks its own token. For a POST endpoint you route yourself, such
+as a single-flight handler, call `ServerRoute.checkOrigin(request)` first.
+
 ## SSR, Streaming, And Sitemaps
 
 - `Route.runStreamingNavigation(...)` splits critical and deferred loader data.
