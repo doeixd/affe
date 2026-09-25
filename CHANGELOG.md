@@ -1,6 +1,53 @@
 # Changelog
 
-## Unreleased (Redesign Track)
+## 0.6.0 (2026-09-25)
+
+### `Route.Switch` and `WithLayer` work as documented
+
+- `WithLayer` never rendered its children: it waited on `Layer.launch`,
+  which never completes, and the layer's services never reached the
+  subtree. It now builds the layer (synchronous layers render immediately,
+  asynchronous ones show `fallback` until built), provides its services to
+  component setup, `useService` and nested boundaries, and releases the
+  layer on unmount. It returns an accessor.
+- `Route.Switch` returned its first non-null child, and a component call is
+  never null, so every router example only ever rendered its first page. It
+  now renders the most specific routed child that matches the current URL
+  (`/users/new` beats `/users/:id`), follows navigation, keeps the mounted
+  instance across URLs of the same route, and falls back to `fallback`. Pass
+  the components (`children={[Home, User]}`) so only the winner's setup and
+  loader run; calls (`Home({})`) are still accepted.
+- New `Component.isComponent(value)` guard.
+
+### Router matches rank by specificity
+
+- When sibling routes match the same path the most specific wins
+  (`static > :param > :param? > *`) in loaders, guards, head resolution, SSR
+  pre-runs, the client `RouterRuntime`, `ServerRoute.find` / `dispatch` and
+  `Route.Switch`. See "Match ranking" in `docs/router.md`.
+- Loader cache keys sort by code unit, so they no longer depend on locale.
+  Duration strings accept decimals and bad ones throw instead of becoming
+  `NaN`. Serialized records with a `__proto__` key are safe.
+
+### Background atom policies follow their readers
+
+- `Atom.withPolling`, `withStaleTime` and `withRetry` keep running while any
+  reactive reader holds the atom and stop when the last one goes. Before,
+  each read restarted or stopped the timer, so frequent re-reads starved
+  polling and one reader unmounting stopped polling for every other reader.
+
+### MCP adapter requires authentication by default
+
+- `@doeixd/affe-ui-agent`'s MCP adapter refuses tool calls that carry no
+  `McpAuth` with `McpAuthenticationRequiredError`. Pass `auth: "none"` to
+  opt out (for example, over a trusted local stdio transport).
+
+### Release tooling
+
+- `npm run verify:package` packs the package, installs it with its `effect`
+  peer, imports every subpath and type-checks a consumer strictly. CI runs
+  it, and pushing a `v*` tag publishes to npm with provenance (see
+  `docs/RELEASE_CHECKLIST.md`).
 
 ### Slot handles bind to rendered elements
 

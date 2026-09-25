@@ -37,7 +37,7 @@ Authority: `docs/V1_SCOPE.md` (ships vs deferred).
 
 ## Packaging
 
-- [x] `package.json` version on prerelease line (`0.5.0`)
+- [x] `package.json` version on prerelease line (`0.6.0`)
 - [x] `main` / `types` / `exports` / `bin` verified
 - [x] Build outputs under `dist/` (clean build)
 - [x] Lockfile committed
