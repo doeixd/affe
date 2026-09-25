@@ -48,7 +48,7 @@ Authority: `docs/V1_SCOPE.md` (ships vs deferred).
 - [x] Changelog / unreleased notes prepared for redesign track
 - [x] Example typecheck gate green (`typecheck:examples`)
 - [x] Integration suite `src/__tests__/todomvc.integration.test.ts` passing
-- [ ] Tag and publish plan confirmed (operator action — not automated)
+- [ ] Release started (Actions → Release → Run workflow, or a pushed tag)
 - [ ] Wait for Effect 4 stable before cutting `1.0.0` (not `0.x` prerelease)
 
 ## Latest Validation Snapshot (2026-07-09)
@@ -98,11 +98,17 @@ certification theater. See `docs/V1_SCOPE.md` Deferred.
    available). `verify:package` installs the packed tarball into a throwaway
    project, imports every subpath, and type-checks a golden-path file against
    the shipped types.
-3. Commit, then tag and push: `git tag v<version> && git push origin v<version>`.
-   `.github/workflows/release.yml` re-runs the gates and publishes
+3. Merge to `main`, then start the release: **Actions → Release → Run
+   workflow** with the version (`0.6.0`), or push the tag yourself
+   (`git tag -a v<version> -m "Affe <version>" && git push origin v<version>`).
+   `.github/workflows/release.yml` re-runs the gates, publishes
    `@doeixd/affe`, then `@doeixd/create-affe`, `@doeixd/affe-ui-agent`,
-   `@doeixd/affe-css` and `@doeixd/affe-permissive`, with npm provenance. Versions containing a hyphen
-   (`0.7.0-rc.1`) publish under the `next` dist-tag. The workflow needs the
-   `NPM_TOKEN` repository secret.
+   `@doeixd/affe-css` and `@doeixd/affe-permissive` with npm provenance,
+   creates the `v<version>` tag when it was started by hand, and creates the
+   GitHub release with that version's CHANGELOG section as its notes.
+   Versions containing a hyphen (`0.7.0-rc.1`) publish under the `next`
+   dist-tag and become a prerelease. A package already on npm at that
+   version is skipped, so a run that failed partway can be run again. The
+   workflow needs the `NPM_TOKEN` repository secret.
 4. Leave the old `effect-atom-jsx` package on npm untouched: do not publish
    to it or deprecate it.

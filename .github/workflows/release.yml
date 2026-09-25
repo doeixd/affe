@@ -2,59 +2,130 @@ name: Release
 
 # Publishes @doeixd/affe and the packages that release in step with it
 # (@doeixd/create-affe, @doeixd/affe-ui-agent, @doeixd/affe-css,
-# @doeixd/affe-permissive) when a version tag (v1.2.3, v0.6.0-rc.1) is pushed.
+# @doeixd/affe-permissive), then tags the commit and creates the GitHub
+# release with that version's CHANGELOG section as its notes.
+#
+# Start it either way:
+# - Actions → Release → Run workflow, with the version in package.json
+#   (e.g. 0.6.0). The workflow creates the v0.6.0 tag itself.
+# - Push a version tag (v1.2.3, v0.6.0-rc.1).
+#
 # Requires the NPM_TOKEN repository secret (an npm automation token with
-# publish rights to the @doeixd scope). Provenance links the published
-# package to this workflow run.
+# publish rights to the @doeixd scope). Provenance links each published
+# package to this workflow run. A package already on npm at this version is
+# skipped, so a run that failed partway can simply be run again.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release; must equal package.json (e.g. 0.6.0)"
+        required: true
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
-      - run: npm ci
-      - name: Tag matches package version
+      - name: Resolve the version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          VERSION="v$(node -p 'require("./package.json").version')"
-          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package.json version $VERSION" >&2
+          VERSION="$(node -p 'require("./package.json").version')"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            WANTED="${INPUT_VERSION#v}"
+          else
+            WANTED="${GITHUB_REF_NAME#v}"
+          fi
+          if [ "$WANTED" != "$VERSION" ]; then
+            echo "Asked to release $WANTED but package.json is $VERSION" >&2
             exit 1
           fi
+          TAG="v$VERSION"
+          # A tag that already exists must point at this commit.
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            if [ "$(git rev-list -n 1 "$TAG")" != "$(git rev-parse HEAD)" ]; then
+              echo "$TAG already exists on another commit" >&2
+              exit 1
+            fi
+          fi
+          DIST_TAG=latest
+          case "$VERSION" in *-*) DIST_TAG=next ;; esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+      - run: npm ci
       - run: npm run build
       - run: npm run build:packages
       - run: npm run typecheck:all
       - run: npm test
       - run: npm run verify:package
-      # Prerelease versions (anything with a hyphen) publish under the "next"
-      # dist-tag so `npm install @doeixd/affe` never picks them up by accident.
-      - name: Publish @doeixd/affe
-        run: |
-          VERSION="$(node -p 'require("./package.json").version')"
-          TAG=latest
-          case "$VERSION" in *-*) TAG=next ;; esac
-          npm publish --provenance --access public --tag "$TAG"
+      # The core first: the others peer on it. Prerelease versions publish
+      # under the "next" dist-tag so `npm install @doeixd/affe` never picks
+      # them up by accident.
+      - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # The core first: the others peer on it.
-      - name: Publish the packages that release with the core
+          VERSION: ${{ steps.version.outputs.version }}
+          DIST_TAG: ${{ steps.version.outputs.dist_tag }}
         run: |
-          VERSION="$(node -p 'require("./package.json").version')"
-          TAG=latest
-          case "$VERSION" in *-*) TAG=next ;; esac
-          for workspace in packages/create-affe packages/agent packages/css packages/permissive; do
-            npm publish --provenance --access public --tag "$TAG" --workspace "$workspace"
+          for dir in . packages/create-affe packages/agent packages/css packages/permissive; do
+            NAME="$(node -p "require('./$dir/package.json').name")"
+            if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+              echo "$NAME@$VERSION is already published; skipping"
+              continue
+            fi
+            if [ "$dir" = "." ]; then
+              npm publish --provenance --access public --tag "$DIST_TAG"
+            else
+              npm publish --provenance --access public --tag "$DIST_TAG" --workspace "$dir"
+            fi
           done
+      - name: Tag the release
+        if: github.event_name == 'workflow_dispatch'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Affe ${TAG#v}"
+          git push origin "$TAG"
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+            exit 0
+          fi
+          awk -v v="$VERSION" '
+            index($0, "## " v " ") == 1 || $0 == "## " v { found = 1; next }
+            /^## / { if (found) exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          PRERELEASE=""
+          case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
+          gh release create "$TAG" --title "Affe $VERSION" --notes-file release-notes.md --verify-tag $PRERELEASE
