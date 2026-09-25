@@ -17,11 +17,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import affe from "../dist/vite.js";
+import { examples, examplesDir as here, portOf } from "./examples-list.mjs";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..");
 const pkg = JSON.parse(fs.readFileSync(path.join(repo, "package.json"), "utf8"));
 
@@ -34,18 +33,6 @@ const alias = Object.entries(pkg.exports)
     const specifier = key === "." ? pkg.name : `${pkg.name}/${key.slice(2)}`;
     return { find: new RegExp(`^${specifier.replace(/[/.]/g, "\\$&")}$`), replacement: path.join(repo, target) };
   });
-
-/**
- * Examples with an index.html, in a stable order; ports are 4200 + index.
- * Examples with their own `build.mjs` (the resumability and permissive demos)
- * need a server build and have their own browser specs.
- */
-export const examples = fs.readdirSync(here)
-  .filter((name) => fs.existsSync(path.join(here, name, "index.html")))
-  .filter((name) => !fs.existsSync(path.join(here, name, "build.mjs")))
-  .sort();
-
-export const portOf = (name) => 4200 + examples.indexOf(name);
 
 const requested = process.argv.slice(2);
 for (const name of requested) {

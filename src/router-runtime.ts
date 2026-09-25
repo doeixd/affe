@@ -1,4 +1,5 @@
 import { Context, Effect, Fiber, Layer, Schema } from "effect";
+import { createSignal, type Accessor } from "./api.js";
 import { Result as CoreResult, type Result as CoreResultType } from "./effect-ts.js";
 import { makeResourceCacheIdentity } from "./cache-identity.js";
 import {
@@ -54,6 +55,13 @@ export interface LoaderCacheStore {
   /** Set once {@link LoaderCacheStore.dispose} has run; refuses late writes. */
   disposed: boolean;
   /**
+   * Reactive revision, bumped on every entry write, invalidation and clear.
+   * Mounted route components read it to follow their entry: a single-flight
+   * seed or an invalidation reaches a page that is already on screen.
+   */
+  readonly revision: Accessor<number>;
+  readonly bumpRevision: () => void;
+  /**
    * Set when a matched route guard refused this request (R3's server half).
    * The route setup path consults it to render the denied route as blocked —
    * without it, a render-time cache miss would run the protected loader that
@@ -94,7 +102,10 @@ function forEachLoaderCacheStore(f: (store: LoaderCacheStore) => void): void {
 
 /** Create an isolated loader cache store (one per server request, typically). */
 export function makeLoaderCacheStore(): LoaderCacheStore {
+  const [revision, setRevision] = createSignal(0);
   const store: LoaderCacheStore = {
+    revision,
+    bumpRevision: () => setRevision((n) => n + 1),
     cache: new Map(),
     reactivityToCache: new Map(),
     reactivitySubscriptions: new Map(),
@@ -192,11 +203,14 @@ function markStaleByReactivityKey(store: LoaderCacheStore, key: string): void {
   seen.set(key, invalidationSequence);
   const cacheKeys = store.reactivityToCache.get(key);
   if (!cacheKeys) return;
+  let changed = false;
   for (const cacheKey of cacheKeys) {
     const existing = store.cache.get(cacheKey);
     if (!existing) continue;
     store.cache.set(cacheKey, { ...existing, staleAt: 0 });
+    changed = true;
   }
+  if (changed) store.bumpRevision();
 }
 
 function ensureReactivitySubscription(store: LoaderCacheStore, key: string): void {
@@ -313,6 +327,7 @@ export function setLoaderCacheEntry(routeId: string, params: unknown, result: Co
     target.reactivityToCache.set(rk, set);
     ensureReactivitySubscription(target, rk);
   }
+  target.bumpRevision();
   return entry;
 }
 
@@ -363,11 +378,13 @@ export function clearLoaderCache(routeId?: string, store?: LoaderCacheStore): vo
   if (!routeId) {
     target.cache.clear();
     target.reactivityToCache.clear();
+    target.bumpRevision();
     return;
   }
   for (const [k, v] of target.cache.entries()) {
     if (v.routeId === routeId) target.cache.delete(k);
   }
+  target.bumpRevision();
 }
 
 /**

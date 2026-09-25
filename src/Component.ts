@@ -59,7 +59,7 @@ import {
   publishComponentServices,
 } from "./component-scope.js";
 import { normalizeReactivityKeys } from "./reactivity-runtime.js";
-import { currentLoaderCacheStore } from "./router-runtime.js";
+import { currentLoaderCacheStore, getLoaderCacheEntry, makeLoaderCacheKey } from "./router-runtime.js";
 
 export const ComponentTypeId: unique symbol = Symbol.for("affe/Component");
 
@@ -2592,6 +2592,76 @@ function routeErrorTag(error: unknown): string {
 }
 
 /**
+ * Keep a mounted route component's loader result in step with its cache
+ * entry. Without this, the result was fixed at setup: a single-flight seed or
+ * a reactivity invalidation never reached a page already on screen, and
+ * moving between URLs of the same route (`/users/1` → `/users/2`) kept the
+ * first URL's data.
+ *
+ * - new params: run the loader for them;
+ * - the entry was invalidated (`staleAt` 0): run it again;
+ * - someone else wrote a fresh entry (a single-flight seed, a preload):
+ *   show it.
+ *
+ * Loads run in the setup's own Effect context, so loader requirements are
+ * satisfied exactly as they were for the first load.
+ */
+function followLoaderEntry(input: {
+  readonly component: Component<any, any, any, any, any>;
+  readonly meta: Route.RouteMeta<any, any, any>;
+  readonly routeId: string;
+  readonly router: Route.RouterService;
+  readonly matched: Atom.ReadonlyAtom<boolean>;
+  readonly result: Atom.WritableAtom<any>;
+}): Effect.Effect<() => void> {
+  return Effect.gen(function* () {
+    const { component, meta, routeId, router, matched, result } = input;
+    const store = yield* currentLoaderCacheStore;
+    const context = yield* Effect.context<never>();
+    const paramsOf = (url: URL) => Route.extractParams(meta.fullPattern, url.pathname) ?? {};
+    let params = paramsOf(router.url());
+    let paramsKey = makeLoaderCacheKey(routeId, params).key;
+    let seen = getLoaderCacheEntry(routeId, params, store);
+    let sequence = 0;
+
+    const reload = (url: URL): void => {
+      const current = ++sequence;
+      Effect.runForkWith(context)(
+        Route.runRouteLoader(component, meta, url).pipe(
+          Effect.tap((next) => Effect.sync(() => {
+            if (current !== sequence) return;
+            seen = getLoaderCacheEntry(routeId, params, store);
+            result.set(next);
+          })),
+        ),
+      );
+    };
+
+    const signal = Atom.derived(() => [router.url(), store.revision(), matched()] as const);
+    return Atom.subscribe(signal, ([url, , isMatched]) => {
+      if (!isMatched) return;
+      const nextParams = paramsOf(url);
+      const nextKey = makeLoaderCacheKey(routeId, nextParams).key;
+      if (nextKey !== paramsKey) {
+        params = nextParams;
+        paramsKey = nextKey;
+        seen = undefined;
+        reload(url);
+        return;
+      }
+      const entry = getLoaderCacheEntry(routeId, params, store);
+      if (entry === undefined || entry === seen) return;
+      seen = entry;
+      if (entry.staleAt === 0) {
+        reload(url);
+        return;
+      }
+      if (entry.result !== result()) result.set(entry.result);
+    }, { immediate: false });
+  });
+}
+
+/**
  * Component-first routing (Tier 1): attach route context, params/query/hash,
  * loader, and guards to an **already-composed** component in place. Use this
  * when the routing decision is local to a component — e.g. retrofitting
@@ -2738,29 +2808,46 @@ export function route<P = Record<string, string>, Q = Record<string, string | un
         let loaderDataAtom: Atom.ReadonlyAtom<unknown> | undefined;
         let loaderResultAtom: Atom.ReadonlyAtom<any> | undefined;
         if (wrappedRoute.__routeLoader) {
-          if (loaderOptions.streaming) {
-            const resultState = yield* state(loaderResult);
-            loaderResultAtom = resultState;
-            loaderDataAtom = Atom.derived(() => {
-              const current = resultState();
-              return current._tag === "Success" ? current.value : undefined;
-            });
-          } else {
-            if (loaderResult._tag === "Failure") {
-              const cases = wrappedRoute.__routeLoaderError;
-              if (cases) {
-                const tag = routeErrorTag(loaderResult.error);
-                const handler = cases[tag] ?? cases._;
-                if (handler) {
-                  const fallbackView = handler(loaderResult.error, paramsAtom());
-                  return { __routeMatched: routeMatched, __routeInner: { __routeLoaderErrorView: fallbackView }, __routeCtx: ctx, __routeHeadId: headId, __routeHeadStore: headStore, __routePattern: fullPattern } satisfies RouteBindings<P, Q, H>;
-                }
+          if (!loaderOptions.streaming && loaderResult._tag === "Failure") {
+            const cases = wrappedRoute.__routeLoaderError;
+            if (cases) {
+              const tag = routeErrorTag(loaderResult.error);
+              const handler = cases[tag] ?? cases._;
+              if (handler) {
+                const fallbackView = handler(loaderResult.error, paramsAtom());
+                return { __routeMatched: routeMatched, __routeInner: { __routeLoaderErrorView: fallbackView }, __routeCtx: ctx, __routeHeadId: headId, __routeHeadStore: headStore, __routePattern: fullPattern } satisfies RouteBindings<P, Q, H>;
               }
-              throw loaderResult.error;
             }
-            const loaded = loaderResult._tag === "Success" ? loaderResult.value : undefined;
-            loaderDataAtom = Atom.value(loaded);
-            loaderResultAtom = Atom.value(loaderResult);
+            throw loaderResult.error;
+          }
+          const resultState = yield* state(loaderResult);
+          loaderResultAtom = resultState;
+          // Data stays on the last success while a new load is in flight.
+          let lastData: unknown = loaderResult._tag === "Success" ? loaderResult.value : undefined;
+          loaderDataAtom = Atom.derived(() => {
+            const current = resultState();
+            if (current._tag === "Success") lastData = current.value;
+            return lastData;
+          });
+          const unfollow = yield* followLoaderEntry({
+            component: wrapped,
+            meta: {
+              pattern,
+              fullPattern,
+              paramsSchema: options?.params,
+              querySchema: options?.query,
+              hashSchema: options?.hash,
+              exact: options?.exact,
+              id: routeId,
+            },
+            routeId,
+            router,
+            matched: routeMatched,
+            result: resultState,
+          });
+          const instanceScope = yield* Effect.serviceOption(Scope.Scope);
+          if (instanceScope._tag === "Some") {
+            yield* Scope.addFinalizer(instanceScope.value, Effect.sync(unfollow));
           }
         }
 

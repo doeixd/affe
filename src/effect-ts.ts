@@ -1362,6 +1362,13 @@ function mutationEffect<A, E, R>(
   const [result, setResult] = createSignal<Result<void, E>>(Result.success(undefined));
   let fiberRef: Fiber.Fiber<unknown, unknown> | null = null;
   let runVersion = 0;
+  // A mutation runs later, from an event handler with no owner. Capture what
+  // was visible where it was defined — the owner (so `useService` inside
+  // `fn` resolves), the mount runtime, and `WithLayer` services — and run
+  // every invocation with them.
+  const definedOwner = getOwner();
+  const definedRuntime = options?.runtime ?? getAmbientManagedRuntime() ?? undefined;
+  const definedServices = currentComponentServices();
 
   const interrupt = (): void => {
     if (fiberRef !== null) {
@@ -1406,8 +1413,15 @@ function mutationEffect<A, E, R>(
       setResult(Result.refreshing(prev));
     }
 
+    let body: Effect.Effect<unknown, E, R>;
+    try {
+      body = definedOwner === null ? fn(input) : runWithOwner(definedOwner, () => fn(input));
+    } catch (error) {
+      body = Effect.die(error);
+    }
+    if (definedServices !== null) body = Effect.provideContext(body, definedServices as Context.Context<R>);
     const wrapped = pipe(
-      fn(input),
+      body,
       Effect.matchCause({
         onSuccess: (): void => {
           if (version !== runVersion) return;
@@ -1440,7 +1454,7 @@ function mutationEffect<A, E, R>(
       }),
     );
 
-    fiberRef = runForkWithRuntime(options?.runtime, wrapped as Effect.Effect<void, never, R>) as
+    fiberRef = runForkWithRuntime(definedRuntime as RuntimeLike<R, unknown> | undefined, wrapped as Effect.Effect<void, never, R>) as
       Fiber.Fiber<unknown, unknown>;
   };
 

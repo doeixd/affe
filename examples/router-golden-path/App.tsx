@@ -316,17 +316,18 @@ const TeamDetailPage = TeamDetailWithLoader.pipe(
 // ─── Route Tree ───────────────────────────────────────────────────────────────
 
 const RootLayoutView = Component.from<{}>(() => (
-    <div style="font-family: ui-sans-serif, system-ui; margin: 0 auto; max-width: 960px; padding: 24px;">
       <header style="border-bottom: 1px solid #ccc; margin-bottom: 24px; padding-bottom: 12px;">
         <h1 style="margin: 0;">Router Golden Path</h1>
         <nav style="margin-top: 12px;">
-          <a href={homeLink({})} style="margin-right: 16px;">Home</a>
-          <a href={usersLink({})} style="margin-right: 16px;">Users</a>
-          <a href={teamsLink({})}>Teams</a>
+          {/* Route.Link navigates client-side and marks the active page. */}
+          <Route.Link to={homeLink} params={{}} class={navClass}>Home</Route.Link>
+          <Route.Link to={usersLink} params={{}} class={navClass}>Users</Route.Link>
+          <Route.Link to={teamsLink} params={{}} class={navClass}>Teams</Route.Link>
         </nav>
       </header>
-    </div>
 ));
+
+const navClass = (active: boolean) => (active ? "nav-link active" : "nav-link");
 
 const RootLayout = Route.layout(RootLayoutView).pipe(Route.id("root"));
 
@@ -356,16 +357,20 @@ export function App() {
   return (
     <WithLayer layer={Layer.mergeAll(Route.Router.Browser, UsersLive, TeamsLive)}>
       {() => (
-        <Route.Switch
-          fallback={<p>404 — Page not found</p>}
-          children={[
-            Route.componentOf(HomePage),
-            Route.componentOf(UsersListPage),
-            Route.componentOf(UserDetailPage),
-            Route.componentOf(TeamsListPage),
-            Route.componentOf(TeamDetailPage),
-          ]}
-        />
+        <div style="font-family: ui-sans-serif, system-ui; margin: 0 auto; max-width: 960px; padding: 24px;">
+          <style>{".nav-link { margin-right: 16px; } .nav-link.active { font-weight: 700; }"}</style>
+          <RootLayoutView />
+          <Route.Switch
+            fallback={<p>404 — Page not found</p>}
+            children={[
+              Route.componentOf(HomePage),
+              Route.componentOf(UsersListPage),
+              Route.componentOf(UserDetailPage),
+              Route.componentOf(TeamsListPage),
+              Route.componentOf(TeamDetailPage),
+            ]}
+          />
+        </div>
       )}
     </WithLayer>
   );

@@ -90,10 +90,6 @@ const UsersList = Component.make(
   Route.title("Users"),
 );
 
-const saveUser = Atom.action(
-  (input: SaveUserInput) => Effect.succeed(input),
-  { name: "save-user" },
-);
 
 const UserPage = Component.make(
   Component.props<{}>(),
@@ -111,10 +107,10 @@ const UserPage = Component.make(
           disabled={b.pending()}
           onClick={() => {
             const current = b.user();
-            void Effect.runPromise(saveUser.runEffect({
+            saveUser.run({
               id: current.id,
               name: current.name.endsWith("!") ? current.name.replace(/!+$/, "") : `${current.name}!`,
-            }));
+            });
           }}
         >
           {b.pending() ? "Saving..." : "Toggle Exclamation"}
@@ -157,6 +153,14 @@ const SingleFlightTransportLive = Layer.succeed(Route.SingleFlightTransportTag, 
     return saveUserHandler(request).pipe(Effect.provide(UsersLive));
   }) as any,
 });
+
+// The action runs through a runtime that carries the transport, so calling
+// it from a click handler (which has no ambient services) still reaches the
+// single-flight handler. Setup code refers to `saveUser` lazily, at render.
+const saveUser = Atom.runtime(SingleFlightTransportLive).action(
+  (input: SaveUserInput) => Effect.succeed(input),
+  { name: "save-user" },
+);
 
 const homeLink = Route.link(Home);
 const usersLink = Route.link(UsersList);

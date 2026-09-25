@@ -1,7 +1,7 @@
 import { Cause, Context, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import * as Atom from "./Atom.js";
 import { createComponent } from "./dom.js";
-import { getRequestEvent, insert, renderToString, setRequestEvent } from "./dom.js";
+import { currentDocument, getRequestEvent, insert, renderToString, setRequestEvent } from "./dom.js";
 import { createEffect, createMemo, createSignal, untrack, useContext, type Accessor } from "./api.js";
 import {
   ManagedRuntimeContext,
@@ -2834,7 +2834,7 @@ export function Link<P, Q>(props: {
 }) {
   // No document, no anchor: outside any DOM (browser or installed server
   // document) the Link is inert rather than reaching for browser globals.
-  const doc = (globalThis as { readonly document?: Document }).document;
+  const doc = currentDocument() as Document | undefined;
   if (doc === undefined) return null;
 
   const run = captureAmbientRunner();

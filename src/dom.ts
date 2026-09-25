@@ -143,7 +143,7 @@ function resolveChild(value: unknown): unknown {
 function toNode(val: Child): Node | null {
   if (val == null || val === false || val === true) return null;
   if (val instanceof Node) return val;
-  return document.createTextNode(String(val));
+  return currentDocument().createTextNode(String(val));
 }
 
 /**
@@ -187,8 +187,8 @@ function insertExpression(
   // `View.Slot.mountTarget`.
   if (ViewSlot.isProjection(value)) {
     const markers = ViewSlot.regionMarkers(value.slot.name);
-    const start = document.createComment(markers.start);
-    const end = document.createComment(markers.end);
+    const start = currentDocument().createComment(markers.start);
+    const end = currentDocument().createComment(markers.end);
     parent.insertBefore(start, marker);
     parent.insertBefore(end, marker);
     const child = value.children === undefined ? null : value.children();
@@ -268,7 +268,7 @@ function flattenChild(child: Child): Node[] {
   if (c instanceof Node) return [c];
   if (SafeHtml.isSafeHtml(c)) return safeHtmlChildNodes(c);
   if (isView(c)) return flattenChild((c as { readonly node: unknown }).node as Child);
-  return [document.createTextNode(String(c))];
+  return [currentDocument().createTextNode(String(c))];
 }
 
 /**
@@ -1696,6 +1696,43 @@ export function createServerDocument(): unknown {
 let _ssrMode = false;
 let _serverDoc: unknown = null;
 
+/**
+ * The document nodes are created against: the server document during a
+ * server render, the page's otherwise. Server rendering also installs its
+ * document as `globalThis.document` where it can, but a browser's
+ * `window.document` is read-only — `renderToString` inside a page (previews,
+ * tests, the SSR example) relies on this instead.
+ */
+export function currentDocument(): Document {
+  if (_ssrMode && _serverDoc !== null) return _serverDoc as Document;
+  const ambient = currentServerRenderState()?.document;
+  if (ambient !== undefined) return ambient as unknown as Document;
+  // `undefined` outside any DOM; callers that can run there check for it.
+  return (globalThis as { readonly document?: Document }).document as Document;
+}
+
+/**
+ * Install `doc` as `globalThis.document` for a server-render slice, when the
+ * environment allows it, and return the undo. In a browser the assignment is
+ * refused and nothing changes: runtime code reaches the server document
+ * through {@link currentDocument}.
+ */
+function installGlobalDocument(doc: unknown): () => void {
+  const carrier = globalThis as Record<string, unknown>;
+  const had = "document" in carrier;
+  const previous = carrier.document;
+  try {
+    carrier.document = doc;
+  } catch {
+    return () => {};
+  }
+  if (carrier.document !== doc) return () => {};
+  return () => {
+    if (had) carrier.document = previous;
+    else delete carrier.document;
+  };
+}
+
 /** @internal Serialize a rendered server value; used by Resume async render. */
 export function serverValueToHTML(input: unknown): string {
   // Accessors (every `Component.make` component returns one) resolve here,
@@ -1747,7 +1784,7 @@ export function serverValueToHTML(input: unknown): string {
 export function renderToString(fn: () => unknown): string {
   const prevSSR = _ssrMode;
   const prevDoc = _serverDoc;
-  const origDocument = typeof globalThis.document !== "undefined" ? globalThis.document : undefined;
+  let restoreDocument: () => void = () => {};
   const origNode = typeof globalThis.Node !== "undefined" ? globalThis.Node : undefined;
   let dispose: (() => void) | undefined;
 
@@ -1763,9 +1800,9 @@ export function renderToString(fn: () => unknown): string {
     const serverDoc = ambient?.document ?? createServerDocument();
     _serverDoc = serverDoc;
 
-    // Temporarily install the server document as the global `document` so
-    // that existing functions (template, insert, toNode, etc.) work as-is.
-    (globalThis as Record<string, unknown>).document = serverDoc;
+    // Install the server document as the global `document` where the
+    // environment allows it (Node); runtime code uses `currentDocument()`.
+    restoreDocument = installGlobalDocument(serverDoc);
 
     // Also patch `Node` so that `instanceof Node` checks work with virtual nodes.
     (globalThis as Record<string, unknown>).Node = ServerNode as unknown;
@@ -1803,11 +1840,7 @@ export function renderToString(fn: () => unknown): string {
       } else {
         delete (globalThis as Record<string, unknown>).Node;
       }
-      if (origDocument !== undefined) {
-        (globalThis as Record<string, unknown>).document = origDocument;
-      } else {
-        delete (globalThis as Record<string, unknown>).document;
-      }
+      restoreDocument();
     }
   }
 }
@@ -1895,13 +1928,13 @@ function runStreamSliceUnscoped<A>(
 ): A {
   const prevSSR = _ssrMode;
   const prevDoc = _serverDoc;
-  const origDocument = typeof globalThis.document !== "undefined" ? globalThis.document : undefined;
+  let restoreDocument: () => void = () => {};
   const origNode = typeof globalThis.Node !== "undefined" ? globalThis.Node : undefined;
   let dispose: (() => void) | undefined;
   try {
     _ssrMode = true;
     _serverDoc = serverDoc;
-    (globalThis as Record<string, unknown>).document = serverDoc;
+    restoreDocument = installGlobalDocument(serverDoc);
     (globalThis as Record<string, unknown>).Node = ServerNode as unknown;
     let out!: A;
     runInResumeSession(session, () => {
@@ -1922,11 +1955,7 @@ function runStreamSliceUnscoped<A>(
       } else {
         delete (globalThis as Record<string, unknown>).Node;
       }
-      if (origDocument !== undefined) {
-        (globalThis as Record<string, unknown>).document = origDocument;
-      } else {
-        delete (globalThis as Record<string, unknown>).document;
-      }
+      restoreDocument();
     }
   }
 }
