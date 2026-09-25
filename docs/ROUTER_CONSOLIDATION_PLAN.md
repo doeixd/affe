@@ -152,6 +152,13 @@ Milestone 11 item 4 is where these meet; this plan clears the ground for it.
 2. Reconcile optional-segment handling between `extractParams` and
    `validateTree`; add specificity-based (not length-based) match ranking,
    or document and test length ranking as intended.
+   **Done (2026-09):** sibling matches rank static > `:param` > `:param?` >
+   `*`, segment by segment, ties in declaration order
+   (`selectMostSpecificBranch` / `comparePatternSpecificity` in
+   `src/route-pattern.ts`), applied to route-entry matching, the client
+   runtime, and `ServerRoute.find`/`dispatch`; tests in
+   `src/__tests__/router-ranking.test.ts`. `Component.route`'s own
+   self-match (`src/Component.ts`) is still per-pattern.
 3. Delete F6 outright. For every F5 declared-but-dead option: implement it
    or remove it from the type this release — the type surface must stop
    overstating. (`revalidateOnFocus`/`revalidateOnReconnect` are real

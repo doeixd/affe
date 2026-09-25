@@ -155,3 +155,153 @@ export function substitutePattern(
   }
   return `/${parts.join("/")}`;
 }
+
+// ─── Specificity ranking (R5) ───────────────────────────────────────────────
+//
+// Sibling patterns can match the same path (`/users/new` and `/users/:id`
+// both match `/users/new`). Declaration order must not decide which branch
+// wins, so siblings are ranked segment by segment, left to right:
+//
+//   static  >  :param  >  :param?  >  *  >  (no segment)
+//
+// This is the React Router / Remix ordering. Equal-rank patterns keep
+// declaration order (the sort is stable).
+
+function segmentRank(segment: PatternSegment | undefined): number {
+  if (segment === undefined) return 0;
+  if (segment.kind === "static") return 4;
+  if (segment.kind === "splat") return 1;
+  return segment.optional ? 2 : 3;
+}
+
+/**
+ * Compare two patterns by specificity. Negative when `a` is MORE specific
+ * than `b` (so it sorts first), positive when less, `0` for a tie.
+ */
+export function comparePatternSpecificity(a: string, b: string): number {
+  const left = parsePattern(a);
+  const right = parsePattern(b);
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const diff = segmentRank(right[index]) - segmentRank(left[index]);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+/**
+ * Pick the most specific of several patterns that all match (ties keep the
+ * first). Returns `undefined` for an empty list.
+ */
+export function mostSpecific<T>(
+  items: ReadonlyArray<T>,
+  patternOf: (item: T) => string,
+): T | undefined {
+  let best: T | undefined;
+  for (const item of items) {
+    if (best === undefined || comparePatternSpecificity(patternOf(item), patternOf(best)) < 0) {
+      best = item;
+    }
+  }
+  return best;
+}
+
+function segmentKey(pattern: string): ReadonlyArray<string> {
+  return parsePattern(pattern).map((segment) => segment.raw);
+}
+
+function isStrictSegmentPrefix(
+  prefix: ReadonlyArray<string>,
+  of: ReadonlyArray<string>,
+): boolean {
+  if (prefix.length >= of.length) return false;
+  for (let index = 0; index < prefix.length; index += 1) {
+    if (prefix[index] !== of[index]) return false;
+  }
+  return true;
+}
+
+/**
+ * Prune a set of already-matched route items to the single most specific
+ * branch, preserving the input order of the survivors.
+ *
+ * Route trees here nest by pattern: an item's parent is the longest other
+ * matched pattern that is a segment-prefix of it, and items with the same
+ * segments (a layout and its index route, a pathless layout) share a node.
+ * Starting from the roots, each level keeps only its most specific sibling:
+ *
+ * 1. a sibling whose branch consumes the whole pathname (some pattern in its
+ *    subtree matches exactly) beats one that only prefix-matches;
+ * 2. otherwise {@link comparePatternSpecificity} decides;
+ * 3. ties keep declaration order.
+ *
+ * So for `/users/new`, `/users/:id` (and everything under it) is dropped when
+ * `/users/new` is declared as its sibling, in either order.
+ */
+export function selectMostSpecificBranch<T>(
+  matched: ReadonlyArray<T>,
+  patternOf: (item: T) => string,
+  pathname: string,
+): ReadonlyArray<T> {
+  if (matched.length < 2) return matched;
+  interface Node {
+    readonly key: string;
+    readonly pattern: string;
+    readonly segments: ReadonlyArray<string>;
+    readonly children: Array<Node>;
+    parent: Node | undefined;
+  }
+  const nodes: Array<Node> = [];
+  const byKey = new Map<string, Node>();
+  for (const item of matched) {
+    const pattern = patternOf(item);
+    const segments = segmentKey(pattern);
+    const key = segments.join("/");
+    if (byKey.has(key)) continue;
+    const node: Node = { key, pattern, segments, children: [], parent: undefined };
+    byKey.set(key, node);
+    nodes.push(node);
+  }
+  if (nodes.length < 2) return matched;
+  for (const node of nodes) {
+    let parent: Node | undefined;
+    for (const candidate of nodes) {
+      if (!isStrictSegmentPrefix(candidate.segments, node.segments)) continue;
+      if (parent === undefined || candidate.segments.length > parent.segments.length) {
+        parent = candidate;
+      }
+    }
+    node.parent = parent;
+    parent?.children.push(node);
+  }
+  const consumes = new Map<Node, boolean>();
+  const consumesPath = (node: Node): boolean => {
+    const cached = consumes.get(node);
+    if (cached !== undefined) return cached;
+    const result = extractPatternParams(node.pattern, pathname, true) !== null
+      || node.children.some(consumesPath);
+    consumes.set(node, result);
+    return result;
+  };
+  const kept = new Set<string>();
+  let level = nodes.filter((node) => node.parent === undefined);
+  while (level.length > 0) {
+    let best: Node | undefined;
+    for (const node of level) {
+      if (best === undefined) {
+        best = node;
+        continue;
+      }
+      const nodeConsumes = consumesPath(node);
+      const bestConsumes = consumesPath(best);
+      if (nodeConsumes !== bestConsumes) {
+        if (nodeConsumes) best = node;
+        continue;
+      }
+      if (comparePatternSpecificity(node.pattern, best.pattern) < 0) best = node;
+    }
+    kept.add(best!.key);
+    level = best!.children;
+  }
+  return matched.filter((item) => kept.has(segmentKey(patternOf(item)).join("/")));
+}

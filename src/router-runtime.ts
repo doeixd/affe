@@ -231,19 +231,32 @@ onReactivityInvalidation((keys) => {
   });
 });
 
+/**
+ * Convert a duration option (`number` of ms, or a string such as `"30s"`,
+ * `"1.5 seconds"`, `"5 minutes"`) to milliseconds. `undefined` yields
+ * `fallbackMs`.
+ *
+ * An unparseable string is a programming error, not a silent `0`: it throws
+ * a descriptive `Error` naming the input, so a typo like `"5 mintues"` fails
+ * where it is used instead of quietly disabling caching.
+ */
 export function durationToMillis(input: DurationInput, fallbackMs: number): number {
+  if (input === undefined) return fallbackMs;
   if (typeof input === "number") return input;
   if (typeof input !== "string") return fallbackMs;
   const s = input.trim().toLowerCase();
-  const m = s.match(/^(\d+)\s*(ms|millis|millisecond|milliseconds|s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours)$/);
-  if (!m) return fallbackMs;
+  const m = s.match(/^(\d+(?:\.\d+)?|\.\d+)\s*(ms|millis|millisecond|milliseconds|s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours)$/);
+  if (!m) {
+    throw new Error(
+      `[affe/router] Invalid duration "${input}": expected a number of milliseconds or a string like "500ms", "1.5s", "5 minutes", or "2 hours".`,
+    );
+  }
   const n = Number(m[1]);
-  const unit = m[2];
+  const unit = m[2]!;
   if (unit.startsWith("ms") || unit.startsWith("milli")) return n;
   if (unit === "s" || unit.startsWith("sec") || unit.startsWith("second")) return n * 1000;
   if (unit === "m" || unit.startsWith("min") || unit.startsWith("minute")) return n * 60_000;
-  if (unit === "h" || unit.startsWith("hr") || unit.startsWith("hour")) return n * 3_600_000;
-  return fallbackMs;
+  return n * 3_600_000;
 }
 
 export function makeLoaderCacheKey(routeId: string, params: unknown): { readonly key: string; readonly paramsKey: string } {

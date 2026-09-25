@@ -25,11 +25,13 @@ import {
   runCachedLoader,
   runInLoaderCacheStore,
   setLoaderCacheEntry,
+  durationToMillis,
 } from "./router-runtime.js";
 import { beginReactivityInvalidationCapture, normalizeReactivityKeys, type ReactivityKeysInput } from "./reactivity-runtime.js";
 import {
   extractPatternParams,
   matchPatternSegments,
+  selectMostSpecificBranch,
   substitutePattern,
 } from "./route-pattern.js";
 import type { Component as ComponentType } from "./Component.js";
@@ -1959,12 +1961,16 @@ function registeredRoutesFromTree(root: AnyAppRouteNode | AnyRoute): ReadonlyArr
 /**
  * Matched entries for a pathname, ordered root-first.
  *
- * Ranking is by resolved-pattern length, which R1 documented as the intended
- * (if crude) ordering; R5 owns specificity ranking.
+ * R5 specificity ranking: when sibling routes both match (`/users/new` and
+ * `/users/:id` for `/users/new`), only the most specific branch survives
+ * (`selectMostSpecificBranch`: static > `:param` > `:param?` > `*`, ties in
+ * declaration order), so a shadowed sibling's guards and loaders never run.
+ * Survivors are then ordered root-first by resolved-pattern length.
  */
 function matchedRouteEntries(entries: ReadonlyArray<RouteEntry>, pathname: string): ReadonlyArray<RouteEntry> {
-  return entries
-    .filter((entry) => entry.fullPattern.length > 0 && matchPattern(entry.fullPattern, pathname, entry.exact))
+  const matched = entries.filter((entry) =>
+    entry.fullPattern.length > 0 && matchPattern(entry.fullPattern, pathname, entry.exact));
+  return [...selectMostSpecificBranch(matched, (entry) => entry.fullPattern, pathname)]
     .sort((a, b) => a.fullPattern.length - b.fullPattern.length);
 }
 
@@ -2946,6 +2952,15 @@ export function loader<P, A, E, R>(
   fn: (params: P, deps?: { readonly parent: <X>() => X }) => Effect.Effect<A, E, R>,
   options?: LoaderOptions,
 ): LoaderRouteEnhancer<P, A, E, R> {
+  // Validate durations where they are written: a typo such as "5 mintues"
+  // throws here, naming the option, instead of silently becoming 0ms later.
+  for (const field of ["staleTime", "cacheTime", "timeout"] as const) {
+    try {
+      durationToMillis(options?.[field], 0);
+    } catch (error) {
+      throw new Error(`[affe/Route] Route.loader option '${field}': ${(error as Error).message}`);
+    }
+  }
   const attach = (route: AnyRouteAttachTarget | AnyRoute) => {
     if (isUnifiedRoute(route)) {
       return copyUnifiedRoute(route, {

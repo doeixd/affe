@@ -21,7 +21,10 @@ export function canonicalCacheParameters(value: unknown): string {
     }
     const entries = Object.entries(
       current as Record<string, unknown>,
-    ).sort(([left], [right]) => left.localeCompare(right));
+    ).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+    // Code-unit order, never `localeCompare`: the server and the client may
+    // run under different locales, and a locale-dependent order would give
+    // the same parameters two cache keys across the SSR handoff.
     return `{${entries
       .map(([key, entry]) => `${JSON.stringify(key)}:${encode(entry)}`)
       .join(",")}}`;

@@ -120,9 +120,11 @@ export function decodeResult(wire: string): CoreResultType<unknown, unknown> {
 
 /** Encode a keyed loader-data payload of core `Result`s to a wire string. */
 export function encodeResultRecord(record: Record<string, CoreResultType<unknown, unknown>>): string {
-  const wire: Record<string, ResultWireValue> = {};
+  // Null-prototype records plus `defineProperty`: a route id of `__proto__`
+  // is an ordinary own key, not a prototype write that silently drops it.
+  const wire = Object.create(null) as Record<string, ResultWireValue>;
   for (const [key, result] of Object.entries(record)) {
-    wire[key] = resultToWire(result);
+    defineOwn(wire, key, resultToWire(result));
   }
   return encodeSync(ResultWireRecord, wire);
 }
@@ -130,11 +132,15 @@ export function encodeResultRecord(record: Record<string, CoreResultType<unknown
 /** Decode a keyed loader-data payload of core `Result`s from a wire string. */
 export function decodeResultRecord(wire: string): Record<string, CoreResultType<unknown, unknown>> {
   const decoded = decodeSync(ResultWireRecord, wire);
-  const out: Record<string, CoreResultType<unknown, unknown>> = {};
+  const out = Object.create(null) as Record<string, CoreResultType<unknown, unknown>>;
   for (const [key, value] of Object.entries(decoded)) {
-    out[key] = resultFromWire(value as ResultWireValue);
+    defineOwn(out, key, resultFromWire(value as ResultWireValue));
   }
   return out;
+}
+
+function defineOwn<V>(target: Record<string, V>, key: string, value: V): void {
+  Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
 }
 
 // ─── Injectable service ─────────────────────────────────────────────────────

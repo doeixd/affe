@@ -2,6 +2,7 @@ import { Effect, Fiber, Layer, Context } from "effect";
 import * as Atom from "./Atom.js";
 import * as Route from "./Route.js";
 import { SwrRefreshSupervisorTag } from "./router-runtime.js";
+import { selectMostSpecificBranch } from "./route-pattern.js";
 import type { Result as CoreResultType } from "./effect-ts.js";
 import * as ServerRoute from "./ServerRoute.js";
 import type { AnyRoute, AppRouteNode } from "./Route.js";
@@ -314,7 +315,9 @@ function matchedAppNodes(
   nodes: ReadonlyArray<AppRouteNode<any, any, any, any, any, any> | AnyRoute>,
   pathname: string,
 ): ReadonlyArray<AppRouteNode<any, any, any, any, any, any> | AnyRoute> {
-  return nodes.filter((node) => nodePath(root, node).length > 0 && Route.matchPattern(nodePath(root, node), pathname, nodeExact(node)));
+  const matched = nodes.filter((node) => nodePath(root, node).length > 0 && Route.matchPattern(nodePath(root, node), pathname, nodeExact(node)));
+  // R5: a shadowed sibling (`/users/:id` under `/users/new`) is not a match.
+  return selectMostSpecificBranch(matched, (node) => nodePath(root, node), pathname);
 }
 
 function routeResultEntriesToMaps(
@@ -380,8 +383,7 @@ function createSnapshot(state: {
   serverRoutes: ReadonlyArray<ServerRouteNode<any, any, any, any>>;
 }): RouterRuntimeSnapshot {
   const pathname = state.location.pathname;
-  const appMatches = state.appNodes
-    .filter((node) => nodePath(state.appRoot, node).length > 0 && Route.matchPattern(nodePath(state.appRoot, node), pathname, nodeExact(node)))
+  const appMatches = matchedAppNodes(state.appRoot, state.appNodes, pathname)
     .map((node) => nodeId(state.appRoot, node));
   const matchedServer = ServerRoute.find(state.serverRoutes, "GET", pathname, { kind: "document" })
     ?? ServerRoute.find(state.serverRoutes, "GET", pathname);

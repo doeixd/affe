@@ -85,6 +85,29 @@ Route pipes are orthogonal:
 - `Route.guard(...)`, `Route.transition(...)`, and `Route.sitemapParams(...)`
   attach navigation, transition, and SSG metadata.
 
+### Match ranking
+
+When sibling routes match the same path, the most specific one wins and the
+others are treated as unmatched: their guards and loaders do not run and they
+are absent from `snapshot.appMatches`. Patterns are compared segment by
+segment, left to right:
+
+```text
+static  >  :param  >  :param?  >  *
+```
+
+So with siblings `/users/new` and `/users/:id`, `/users/new` renders the "new"
+branch and `/users/42` the detail branch, whichever is declared first. A branch
+that consumes the whole path beats one that only prefix-matches, and equally
+specific siblings keep declaration order. `ServerRoute.find` and
+`ServerRoute.dispatch` use the same ordering, so `/api/users/me` beats
+`/api/users/:id`.
+
+Ranking applies wherever the router sees the whole tree: `runMatchedLoaders`,
+`renderRequest` / `renderRequestStream` loader pre-runs, guards, head
+resolution, and the client `RouterRuntime`. A `Component.route` component
+rendered on its own still decides its match from its own pattern.
+
 ## Component-First Tier
 
 Use component-first routes when adapting existing component code or when a route
@@ -159,6 +182,10 @@ const User = Route.page("/users/:userId", UserPage).pipe(
     }),
 );
 ```
+
+Durations (`staleTime`, `cacheTime`, `timeout`) take milliseconds or a string
+such as `"500ms"`, `"1.5s"`, `"30 seconds"`, `"5 minutes"`, or `"2 hours"`. An
+unparseable string throws when `Route.loader(...)` is called, naming the option.
 
 Preload warms matched route loaders without navigation:
 

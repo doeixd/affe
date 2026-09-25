@@ -3,7 +3,7 @@ import * as Route from "./Route.js";
 import * as Resume from "./Resume.js";
 import * as Serialization from "./Serialization.js";
 import { renderToString } from "./dom.js";
-import { extractPatternParams, matchPatternSegments } from "./route-pattern.js";
+import { extractPatternParams, matchPatternSegments, mostSpecific } from "./route-pattern.js";
 import type { AnyRoute, AppRouteNode } from "./Route.js";
 
 export const ServerRouteNodeSymbol: unique symbol = Symbol.for("affe/ServerRouteNode");
@@ -579,17 +579,25 @@ export function matches(
   return matchPath(route.path, pathname);
 }
 
-/** Find the first matching server route in a route graph. */
+/**
+ * Find the most specific matching server route in a route graph.
+ *
+ * Among routes that match the method and pathname, the most specific path
+ * wins, compared segment by segment: static > `:param` > `:param?` > `*`
+ * (so `/api/users/me` beats `/api/users/:id` whatever the declaration
+ * order). Equally specific matches keep declaration order.
+ */
 export function find(
   routes: ReadonlyArray<ServerRouteNode<any, any, any, any>>,
   methodValue: string,
   pathname: string,
   options?: { readonly kind?: ServerRouteKind },
 ): ServerRouteNode<any, any, any, any> | undefined {
-  return routes.find((route) => {
+  const candidates = routes.filter((route) => {
     if (options?.kind && route.kind !== options.kind) return false;
     return matches(route, methodValue, pathname);
   });
+  return mostSpecific(candidates, (route) => route.path ?? "");
 }
 
 /** Execute a typed non-document server route with Schema-driven request decoding. */
@@ -736,7 +744,7 @@ export function runDocument(
   });
 }
 
-/** Match and execute the first server route that handles the request. */
+/** Match (most specific route wins, see {@link find}) and execute the server route that handles the request. */
 export function dispatch(
   routes: ReadonlyArray<ServerRouteNode<any, any, any, any>>,
   request: Request,
