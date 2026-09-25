@@ -1,5 +1,5 @@
 {
-  "name": "@doeixd/affe-agent",
+  "name": "@doeixd/affe-ui-agent",
   "version": "0.0.0",
   "description": "Agent-surface adapters for affe: the MCP projection over the Agent catalog (tools from schemas, dispatch through the one governance pipeline). An adapter package per DQ-096 — never a fork of the core surface.",
   "private": true,

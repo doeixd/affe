@@ -74,7 +74,7 @@ export async function fromSrc<K extends string>(
 }
 
 /**
- * Load a WORKSPACE PACKAGE by its bare specifier (e.g. `"@doeixd/affe-agent"`) —
+ * Load a WORKSPACE PACKAGE by its bare specifier (e.g. `"@doeixd/affe-ui-agent"`) —
  * the ratified home for adapter surfaces (`DQ-096`: adapters are packages,
  * never `src/` modules). Resolution goes through the vitest alias so specs
  * and adapters share one module identity. An absent package fails the

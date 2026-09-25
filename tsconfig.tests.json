@@ -7,7 +7,7 @@
     // SOURCE under test (and the public core subpaths they consume resolve
     // to src/), so the suite never depends on a stale dist build.
     "paths": {
-      "@doeixd/affe-agent": ["./packages/agent/src/index.ts"],
+      "@doeixd/affe-ui-agent": ["./packages/agent/src/index.ts"],
       "@doeixd/affe-css": ["./packages/css/src/index.ts"],
       "@doeixd/affe": ["./src/index.ts"],
       "@doeixd/affe/jsx-runtime": ["./src/jsx-runtime.ts"],

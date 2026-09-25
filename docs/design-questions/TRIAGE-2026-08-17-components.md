@@ -52,7 +52,7 @@ Status key: ☐ pending · ✅ ratified · ❌ rejected.
   references (`DQ-061`, built) to names living in a second repo with a
   second release cadence.
 - **Recommendation:** **Option 1 — absorb as `@doeixd/affe-css`**, a workspace
-  package beside `@doeixd/affe-permissive` and `@doeixd/affe-agent` (the packaging
+  package beside `@doeixd/affe-permissive` and `@doeixd/affe-ui-agent` (the packaging
   playbook now exists and is exercised twice). The token namespace, the
   ratified `@layer` order, and Theme's typed references version together as
   one surface; upstream CSS-Tags remains the design source, absorbed

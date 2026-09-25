@@ -7,7 +7,7 @@ specs; no open design question in any lane)
 ## Status as of 2026-09-25
 
 - **Renamed to Affe.** The package is `@doeixd/affe`, with
-  `@doeixd/affe-agent`, `@doeixd/affe-css`, and `@doeixd/affe-permissive`;
+  `@doeixd/affe-ui-agent`, `@doeixd/affe-css`, and `@doeixd/affe-permissive`;
   `deprecated/effect-atom-jsx` is the re-exporting alias. What landed and
   what is still open (logo, domain, alias window, repo rename) is recorded in
   `docs/RENAME_AFFE.md`.
@@ -28,7 +28,7 @@ specs; no open design question in any lane)
 - **The agent-native lane (AN-1–AN-5) is complete.** `src/Agent.ts`
   (catalog/dispatch/governance/audit/ApprovalStore/suggestions),
   `src/reactivity-push.ts` (server-push live sync), result rendering +
-  `Resume.installFragment` (dormant chat widgets), the `@doeixd/affe-agent` MCP
+  `Resume.installFragment` (dormant chat widgets), the `@doeixd/affe-ui-agent` MCP
   adapter package, and `src/ViewSpec.ts` + `src/view-spec-json-render.ts`
   (the typed generative-UI IR, validator, and json-render **v0.20**
   lowering). Every agent-lane design question (`DQ-080`–`DQ-098`) is

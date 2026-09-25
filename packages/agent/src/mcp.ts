@@ -1,6 +1,6 @@
 /**
  * AN-3 — the MCP projection (`AGENT_NATIVE_NOTES.md` §1 "MCP server",
- * §7 item 3), packaged as `@doeixd/affe-agent` per ratified `DQ-096` (the adapter
+ * §7 item 3), packaged as `@doeixd/affe-ui-agent` per ratified `DQ-096` (the adapter
  * lives OUTSIDE core — no `src/agent-mcp.ts` module).
  *
  * Mounting the catalog as an MCP server is a *pure projection* over AN-1:
@@ -24,7 +24,7 @@ import * as Agent from "@doeixd/affe/Agent";
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
 export class McpUnknownToolError extends Schema.TaggedErrorClass<McpUnknownToolError>(
-  "@doeixd/affe-agent/McpUnknownToolError",
+  "@doeixd/affe-ui-agent/McpUnknownToolError",
 )("McpUnknownToolError", {
   tool: Schema.String,
   message: Schema.String,
@@ -36,7 +36,7 @@ export class McpUnknownToolError extends Schema.TaggedErrorClass<McpUnknownToolE
  * cannot be told apart from a typo and a single catch-all satisfies both.
  */
 export class McpToolNotExposedError extends Schema.TaggedErrorClass<McpToolNotExposedError>(
-  "@doeixd/affe-agent/McpToolNotExposedError",
+  "@doeixd/affe-ui-agent/McpToolNotExposedError",
 )("McpToolNotExposedError", {
   tool: Schema.String,
   message: Schema.String,

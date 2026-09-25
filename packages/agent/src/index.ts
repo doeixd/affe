@@ -1,5 +1,5 @@
 /**
- * `@doeixd/affe-agent` — agent-surface adapters over the Affe Agent
+ * `@doeixd/affe-ui-agent` — agent-surface adapters over the Affe Agent
  * catalog (`DQ-096`: adapters live here, never as core `src/` modules).
  *
  * This package builds against **public `@doeixd/affe` subpaths only** —

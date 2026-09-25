@@ -60,9 +60,11 @@ The rename landed as one change-set, following the outline below except where
 noted:
 
 - **npm names.** `@affe` was unavailable, so the core is `@doeixd/affe` (was
-  `@affe/core`) and the workspace packages are `@doeixd/affe-agent`,
+  `@affe/core`) and the workspace packages are `@doeixd/affe-ui-agent`,
   `@doeixd/affe-css`, and `@doeixd/affe-permissive` (were `@affe/agent`,
-  `@affe/css`, `@affe/permissive`). Planned future splits follow the same
+  `@affe/css`, `@affe/permissive`). The agent adapter is `affe-ui-agent`
+  rather than `affe-agent` so it does not collide with the separate Affe Agent
+  sister project. Planned future splits follow the same
   shape (`@doeixd/affe-compiler`, `@doeixd/affe-kit`, `@doeixd/affe-router`).
   The table above keeps the original decision.
 - **JSX import source** is `@doeixd/affe` (TypeScript resolves

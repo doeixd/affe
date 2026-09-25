@@ -13,11 +13,11 @@ const here = (relative: string) => fileURLToPath(new URL(relative, import.meta.u
 export default defineConfig({
   resolve: {
     // Same aliasing rule as vitest.config.ts: adapter packages under test
-    // resolve the public core subpaths to `src/` and `@doeixd/affe-agent` to its
+    // resolve the public core subpaths to `src/` and `@doeixd/affe-ui-agent` to its
     // source, so specs and adapters share one module identity.
     alias: {
       "@doeixd/affe/Agent": here("./src/Agent.ts"),
-      "@doeixd/affe-agent": here("./packages/agent/src/index.ts"),
+      "@doeixd/affe-ui-agent": here("./packages/agent/src/index.ts"),
       "@doeixd/affe-css": here("./packages/css/src/index.ts"),
       "@doeixd/affe/Style": here("./src/Style.ts"),
       "@doeixd/affe/Theme": here("./src/Theme.ts"),
