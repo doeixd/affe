@@ -2,10 +2,11 @@ import { Cause, Context, Effect, Fiber, Layer, Option, Schema, Stream } from "ef
 import * as Atom from "./Atom.js";
 import { createComponent } from "./dom.js";
 import { getRequestEvent, renderToString, setRequestEvent } from "./dom.js";
-import { createSignal, useContext, type Accessor } from "./api.js";
+import { createMemo, createSignal, untrack, useContext, type Accessor } from "./api.js";
 import {
   ManagedRuntimeContext,
   defineMutation,
+  useService,
   Result as CoreResult,
   type Result as MutationResult,
   type Result as CoreResultType,
@@ -31,10 +32,12 @@ import { beginReactivityInvalidationCapture, normalizeReactivityKeys, type React
 import {
   extractPatternParams,
   matchPatternSegments,
+  mostSpecific,
   selectMostSpecificBranch,
   substitutePattern,
 } from "./route-pattern.js";
 import type { Component as ComponentType } from "./Component.js";
+import { invocationSourceOf } from "./component-scope.js";
 
 export interface NavigateOptions {
   readonly replace?: boolean;
@@ -4004,12 +4007,84 @@ export function validateLinks(component: unknown): ReadonlyArray<string> {
   return errors;
 }
 
-export function Switch(props: { readonly children: ReadonlyArray<unknown>; readonly fallback?: unknown }): unknown {
-  const children = Array.isArray(props.children) ? props.children : [props.children];
-  for (const child of children) {
-    if (child !== null && child !== undefined && child !== false) return child;
+type SwitchCandidate = {
+  readonly child: unknown;
+  /** The component to call when `child` is a component rather than a call. */
+  readonly component: ComponentType<any, any, any, any, any> | undefined;
+  readonly meta: RouteMeta<unknown, unknown, unknown> | undefined;
+};
+
+function switchCandidate(child: unknown): SwitchCandidate {
+  if (ComponentRuntime.isComponent(child)) {
+    return { child, component: child, meta: routeMetaOf(child) as RouteMeta<unknown, unknown, unknown> | undefined };
   }
-  return props.fallback ?? null;
+  const source = invocationSourceOf(child);
+  const meta = source !== undefined && ComponentRuntime.isComponent(source)
+    ? routeMetaOf(source) as RouteMeta<unknown, unknown, unknown> | undefined
+    : undefined;
+  return { child, component: undefined, meta };
+}
+
+const isPresent = (value: unknown): boolean => value !== null && value !== undefined && value !== false;
+
+function currentRouterService(): RouterService | undefined {
+  try {
+    return useService(RouterTag);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Render exactly one of several routed children: the one whose pattern
+ * matches the current URL most specifically (`/users/new` beats
+ * `/users/:id`, which beats `/users/*`), or `fallback` when none match.
+ *
+ * Pass the routed components themselves (`children={[Home, Users, User]}`) so
+ * that only the winner is created — its setup and loader run, the others'
+ * never do. Already-called components (`Home({})`) are accepted too, but each
+ * of those has already started its own setup. Children that are not routes
+ * keep the old first-present-child behavior and are used only when no route
+ * child matches.
+ */
+export function Switch(props: { readonly children: ReadonlyArray<unknown> | unknown; readonly fallback?: unknown }): unknown {
+  const children = Array.isArray(props.children) ? props.children : [props.children];
+  const candidates = children.map(switchCandidate);
+  const router = candidates.some((candidate) => candidate.meta !== undefined) ? currentRouterService() : undefined;
+
+  const selectedIndex = (pathname: string | undefined): number => {
+    if (pathname !== undefined) {
+      const matching: Array<{ readonly index: number; readonly pattern: string }> = [];
+      candidates.forEach((candidate, index) => {
+        const meta = candidate.meta;
+        if (meta !== undefined && matchPattern(meta.fullPattern, pathname, meta.exact)) {
+          matching.push({ index, pattern: meta.fullPattern });
+        }
+      });
+      const best = mostSpecific(matching, (entry) => entry.pattern);
+      if (best !== undefined) return best.index;
+    }
+    return candidates.findIndex((candidate) => candidate.meta === undefined && isPresent(candidate.child));
+  };
+
+  const renderIndex = (index: number): unknown => {
+    if (index < 0) return props.fallback ?? null;
+    const candidate = candidates[index];
+    return candidate.component !== undefined ? candidate.component({}) : candidate.child;
+  };
+
+  if (router === undefined) return renderIndex(selectedIndex(undefined));
+
+  // The index memo only changes when a different child wins, so navigating
+  // between URLs of the same route (`/users/1` → `/users/2`) keeps the
+  // mounted instance; the view memo owns the winner's instance and disposes
+  // it when another child takes over.
+  const index = createMemo(() => selectedIndex(router.url().pathname));
+  const view = createMemo(() => {
+    const current = index();
+    return untrack(() => renderIndex(current));
+  });
+  return view;
 }
 
 export function lazy<T extends { readonly default?: unknown }>(

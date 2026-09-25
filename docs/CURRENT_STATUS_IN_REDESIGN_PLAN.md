@@ -30,6 +30,11 @@ specs; no open design question in any lane)
     `future/` suite.
   - The README covers resumability and the agent surface, and states that slot
     handles are not yet bound to rendered DOM elements (see below).
+- **0.6.0 (2026-09-25).** Rendering the router examples end to end found
+  that `WithLayer` never rendered its children (it waited on
+  `Layer.launch`, which never completes) and `Route.Switch` always rendered
+  its first child. Both are fixed (`router-switch.test.ts`); `Switch` ranks
+  siblings by specificity and, given components, creates only the winner.
 - **Release audit (2026-09-25).** Five subsystem audits found 47 bugs
   (router 8, reactive core 10, rendering/SSR/components/hydration 14,
   resumability 10 plus one found while fixing, styles/themes/elements 5);

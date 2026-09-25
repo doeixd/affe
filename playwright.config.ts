@@ -34,5 +34,11 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 30_000,
     },
+    {
+      command: "npm run preview:router-example",
+      url: "http://127.0.0.1:4180",
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
   ],
 });

@@ -359,11 +359,11 @@ export function App() {
         <Route.Switch
           fallback={<p>404 — Page not found</p>}
           children={[
-            Route.componentOf(HomePage)({}),
-            Route.componentOf(UsersListPage)({}),
-            Route.componentOf(UserDetailPage)({}),
-            Route.componentOf(TeamsListPage)({}),
-            Route.componentOf(TeamDetailPage)({}),
+            Route.componentOf(HomePage),
+            Route.componentOf(UsersListPage),
+            Route.componentOf(UserDetailPage),
+            Route.componentOf(TeamsListPage),
+            Route.componentOf(TeamDetailPage),
           ]}
         />
       )}

@@ -101,7 +101,7 @@ export function App() {
               <Route.Link to={userLink} params={{ userId: "alice" }}>Alice Profile</Route.Link>
             </p>
 
-            <Route.Switch children={[SearchPage({}), UserDetail({})]} fallback={<p>No route matched.</p>} />
+            <Route.Switch children={[SearchPage, UserDetail]} fallback={<p>No route matched.</p>} />
           </main>
         )}
       </WithLayer>

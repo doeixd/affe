@@ -1460,7 +1460,7 @@ describe("createFrame / Frame", () => {
 });
 
 describe("WithLayer", () => {
-  it("renders fallback while layer is unresolved", () => {
+  it("renders its children, not the fallback, once a synchronous layer is built", () => {
     const layer = Layer.succeed(Context.Service<{ readonly v: number }>("Tmp"), { v: 1 });
     let fallbacks = 0;
     let childRuns = 0;
@@ -1475,12 +1475,12 @@ describe("WithLayer", () => {
         return "ok";
       },
     });
-    // The old assertion (`r === "loading" || r === "ok" || r === null`) was
-    // satisfied by every possible implementation, including one that never
-    // invoked either branch. Pin the synchronous shape instead.
-    expect(r).toBe("loading");
-    expect(fallbacks).toBe(1);
-    expect(childRuns).toBe(0);
+    // The boundary is an accessor so it can swap in its children when an
+    // asynchronous layer settles (see router-switch.test.ts).
+    expect(typeof r).toBe("function");
+    expect((r as () => unknown)()).toBe("ok");
+    expect(fallbacks).toBe(0);
+    expect(childRuns).toBe(1);
   });
 });
 

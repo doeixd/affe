@@ -63,8 +63,11 @@ import {
 import { createMemo } from "./api.js";
 import { render } from "./dom.js";
 import {
+  ComponentScopeContext,
+  ComponentServicesContext,
   closeComponentScope,
   currentComponentScope,
+  currentComponentServices,
   withComponentScope,
 } from "./component-scope.js";
 import { ReactivityTag } from "./Reactivity.js";
@@ -658,6 +661,13 @@ function runForkWithRuntime<R, A, E>(
  * }
  */
 export function useService<I, S>(tag: Context.Key<I, S>): S {
+  // Services a `WithLayer` / `Component.withLayer` boundary published for
+  // this subtree win over the mount's runtime.
+  const published = currentComponentServices();
+  if (published !== null) {
+    const found = Context.getOption(published as Context.Context<I>, tag);
+    if (Option.isSome(found)) return found.value;
+  }
   const runtime = getAmbientManagedRuntime();
   if (runtime === null) {
     throw new Error(
@@ -1692,42 +1702,71 @@ export function layerContext<A, E, RIn>(
     : [runtime: RuntimeLike<RIn, unknown>]
 ): { readonly children: unknown } {
   const runtimeArg = runtime[0] as RuntimeLike<RIn, unknown> | undefined;
-  const [ready, setReady] = createSignal(false);
+  const [services, setServices] = createSignal<Context.Context<never> | null>(null);
   const [error, setError] = createSignal<E | null>(null);
+  const owner = getOwner();
 
+  // The layer is built into its own scope, which lives as long as the
+  // boundary's owner: scoped resources are released on unmount. Services an
+  // ancestor boundary (or `Component.withLayer`) published reach the layer's
+  // own requirements, and the built services are published to `fn`'s subtree
+  // — the same channel component setup reads from.
+  const layerScope = Scope.makeUnsafe();
+  const inherited = currentComponentServices();
+  const ambientRuntime = getAmbientManagedRuntime();
+  const build = Layer.buildWithScope(layer, layerScope);
   const fiber = pipe(
-    Layer.launch(layer),
+    inherited === null ? build : Effect.provideContext(build, inherited as Context.Context<RIn>),
     Effect.matchCause({
-      onSuccess: (): void => { setReady(true); },
+      onSuccess: (context): void => { setServices(context as Context.Context<never>); },
       onFailure: (cause: Cause.Cause<E>): void => {
         const typed = Cause.findErrorOption(cause);
         if (Option.isSome(typed)) {
           setError(typed.value);
-        } else {
+        } else if (!Cause.hasInterruptsOnly(cause)) {
           console.error("[affe] layerContext: layer build failed:", Cause.pretty(cause));
         }
       },
     }),
-    (eff) => runForkWithRuntime(runtimeArg, eff as Effect.Effect<void, never, RIn>),
+    (eff) => runForkWithRuntime(
+      runtimeArg ?? (ambientRuntime as RuntimeLike<RIn, unknown> | null) ?? undefined,
+      eff as Effect.Effect<void, never, RIn>,
+    ),
   );
 
-  const interrupt = (): void => {
+  const release = (): void => {
     Effect.runFork(Fiber.interrupt(fiber));
+    closeComponentScope(layerScope);
   };
 
   const scope = currentComponentScope();
   if (scope !== null) {
-    Effect.runSync(Scope.addFinalizer(scope, Effect.sync(interrupt)));
+    Effect.runSync(Scope.addFinalizer(scope, Effect.sync(release)));
   }
 
-  onCleanup(() => {
-    interrupt();
-  });
+  onCleanup(release);
 
   return {
     get children() {
-      if (error()) return null;
-      return ready() ? fn() : null;
+      if (error() !== null) return null;
+      const context = services();
+      if (context === null) return null;
+      // `fn` runs under a fresh child of whichever owner evaluates this
+      // (so it shares that computation's lifetime), carrying the context
+      // captured where the boundary was created: the accessor is often
+      // evaluated later, under an owner that cannot see those entries.
+      const parent = getOwner() ?? owner;
+      if (parent === null) return fn();
+      const subtree = new Owner(parent);
+      const entries = new Map<symbol, unknown>();
+      if (ambientRuntime !== null) entries.set(ManagedRuntimeContext.id, ambientRuntime);
+      if (scope !== null) entries.set(ComponentScopeContext.id, scope);
+      entries.set(
+        ComponentServicesContext.id,
+        inherited === null ? context : Context.merge(inherited, context),
+      );
+      contextMap.set(subtree, entries);
+      return runWithOwner(subtree, fn);
     },
   };
 }
@@ -2158,7 +2197,9 @@ export function WithLayer<A, E, RIn>(props: {
     props.children as () => unknown,
     props.runtime as RuntimeLike<RIn, unknown>,
   );
-  return ctx.children ?? props.fallback?.() ?? null;
+  // An accessor, so the boundary swaps from `fallback` to its children when
+  // an asynchronous layer finishes building.
+  return () => ctx.children ?? props.fallback?.() ?? null;
 }
 
 // ─── MatchTag ─────────────────────────────────────────────────────────────────

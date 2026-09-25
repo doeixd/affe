@@ -2,6 +2,20 @@ import { Context, Effect, Exit, Scope } from "effect";
 import { contextMap, createContext, getOwner, onCleanup, useContext } from "./api.js";
 import type { Owner } from "./owner.js";
 
+/**
+ * Stamped on the accessor a component call returns, pointing back at the
+ * component — so a parent such as `Route.Switch` can read the route metadata
+ * of the children it was handed.
+ */
+export const ComponentInvocationSource: unique symbol = Symbol.for("affe/ComponentInvocationSource");
+
+/** The component whose call produced `value`, if `value` is such a call's result. */
+export function invocationSourceOf(value: unknown): unknown {
+  return typeof value === "function"
+    ? (value as { readonly [ComponentInvocationSource]?: unknown })[ComponentInvocationSource]
+    : undefined;
+}
+
 export const ComponentScopeContext = createContext<Scope.Closeable | null>(null);
 
 export function currentComponentScope(): Scope.Closeable | null {

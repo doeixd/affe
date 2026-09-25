@@ -105,8 +105,9 @@ specific siblings keep declaration order. `ServerRoute.find` and
 
 Ranking applies wherever the router sees the whole tree: `runMatchedLoaders`,
 `renderRequest` / `renderRequestStream` loader pre-runs, guards, head
-resolution, and the client `RouterRuntime`. A `Component.route` component
-rendered on its own still decides its match from its own pattern.
+resolution, the client `RouterRuntime`, and `Route.Switch`. A
+`Component.route` component rendered on its own, outside a `Switch`, still
+decides its match from its own pattern.
 
 ## Component-First Tier
 
@@ -121,6 +122,27 @@ const UserPage = Component.from<{ readonly id: string }>(() => null).pipe(
   Route.loader((params) => Effect.succeed({ id: params.userId })),
 );
 ```
+
+To render one of several sibling pages, hand the components to `Route.Switch`.
+It renders the most specific match (same ranking as above) or `fallback`:
+
+```tsx
+<WithLayer layer={Route.Router.Browser}>
+  {() => (
+    <Route.Switch
+      fallback={<p>Not found</p>}
+      children={[Home, NewUser, UserPage]}
+    />
+  )}
+</WithLayer>
+```
+
+Pass the components themselves, not calls such as `UserPage({})`: `Switch`
+then creates only the winner, so the other pages' setup and loaders never run.
+Calls are accepted too, but each has already started its own setup. Moving
+between URLs of the same route (`/users/1` to `/users/2`) keeps the mounted
+instance; its params update in place. `Route.componentOf(node)` values work
+the same way.
 
 This tier is supported, but route-node APIs are clearer for application route
 trees.

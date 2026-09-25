@@ -455,6 +455,7 @@ The key insight is that `Component.make` separates _setup_ (an Effect that runs 
 - `Component.make(props, require, setup, view)`
 - `Component.headless(props, require, setup)` — setup-only, no view (for logic reuse)
 - `Component.from(fn)` — create from a plain function component
+- `Component.isComponent(value)` — type guard for component values
 - `Component.props<P>()` / `Component.propsSchema(schema)` — declare prop shape
 - `Component.require(...tags)` — declare required Effect services
 - metadata extractors: `Component.Requirements<T>`, `Component.Errors<T>`, `Component.PropsOf<T>`, `Component.BindingsOf<T>`, `Component.SlotsOf<T>`, `Component.SlotContractOf<T>`
@@ -931,7 +932,8 @@ Component wrappers like `Component.withLoading(...)`, `Component.withSpan(...)`,
 
 - `Route.guard`, `Route.title`, `Route.meta`, `Route.transition`
 - `Route.lazy(importer, { loading? })` — demand-load a component, expose `preload()`, and update through signals when the module resolves
-- `Route.Switch`, `Route.collect`, `Route.collectAll(source)`, `Route.validateLinks`
+- `Route.Switch({ children, fallback? })` — render the most specific routed child that matches the current URL (pass components, not calls, so only the winner is created)
+- `Route.collect`, `Route.collectAll(source)`, `Route.validateLinks`
 - `Route.registry([...])`, `Route.isRouteRegistry`, `Route.RouteSourceTag`, `Route.routeSourceLayer(source)` — explicit route sources; `routeSourceLayer` is what makes `RouterService.preload` resolvable
 
 **SSR/SSG loader helpers:**
@@ -2051,7 +2053,7 @@ These components pattern-match `Result` or conditional values and render the app
 - **`Optional({ when, fallback?, children })`** — render when truthy
 - **`MatchOption({ value, some, none? })`** — match Effect `Option`
 - **`Dynamic({ component, ...props })`** — dynamic component selection at runtime
-- **`WithLayer({ layer, runtime?, fallback?, children })`** — provide a Layer boundary to a subtree
+- **`WithLayer({ layer, runtime?, fallback?, children })`** — build a Layer and provide its services to a subtree (component setup, `useService`, nested boundaries); shows `fallback` while an asynchronous layer builds, and releases the layer on unmount
 - **`Frame({ children })` / `createFrame(initial?)`** — animation frame loop
 
 ### Types

@@ -48,6 +48,7 @@ import {
   type RuntimeLike,
 } from "./effect-ts.js";
 import {
+  ComponentInvocationSource,
   closeComponentScope,
   currentComponentScope,
   currentComponentServices,
@@ -435,6 +436,11 @@ function appendTransform(
   });
 }
 
+/** Whether `value` is a component created by this module. */
+export function isComponent(value: unknown): value is Component<any, any, any, any, any> {
+  return isInternalComponent(value);
+}
+
 function isInternalComponent<Props, Req, E, Bindings>(
   value: unknown,
 ): value is InternalComponent<Props, Req, E, Bindings> {
@@ -619,7 +625,7 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
       Effect.runFork(Fiber.interrupt(fiber));
     });
 
-    return () => {
+    const invocation = () => {
       const failure = error();
       if (failure !== null) {
         const rendered = matchBoundary(internal.boundary, failure);
@@ -647,6 +653,8 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
         return renderViewResult(out, result, ready, currentPlatform, currentReporter);
       });
     };
+    (invocation as { [ComponentInvocationSource]?: unknown })[ComponentInvocationSource] = out;
+    return invocation;
   }) as Component<Props, Req, E, Bindings, SlotContract>;
 
   const out = Object.assign(component, {

@@ -177,7 +177,7 @@ export function App() {
             {" · "}
             <a href={userLink({ userId: "bob" })}>Bob</a>
           </p>
-          <Route.Switch fallback={<p>No route matched.</p>} children={[Home({}), UsersList({}), UserPage({})]} />
+          <Route.Switch fallback={<p>No route matched.</p>} children={[Home, UsersList, UserPage]} />
         </main>
       )}
     </WithLayer>
