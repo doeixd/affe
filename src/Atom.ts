@@ -5,6 +5,8 @@ import {
   type Accessor,
   createEffect,
   onCleanup,
+  untrack,
+  useContext,
 } from "./api.js";
 import { Owner, getOwner, runWithOwner } from "./owner.js";
 import {
@@ -23,6 +25,8 @@ import {
   type ResultDefectError,
   type MutationSupersededError,
   type OptimisticRef,
+  type QueryRef,
+  ManagedRuntimeContext,
 } from "./effect-ts.js";
 import {
   flushReactivityRuntime,
@@ -74,6 +78,23 @@ function ensureRefresh<A>(atom: ReadonlyAtom<A, any, any>): RefreshRef {
   const next = { get, bump: () => set((n) => n + 1) };
   refreshMap.set(atom, next);
   return next;
+}
+
+/**
+ * Build shared, lazily-created atom machinery (a query computation, a watcher)
+ * outside of whichever reader happens to touch the atom first.
+ *
+ * Atoms are shared: their internal computations must not become children of
+ * the first reader's per-run owner (the reader's next re-run would dispose
+ * them, freezing the value or interrupting an in-flight fiber), and their
+ * creation must not register dependencies on the reader. The returned owner
+ * is the machinery's lifetime owner; nothing disposes it today because atoms
+ * have no dispose path, so the machinery lives as long as the atom.
+ */
+function createDetached<T>(fn: () => T): { readonly value: T; readonly owner: Owner } {
+  const owner = new Owner(null);
+  const value = runWithOwner(owner, () => untrack(fn));
+  return { value, owner };
 }
 
 /**
@@ -669,8 +690,17 @@ export function family<Args extends ReadonlyArray<unknown>, T>(
     node.value = undefined;
     node.children.clear();
   };
-  const sameArgs = (a: Args, b: Args) =>
-    a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
+  // `evictArgs` clears the whole trie subtree under `args`, so every member
+  // whose args extend `args` is gone from the index too; drop it from
+  // `members` so `size` / `keys()` / `entries()` stay truthful.
+  const removeMembersUnder = (args: Args) => {
+    for (let i = members.length - 1; i >= 0; i--) {
+      const candidate = members[i]!.args;
+      if (candidate.length >= args.length && args.every((v, j) => v === candidate[j])) {
+        members.splice(i, 1);
+      }
+    }
+  };
 
   const getOrCreate = ((...args: Args) => {
     const node = familyPath(root, args, true) as FamilyNode<T>;
@@ -682,7 +712,10 @@ export function family<Args extends ReadonlyArray<unknown>, T>(
     if (capacity !== undefined) {
       while (members.length > capacity) {
         const oldest = members.shift();
-        if (oldest !== undefined) evictArgs(oldest.args);
+        if (oldest !== undefined) {
+          evictArgs(oldest.args);
+          removeMembersUnder(oldest.args);
+        }
       }
     }
     return next;
@@ -690,8 +723,7 @@ export function family<Args extends ReadonlyArray<unknown>, T>(
 
   getOrCreate.evict = (...args: Args) => {
     evictArgs(args);
-    const index = members.findIndex((entry) => sameArgs(entry.args, args));
-    if (index >= 0) members.splice(index, 1);
+    removeMembersUnder(args);
   };
   getOrCreate.clear = () => {
     root.children.clear();
@@ -1411,22 +1443,45 @@ export function withReactivity<A, E = never, R = never>(
 ): ReadonlyAtom<A, E, R> | ((self: ReadonlyAtom<A, E, R>) => ReadonlyAtom<A, E, R>) {
   if (arg2 === undefined) {
     const keys = normalizeReactivityKeys(arg1 as ReactivityKeysInput);
-    return (self: ReadonlyAtom<A, E, R>) => {
-      const wrapped = readable<A, E, R>((get) => {
-        trackReactivityRuntime(keys);
-        return get(self);
-      }) as Atom<A, E, R> & ReactivityTagged;
-      wrapped[ReactivityKeysSymbol] = keys;
-      return wrapped;
-    };
+    return (self: ReadonlyAtom<A, E, R>) => wrapWithReactivity(self, keys);
   }
+  return wrapWithReactivity(arg1 as ReadonlyAtom<A, E, R>, normalizeReactivityKeys(arg2));
+}
 
-  const self = arg1 as ReadonlyAtom<A, E, R>;
-  const keys = normalizeReactivityKeys(arg2);
-  const wrapped = readable<A, E, R>((get) => {
+function wrapWithReactivity<A, E, R>(
+  self: ReadonlyAtom<A, E, R>,
+  keys: ReadonlyArray<string>,
+): ReadonlyAtom<A, E, R> {
+  // Tracking the keys in the wrapper's read only re-runs the wrapper's
+  // readers; a query atom underneath would keep serving its cached result.
+  // A detached watcher turns each key invalidation into a real refresh of the
+  // wrapped atom (re-running a query's effect). It is created on first read
+  // so an unread atom does no work.
+  let watching = false;
+  const ensureWatcher = (): void => {
+    if (watching) return;
+    watching = true;
+    createDetached(() => {
+      let first = true;
+      createEffect(() => {
+        trackReactivityRuntime(keys);
+        if (first) {
+          first = false;
+          return;
+        }
+        untrack(() => defaultContext.refresh(self));
+      });
+    });
+  };
+  const wrapped = readable<A, E, R>(
+    (get) => {
+      ensureWatcher();
       trackReactivityRuntime(keys);
       return get(self);
-  }) as Atom<A, E, R> & ReactivityTagged;
+    },
+    // `Atom.refresh(wrapped)` forwards to the wrapped atom.
+    (refreshAtom) => refreshAtom(toAtom(self)),
+  ) as Atom<A, E, R> & ReactivityTagged;
   wrapped[ReactivityKeysSymbol] = keys;
   return wrapped;
 }
@@ -2373,12 +2428,20 @@ export const subscribe = <A>(
   const owner = new Owner();
   runWithOwner(owner, () => {
     let first = true;
+    let previous: A;
     createEffect(() => {
       const next = defaultContext.get(self);
       if (first) {
         first = false;
+        previous = next;
         if (options?.immediate === false) return;
+        f(next);
+        return;
       }
+      // The effect can re-run without the value changing (e.g. a derived atom
+      // recomputed to the same value); only report actual changes.
+      if (Object.is(previous, next)) return;
+      previous = next;
       f(next);
     });
   });
@@ -2499,19 +2562,32 @@ export function query<A, E, R>(
   arg1: RuntimeLike<R, unknown> | (() => Effect.Effect<A, E, R>),
   arg2?: () => Effect.Effect<A, E, R>,
 ): ResultAtom<A, E, R> {
-  let accessor: Accessor<Result<A, E>> | null = null;
+  let ref: QueryRef<A, E> | null = null;
 
-  const getAccessor = (): Accessor<Result<A, E>> => {
-    if (accessor !== null) return accessor;
-    if (arg2 === undefined) {
-      accessor = defineQuery(arg1 as () => Effect.Effect<A, E, R>).result;
-    } else {
-      accessor = defineQuery(arg2, { runtime: arg1 as RuntimeLike<R, unknown> }).result;
-    }
-    return accessor as Accessor<Result<A, E>>;
+  const getRef = (): QueryRef<A, E> => {
+    if (ref !== null) return ref;
+    // Resolve the ambient runtime under the reader (it is owner-context
+    // scoped), then build the query detached from the reader's owner so a
+    // reader re-run never disposes the shared query or interrupts its fiber.
+    const runtime = arg2 === undefined
+      ? useContext(ManagedRuntimeContext) as RuntimeLike<R, unknown> | null
+      : arg1 as RuntimeLike<R, unknown>;
+    const fn = (arg2 ?? arg1) as () => Effect.Effect<A, E, R>;
+    ref = createDetached(() =>
+      runtime === null ? defineQuery(fn) : defineQuery(fn, { runtime })
+    ).value as QueryRef<A, E>;
+    return ref;
   };
 
-  return readable<Result<A, E>, E, R>(() => getAccessor()());
+  return readable<Result<A, E>, E, R>(
+    () => getRef().result(),
+    // `Atom.refresh` (and withStaleTime/withRetry/withPolling/withReactivity,
+    // which refresh through it) re-runs the query's effect. An atom that was
+    // never read has no query yet and nothing to refresh.
+    () => {
+      ref?.refresh();
+    },
+  );
 }
 
 /**
@@ -2524,10 +2600,24 @@ export const effect = <A, E>(
   fn: () => Effect.Effect<A, E, never>,
 ): ResultAtom<A, E> => {
   let accessor: Accessor<Result<A, E>> | null = null;
+  // Bumped by `Atom.refresh`; read inside the effect's computation so a
+  // refresh re-runs `fn`.
+  const [version, setVersion] = createSignal(0);
   const getAccessor = (): Accessor<Result<A, E>> => {
     if (accessor !== null) return accessor;
-    accessor = atomEffect(fn);
+    // Detached from the reader's owner: see `createDetached`.
+    accessor = createDetached(() =>
+      atomEffect(() => {
+        version();
+        return fn();
+      })
+    ).value;
     return accessor;
   };
-  return readable<Result<A, E>, E>(() => getAccessor()());
+  return readable<Result<A, E>, E>(
+    () => getAccessor()(),
+    () => {
+      if (accessor !== null) setVersion((n) => n + 1);
+    },
+  );
 };

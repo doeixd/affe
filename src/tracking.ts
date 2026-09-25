@@ -12,6 +12,12 @@ export interface IComputation {
   addDependency(signal: ISignal<unknown>): void;
   /** Called by a Signal when its value has changed. */
   invalidate(): void;
+  /**
+   * True for pure derivations (memos). The scheduler settles every queued
+   * pure computation before running any side-effecting one, so effects never
+   * observe a half-updated set of derived values (diamond glitch).
+   */
+  readonly pure?: boolean;
 }
 
 export interface ISignal<T> {
@@ -45,9 +51,14 @@ export function runUntracked<T>(fn: () => T): T {
 /**
  * Batch flag. When > 0, Signal writes are queued rather than immediately
  * propagated. Flushes when the outermost batch exits.
+ *
+ * Queued work is split in two: pure computations (memos) and effects. `flush`
+ * always drains the pure queue first, so by the time an effect runs, every
+ * memo invalidated by the same change has recomputed.
  */
 let batchDepth = 0;
-const batchQueue: Set<IComputation> = new Set();
+const pureQueue: Set<IComputation> = new Set();
+const effectQueue: Set<IComputation> = new Set();
 let microtaskScheduled = false;
 
 export function isBatching(): boolean {
@@ -55,7 +66,7 @@ export function isBatching(): boolean {
 }
 
 export function enqueueComputation(comp: IComputation): void {
-  batchQueue.add(comp);
+  (comp.pure === true ? pureQueue : effectQueue).add(comp);
   if (batchDepth === 0 && !microtaskScheduled) {
     microtaskScheduled = true;
     queueMicrotask(() => {
@@ -65,14 +76,16 @@ export function enqueueComputation(comp: IComputation): void {
   }
 }
 
+function takeFirst(queue: Set<IComputation>): IComputation {
+  const next = queue.values().next().value as IComputation;
+  queue.delete(next);
+  return next;
+}
+
 export function flush(): void {
-  if (batchQueue.size === 0) return;
-  while (batchQueue.size > 0) {
-    const toRun = [...batchQueue];
-    batchQueue.clear();
-    for (const comp of toRun) {
-      comp.invalidate();
-    }
+  while (pureQueue.size > 0 || effectQueue.size > 0) {
+    const comp = pureQueue.size > 0 ? takeFirst(pureQueue) : takeFirst(effectQueue);
+    comp.invalidate();
   }
 }
 

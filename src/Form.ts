@@ -223,8 +223,13 @@ export function make<
       name: options.name ?? "form.submit",
       singleFlight: options.singleFlight as Atom.SingleFlightClientOptions<void>,
       reactivityKeys: options.reactivityKeys,
-      onError: () => {
-        options.rollback?.(values());
+      // Roll back on typed failures AND defects, matching the mutation path.
+      // `onError` only sees typed errors (actions filter defects out of it),
+      // so a dying `onSubmit` would otherwise leave optimistic state behind.
+      onTransition: ({ phase }) => {
+        if (phase === "failure" || phase === "defect") {
+          options.rollback?.(values());
+        }
       },
     });
     const run = (input?: void) => {

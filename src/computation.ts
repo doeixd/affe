@@ -19,7 +19,7 @@
  * getter — the canonical "derived signal" primitive.
  */
 
-import { type IComputation, type ISignal, getObserver, setObserver } from "./tracking.js";
+import { type IComputation, type ISignal, enqueueComputation, getObserver, setObserver } from "./tracking.js";
 import { Owner, getOwner, runWithOwner } from "./owner.js";
 import { defaultEquals, type EqualityFn } from "./signal.js";
 
@@ -40,6 +40,12 @@ export class Computation implements IComputation {
   private _runOwner: Owner | null = null;
   private _disposed = false;
   private _running = false;
+  /**
+   * Set when an invalidation arrives while `fn` is executing (e.g. a
+   * self-write inside `batch()`, which flushes synchronously). The run that is
+   * in progress cannot be restarted, so the computation re-runs once it ends.
+   */
+  private _rerunPending = false;
 
   /**
    * @param fn          - The reactive function to execute.
@@ -71,7 +77,11 @@ export class Computation implements IComputation {
   }
 
   invalidate(): void {
-    if (this._disposed || this._running) return;
+    if (this._disposed) return;
+    if (this._running) {
+      this._rerunPending = true;
+      return;
+    }
     this._cleanupRunOwner();
     if (this._disposed) return;
     this._run();
@@ -111,13 +121,35 @@ export class Computation implements IComputation {
       this._capturedDeps = null;
       this._running = false;
     }
+    if (this._rerunPending) {
+      this._rerunPending = false;
+      this.invalidate();
+    }
+  }
+
+  /**
+   * Unsubscribe from old dependencies `_deps[_depIndex..]` that were NOT read
+   * again during this run. A dependency can move out of the reused prefix
+   * (inserted/reordered reads) while still being read — it then lives in
+   * `_capturedDeps` (or even in the prefix, for duplicate reads) and must stay
+   * subscribed.
+   */
+  private _unsubscribeStale(): void {
+    if (this._depIndex >= this._deps.length) return;
+    const kept = new Set<ISignal<unknown>>();
+    for (let i = 0; i < this._depIndex; i++) kept.add(this._deps[i]);
+    if (this._capturedDeps !== null) {
+      for (const dep of this._capturedDeps) kept.add(dep);
+    }
+    for (let i = this._depIndex; i < this._deps.length; i++) {
+      const dep = this._deps[i];
+      if (!kept.has(dep)) dep.removeSubscriber(this);
+    }
   }
 
   private _reconcileDependencies(): void {
+    this._unsubscribeStale();
     if (this._capturedDeps !== null) {
-      for (let i = this._depIndex; i < this._deps.length; i++) {
-        this._deps[i].removeSubscriber(this);
-      }
 
       if (this._depIndex > 0) {
         this._deps.length = this._depIndex + this._capturedDeps.length;
@@ -131,9 +163,6 @@ export class Computation implements IComputation {
     }
 
     if (this._depIndex < this._deps.length) {
-      for (let i = this._depIndex; i < this._deps.length; i++) {
-        this._deps[i].removeSubscriber(this);
-      }
       this._deps.length = this._depIndex;
     }
   }
@@ -165,6 +194,7 @@ export class Computation implements IComputation {
  * without notifying (no subscribers exist yet at construction time).
  */
 export class Memo<T> extends Computation implements ISignal<T> {
+  readonly pure = true;
   private _value: T | undefined = undefined;
   private _subscribers: Set<IComputation> = new Set();
   private _equals: EqualityFn<T>;
@@ -193,12 +223,13 @@ export class Memo<T> extends Computation implements ISignal<T> {
     }
 
     // Subsequent runs: notify only when the value actually changes.
+    // Subscribers are queued rather than invalidated synchronously: sibling
+    // memos invalidated by the same change may still be pending, and the
+    // scheduler settles all memos before any effect runs (no diamond glitch).
     if (!this._equals(this._value as T, next)) {
       this._value = next;
-      if (this._subscribers.size > 0) {
-        for (const sub of [...this._subscribers]) {
-          sub.invalidate();
-        }
+      for (const sub of this._subscribers) {
+        enqueueComputation(sub);
       }
     }
   }
