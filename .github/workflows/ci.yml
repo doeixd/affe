@@ -31,6 +31,23 @@ jobs:
       - name: Test
         run: npm test
 
+  browser:
+    name: Browser tests (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      # Builds the core, the permissive package and the three example apps,
+      # then serves them and runs browser-tests/.
+      - name: Browser tests
+        run: npm run test:browser
+
   bench:
     name: Performance benchmarks (tracked, non-blocking)
     runs-on: ubuntu-latest

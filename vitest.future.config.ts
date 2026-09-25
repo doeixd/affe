@@ -33,5 +33,8 @@ export default defineConfig({
     // A red spec is a work item, not an emergency. Keep the whole worklist
     // visible in one run instead of stopping at the first failure.
     bail: 0,
+    // An empty worklist is a finished one, not an error: `test:all` chains
+    // this suite and must not fail just because every spec was promoted.
+    passWithNoTests: true,
   },
 });
