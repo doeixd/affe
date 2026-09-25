@@ -208,7 +208,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/doeixd/effect-atom-jsx.git"
+    "url": "git+https://github.com/doeixd/affe.git"
   },
-  "homepage": "https://github.com/doeixd/effect-atom-jsx#readme"
+  "homepage": "https://github.com/doeixd/affe#readme"
 }

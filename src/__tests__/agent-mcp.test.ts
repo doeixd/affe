@@ -1,12 +1,12 @@
 /**
- * AN-3 — `@doeixd/affe-agent` MCP projection, gating coverage. The authoritative
+ * AN-3 — `@doeixd/affe-ui-agent` MCP projection, gating coverage. The authoritative
  * scenario suite lives in `future/agent/mcp-projection.spec.ts` (kept there
  * until `DQ-098` settles the A2A scope); these tests keep the adapter's
  * load-bearing behavior under `npm test`, plus the package-surface lint the
  * permissive package pins for itself: adapters consume PUBLIC core subpaths
  * only, never `src/` or `dist/` deep imports (`DQ-096`).
  */
-import { McpAuth, mcpServer, mcpTools } from "@doeixd/affe-agent";
+import { McpAuth, mcpServer, mcpTools } from "@doeixd/affe-ui-agent";
 import { Effect, Layer, Schema } from "effect";
 import fs from "node:fs";
 import path from "node:path";
@@ -61,7 +61,7 @@ function makeMixedCatalog() {
   };
 }
 
-describe("@doeixd/affe-agent MCP projection", () => {
+describe("@doeixd/affe-ui-agent MCP projection", () => {
   it("projects one MCP tool per agent-exposed entry and callTool runs the one dispatch path", async () => {
     const { calls, catalog } = makeMixedCatalog();
 
@@ -208,11 +208,11 @@ describe("@doeixd/affe-agent MCP projection", () => {
     expect(content.limit).toBe(50);
   });
 
-  it("ships no A2A / ask-agent surface (DQ-098: userland; a bridge, if ever, lives in @doeixd/affe-agent)", async () => {
+  it("ships no A2A / ask-agent surface (DQ-098: userland; a bridge, if ever, lives in @doeixd/affe-ui-agent)", async () => {
     // The boundary pin: neither the core Agent module nor the adapter exports
     // an agent-delegation surface. §1's answer stands — `ask-agent` is an
     // app-level action like any other.
-    const adapter = await import("@doeixd/affe-agent");
+    const adapter = await import("@doeixd/affe-ui-agent");
     for (const mod of [Agent as Record<string, unknown>, adapter as Record<string, unknown>]) {
       const delegating = Object.keys(mod).filter((name) => /askagent|a2a/i.test(name));
       expect(delegating).toEqual([]);

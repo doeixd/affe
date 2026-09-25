@@ -1,8 +1,8 @@
 # Rename: effect-atom-jsx → Affe
 
 Date: 2026-07-29
-Status: migrated 2026-09-25 (see "Migration record" below); logo, domain,
-and repo rename still open
+Status: migrated 2026-09-25 (see "Migration record" below); logo and
+domain still open
 
 ## Decision
 
@@ -60,9 +60,11 @@ The rename landed as one change-set, following the outline below except where
 noted:
 
 - **npm names.** `@affe` was unavailable, so the core is `@doeixd/affe` (was
-  `@affe/core`) and the workspace packages are `@doeixd/affe-agent`,
+  `@affe/core`) and the workspace packages are `@doeixd/affe-ui-agent`,
   `@doeixd/affe-css`, and `@doeixd/affe-permissive` (were `@affe/agent`,
-  `@affe/css`, `@affe/permissive`). Planned future splits follow the same
+  `@affe/css`, `@affe/permissive`). The agent adapter is `affe-ui-agent`
+  rather than `affe-agent` so it does not collide with the separate Affe Agent
+  sister project. Planned future splits follow the same
   shape (`@doeixd/affe-compiler`, `@doeixd/affe-kit`, `@doeixd/affe-router`).
   The table above keeps the original decision.
 - **JSX import source** is `@doeixd/affe` (TypeScript resolves
@@ -83,8 +85,11 @@ noted:
   wording with a rename note. File names such as `docs/afui.md` and
   `docs/af-ui-json-render/` are unchanged, as are the `af-ui`, `af-ui-doctor`,
   and `create-af-ui` CLI names, which this decision did not cover.
+- **Repository** (step 5): `doeixd/effect-atom-jsx` → `doeixd/affe`; the
+  `repository`, `homepage`, and `bugs` URLs in `package.json` (and the alias
+  generated from it) point at the new name, and GitHub redirects the old one.
 - **Not done yet:** the mascot/logo, the domain, the npm dispute for bare
-  `affe`, the alias's transition window, and the GitHub repo rename (step 5).
+  `affe`, and the alias's transition window.
 
 ## Migration outline (when scheduled — deliberately not now)
 

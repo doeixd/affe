@@ -141,6 +141,6 @@ Chromium where the slice touches served output) and sabotage-verified tests.
 ## Non-goals (v1)
 
 Store-proxy dependency graphs; publishing to a registry; the MCP adapter
-itself (that is the `@doeixd/affe-agent` package, AN-3 — this milestone only
+itself (that is the `@doeixd/affe-ui-agent` package, AN-3 — this milestone only
 establishes the workspace pattern it will reuse); any `future/agent/*`
 implementation.
