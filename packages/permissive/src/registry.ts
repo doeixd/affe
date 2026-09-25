@@ -16,7 +16,10 @@
 import type * as Serialization from "@doeixd/affe/Serialization";
 
 export interface HandleRegistry {
-  /** Bind a stable key to a live handle. Re-registering a key replaces it. */
+  /**
+   * Bind a stable key to a live handle. Re-registering a key replaces it;
+   * registering a handle under a new key moves it (the old key is removed).
+   */
   readonly register: (key: string, handle: object) => void;
   /** Remove a key (e.g. on component disposal). */
   readonly unregister: (key: string) => void;
@@ -29,14 +32,24 @@ export function createHandleRegistry(): HandleRegistry {
   const byHandle = new Map<object, string>();
   return {
     register: (key, handle) => {
+      // A handle has exactly one key: moving it to a new key retires the old
+      // one, so a later unregister of the stale key cannot orphan the handle.
+      const previousKey = byHandle.get(handle);
+      if (previousKey !== undefined && previousKey !== key) {
+        byKey.delete(previousKey);
+      }
       const previous = byKey.get(key);
-      if (previous !== undefined) byHandle.delete(previous);
+      if (previous !== undefined && byHandle.get(previous) === key) {
+        byHandle.delete(previous);
+      }
       byKey.set(key, handle);
       byHandle.set(handle, key);
     },
     unregister: (key) => {
       const handle = byKey.get(key);
-      if (handle !== undefined) byHandle.delete(handle);
+      if (handle !== undefined && byHandle.get(handle) === key) {
+        byHandle.delete(handle);
+      }
       byKey.delete(key);
     },
     resolver: {

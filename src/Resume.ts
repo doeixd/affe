@@ -1,5 +1,6 @@
 import {
   Cause,
+  Deferred,
   type Duration,
   Effect,
   Exit,
@@ -5772,7 +5773,9 @@ function installClientClaimed<R, ER>(
         // Extracted so a fragment mount (`DQ-014`/M11b) can install a root
         // listener for an event type the page itself never used.
         const installListener = (eventType: EventType): void => {
-          if (listeners.has(eventType)) return;
+          // A disposed installation must never re-acquire a root listener
+          // (a late fragment mount would otherwise resurrect dispatch).
+          if (disposed || listeners.has(eventType)) return;
           const listener: EventListener = (event) => {
             if (disposed) return;
             const path = eventPathWithinRoot(event, options.root);
@@ -5791,8 +5794,12 @@ function installClientClaimed<R, ER>(
                 if (separator <= 0) continue;
                 const fragment = fragmentScopes.get(marker.slice(0, separator));
                 if (fragment === undefined || fragment.disposed) continue;
-                const fragmentEntry =
-                  fragment.events[marker.slice(separator + 1)];
+                const fragmentEventId = marker.slice(separator + 1);
+                // Own-property lookup: a DOM-supplied id such as
+                // "constructor" must never resolve through Object.prototype.
+                const fragmentEntry = Object.hasOwn(fragment.events, fragmentEventId)
+                  ? fragment.events[fragmentEventId]
+                  : undefined;
                 if (
                   fragmentEntry === undefined
                   || fragmentEntry.type !== eventType
@@ -5812,7 +5819,9 @@ function installClientClaimed<R, ER>(
                 launch(eventType, marker, fragmentEntry);
                 return;
               }
-              const entry = events[scopedEventId];
+              const entry = Object.hasOwn(events, scopedEventId)
+                ? events[scopedEventId]
+                : undefined;
               if (entry === undefined) {
                 report({
                   code: "unknown-event-marker",
@@ -6187,7 +6196,19 @@ function installClientClaimed<R, ER>(
           report,
           fragmentScopes,
           regionFragments,
-          mintFragmentScope: () => `f${++fragmentScopeCounter}`,
+          isDisposed: () => disposed,
+          // A minted scope must never alias the page's own installation id
+          // (the listener consults the page table first) nor a live fragment.
+          mintFragmentScope: () => {
+            let candidate: string;
+            do {
+              candidate = `f${++fragmentScopeCounter}`;
+            } while (
+              candidate === manifest.installationId
+              || fragmentScopes.has(candidate)
+            );
+            return candidate;
+          },
           installListener: (eventType) => installListener(eventType as EventType),
         });
         return installation;
@@ -6266,6 +6287,40 @@ export interface StreamingClientInstallation {
  */
 export function installClientStreaming<R, ER>(
   options: InstallClientStreamingOptions<R, ER>,
+): Effect.Effect<
+  StreamingClientInstallation,
+  ResumeDuplicateClientInstallationError
+> {
+  return Effect.suspend(() => {
+    // Same synchronous root claim as `installClient`: one active
+    // installation per root, whichever door installed it. Released on
+    // dispose, on teardown (a truncated stream), and on a failed install.
+    const installationToken = Symbol();
+    if (activeClientInstallations.has(options.root)) {
+      return Effect.fail(
+        new ResumeDuplicateClientInstallationError({
+          message:
+            "A resume client installation is already active for this root.",
+        }),
+      );
+    }
+    activeClientInstallations.set(options.root, installationToken);
+    const releaseClaim = (): void => {
+      if (activeClientInstallations.get(options.root) === installationToken) {
+        activeClientInstallations.delete(options.root);
+      }
+    };
+    return installClientStreamingClaimed(options, releaseClaim).pipe(
+      Effect.onExit((exit) =>
+        Exit.isSuccess(exit) ? Effect.void : Effect.sync(releaseClaim)
+      ),
+    );
+  }).pipe(Effect.withSpan("Resume.installClientStreaming"));
+}
+
+function installClientStreamingClaimed<R, ER>(
+  options: InstallClientStreamingOptions<R, ER>,
+  releaseClaim: () => void,
 ): Effect.Effect<StreamingClientInstallation> {
   return Effect.gen(function* () {
     const resolver = yield* Portable.makeResolver(options.resolverEntries);
@@ -6297,6 +6352,7 @@ export function installClientStreaming<R, ER>(
     const teardown = (): void => {
       if (torndown) return;
       torndown = true;
+      releaseClaim();
       for (const [eventType, listener] of listeners) {
         try {
           options.root.removeEventListener(eventType, listener, true);
@@ -6426,7 +6482,11 @@ export function installClientStreaming<R, ER>(
             queued.push({ region, eventId, eventType });
             return;
           }
-          const entry = table[eventId];
+          // Own-property lookup: a DOM-supplied id such as "constructor"
+          // must never resolve through Object.prototype.
+          const entry = Object.hasOwn(table, eventId)
+            ? table[eventId]
+            : undefined;
           if (entry === undefined) {
             report({
               code: "unknown-event-marker",
@@ -6529,7 +6589,9 @@ export function installClientStreaming<R, ER>(
             continue;
           }
           queued.splice(index, 1);
-          const entry = events[pending.eventId];
+          const entry = Object.hasOwn(events, pending.eventId)
+            ? events[pending.eventId]
+            : undefined;
           if (entry === undefined) {
             report({
               code: "unknown-event-marker",
@@ -6568,7 +6630,21 @@ export function installClientStreaming<R, ER>(
           && expected.length === new Set(expected).size
           && expected.length === arrived.length
           && arrived.every((id) => expected.includes(id));
-        if (complete) return Effect.void;
+        if (complete) {
+          // Every expected region arrived, so an interaction still queued
+          // targets a region the stream never described: it can never
+          // replay. Surface it instead of holding it forever.
+          const stranded = queued.splice(0, queued.length);
+          for (const pending of stranded) {
+            report({
+              code: "unknown-event-marker",
+              eventType: pending.eventType,
+              eventId: `${pending.region}:${pending.eventId}`,
+              reason: `A queued interaction targeted region "${pending.region}", which the completed stream never described; it will not run.`,
+            });
+          }
+          return Effect.void;
+        }
         const message =
           terminal === undefined
             ? "The record stream ended without its terminal completeness record; tearing the streamed installation down."
@@ -6596,7 +6672,7 @@ export function installClientStreaming<R, ER>(
         teardown();
       }),
     } satisfies StreamingClientInstallation;
-  }).pipe(Effect.withSpan("Resume.installClientStreaming"));
+  });
 }
 
 /**
@@ -6610,7 +6686,9 @@ export function installClientStreamed<R, ER>(
   options: InstallClientStreamedOptions<R, ER>,
 ): Effect.Effect<
   StreamingClientInstallation,
-  StreamIngestError | ResumeStreamTruncatedError
+  | StreamIngestError
+  | ResumeStreamTruncatedError
+  | ResumeDuplicateClientInstallationError
 > {
   const { records, ...rest } = options;
   return Effect.gen(function* () {
@@ -6679,6 +6757,7 @@ interface ClientFragmentInternals {
   readonly regionFragments: Map<string, { dispose: () => void }>;
   readonly mintFragmentScope: () => string;
   readonly installListener: (eventType: string) => void;
+  readonly isDisposed: () => boolean;
 }
 
 /** Fragment machinery per live install, kept off the public handle type. */
@@ -6902,6 +6981,11 @@ function mountClientFragment(
           "This installation cannot host fragments; mount into the handle installClient returned.",
       });
     }
+    if (internals.isDisposed()) {
+      return yield* new ResumeConfigurationError({
+        message: `Cannot mount a fragment into region "${regionId}": the client installation has been disposed.`,
+      });
+    }
     const manifest = yield* validateManifestValue(
       options.manifest,
       "fragment mount",
@@ -7073,9 +7157,30 @@ export function installFragment(
       Record<string, typeof ComponentSnapshotSchema.Type>
     > = validated.version === 1 ? {} : validated.components;
 
-    let state: "installed" | "active" | "disposed" = "installed";
+    let state: "installed" | "activating" | "active" | "disposed" =
+      "installed";
     let disposeCount = 0;
     const mounted: Array<Effect.Effect<void>> = [];
+    // The one in-flight activation: overlapping activate() calls join it, so
+    // setup runs exactly once however many callers race.
+    let inFlight:
+      | Deferred.Deferred<void, InstalledFragmentActivateError>
+      | undefined;
+    // Read through a function so control-flow narrowing never assumes the
+    // state is unchanged across an `yield*` (dispose may run meanwhile).
+    const isDisposed = (): boolean => state === "disposed";
+    // `componentId` is schema-checked (`c<n>`), so a placeholder such as
+    // "fragment" would make the constructor throw a defect instead of
+    // failing typed. Name the component in flight, else the fragment's first.
+    const fallbackComponentId = (Object.keys(componentEntries)[0] ?? "c0") as
+      typeof ComponentId.Type;
+    const disposedError = (
+      componentId: typeof ComponentId.Type = fallbackComponentId,
+    ) =>
+      new ResumeComponentActivationDisposedError({
+        componentId,
+        message: "This fragment installation is disposed.",
+      });
 
     const disposeMounts = Effect.suspend(() => {
       const pending = mounted.splice(0, mounted.length);
@@ -7084,15 +7189,8 @@ export function installFragment(
       });
     });
 
-    const activate = (): Effect.Effect<void, InstalledFragmentActivateError> =>
+    const runActivation: Effect.Effect<void, InstalledFragmentActivateError> =
       Effect.gen(function* () {
-        if (state === "disposed") {
-          return yield* new ResumeComponentActivationDisposedError({
-            componentId: "fragment" as typeof ComponentId.Type,
-            message: "This fragment installation is disposed.",
-          });
-        }
-        if (state === "active") return;
         for (const [rawComponentId, entry] of Object.entries(componentEntries)) {
           const componentId = rawComponentId as typeof ComponentId.Type;
           if (entry.activation === undefined) continue;
@@ -7113,6 +7211,12 @@ export function installFragment(
               })
             ),
           );
+          // dispose() may have run while the activation resolved: stop
+          // before running any setup.
+          if (isDisposed()) {
+            yield* disposeMounts;
+            return yield* disposedError(componentId);
+          }
           const context: ComponentActivationContext = {
             componentId,
             mount: (component, props) =>
@@ -7138,15 +7242,45 @@ export function installFragment(
             // Roll the partially activated fragment back before failing, so
             // a later successful activate cannot double-mount.
             yield* disposeMounts;
+            if (isDisposed()) return yield* disposedError(componentId);
             return yield* new ResumeComponentActivationExecutionError({
               componentId,
               message:
                 `Fragment component "${componentId}" failed to activate: ${String(mount.cause)}`,
             });
           }
+          if (isDisposed()) {
+            // Disposed mid-setup: this mount (and any made before it) must
+            // not outlive the handle.
+            yield* mount.value.dispose;
+            yield* disposeMounts;
+            return yield* disposedError(componentId);
+          }
           mounted.push(mount.value.dispose);
         }
-        state = "active";
+      });
+
+    const activate = (): Effect.Effect<void, InstalledFragmentActivateError> =>
+      Effect.suspend(() => {
+        if (isDisposed()) return Effect.fail(disposedError());
+        if (state === "active") return Effect.void;
+        if (inFlight !== undefined) return Deferred.await(inFlight);
+        const deferred = Deferred.makeUnsafe<
+          void,
+          InstalledFragmentActivateError
+        >();
+        inFlight = deferred;
+        state = "activating";
+        return runActivation.pipe(
+          Effect.onExit((exit) =>
+            Effect.sync(() => {
+              if (inFlight === deferred) inFlight = undefined;
+              if (!isDisposed()) {
+                state = Exit.isSuccess(exit) ? "active" : "installed";
+              }
+            }).pipe(Effect.andThen(Deferred.done(deferred, exit)))
+          ),
+        );
       });
 
     const dispose = (): Effect.Effect<void> =>
@@ -7311,7 +7445,11 @@ function validateMarkers(
             }.`,
           });
         }
-        const entry = events[eventId];
+        // Own-property lookup: a DOM-supplied id such as "constructor" must
+        // never resolve through Object.prototype.
+        const entry = Object.hasOwn(events, eventId)
+          ? events[eventId]
+          : undefined;
         if (entry === undefined) {
           return yield* new ResumeUnknownEventMarkerError({
             marker,

@@ -382,7 +382,45 @@ export default function resumeExtractPlugin(
     // identifier (`captures: LocalSchema`) would otherwise slip through the
     // hoisting check entirely.
     if (path.isIdentifier()) checkIdentifier(path);
+    // Assignment targets are binding positions, not ReferencedIdentifiers, so
+    // `count = 1` / `count++` / `for (count of xs)` would slip past the
+    // reference walk above. A write to an enclosing-function variable cannot
+    // be hoisted (the binding does not exist at module scope) and cannot be
+    // captured either (captures are copied values), so it is a hard error in
+    // both explicit and auto mode.
+    const checkWriteTarget = (
+      writer: Babel.NodePath,
+      target: Babel.types.Node | null | undefined,
+    ): void => {
+      if (target === null || target === undefined) return;
+      if (t.isVariableDeclaration(target)) return; // declares its own binding
+      const names = Object.keys(t.getBindingIdentifiers(target));
+      for (const name of names) {
+        const binding = writer.scope.getBinding(name);
+        if (binding === undefined) continue;
+        if (binding.scope.block.type === "Program") continue;
+        const owner = binding.scope.path;
+        if (owner === path || owner.isDescendant(path)) continue;
+        throw writer.buildCodeFrameError(
+          `[resume-extract] ${subject} assigns to "${name}" from an enclosing function scope. `
+            + "Extracted portable code cannot write to outer-scope variables (captures are copied values); "
+            + "return the value or keep the state in module scope instead.",
+        );
+      }
+    };
     path.traverse({
+      AssignmentExpression(assignPath) {
+        checkWriteTarget(assignPath, assignPath.node.left);
+      },
+      UpdateExpression(updatePath) {
+        checkWriteTarget(updatePath, updatePath.node.argument);
+      },
+      ForInStatement(forPath) {
+        checkWriteTarget(forPath, forPath.node.left);
+      },
+      ForOfStatement(forPath) {
+        checkWriteTarget(forPath, forPath.node.left);
+      },
       ThisExpression(thisPath) {
         if (resolvesOutside(thisPath)) {
           throw contextError(thisPath, "this");
@@ -1225,9 +1263,19 @@ export default function resumeExtractPlugin(
             }
             // Narrowed together so the declarator node is provably present
             // when its index is looked up, without a non-null assertion.
+            // The marker need not be the declarator's direct init
+            // (`handlers = { save: extract(...) }`), so find the enclosing
+            // declarator of the top-level statement itself.
+            const enclosingDeclarator = callPath.findParent((candidate) =>
+              candidate.isVariableDeclarator()
+              && candidate.parentPath !== null
+              && (candidate.parentPath === topLevel
+                || candidate.parentPath.parentPath === topLevel)
+            );
             const declaratorPath =
-              declarator !== null && declarator.isVariableDeclarator()
-                ? declarator
+              enclosingDeclarator !== null
+                && enclosingDeclarator.isVariableDeclarator()
+                ? enclosingDeclarator
                 : undefined;
             const variableDeclaration = declaratorPath !== undefined
                 && declaratorPath.parentPath.isVariableDeclaration()
