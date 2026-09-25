@@ -29,10 +29,12 @@ typed, lifecycles are scoped, and everything composes with `.pipe()`.
 | **Atoms** | Callable fine-grained state, derived atoms, families, schema-validated forms |
 | **Async** | `Result`-based queries, actions, retry/polling schedules, optimistic updates |
 | **Reactivity** | Semantic key-based invalidation as an Effect service |
-| **Affe** | Components with published slot contracts; styles and behaviors attach from outside |
+| **Components** | Components with published slot contracts; styles and behaviors attach from outside |
 | **Router** | Schema-first routes, loaders with SWR caching, typed links, head metadata |
 | **Single flight** | One round-trip for a mutation *and* all affected loader data |
 | **Server** | Typed server routes, document rendering, SSR hydration |
+| **Resumability** | Dormant server-rendered pages that load only the code the first interaction needs |
+| **Agent surface** | Your actions as typed tools for AI agents, over HTTP and MCP, with approval and audit |
 
 You can stop at any row. The atoms work alone; the UI model works without the
 router; the router works without the server runtime.
@@ -40,12 +42,12 @@ router; the router works without the server runtime.
 ## Install
 
 ```sh
-npm install @doeixd/affe effect
+npm install @doeixd/affe effect@4.0.0-beta.102
 ```
 
-**Effect compatibility:** this package peers on **Effect 4 beta**
-(`effect ^4.0.0-beta.29`). Ship as **0.x prerelease / beta** until Effect 4
-is stable; a `1.0.0` cut waits on a stable Effect core. See
+**Effect compatibility:** this package peers on **Effect 4 beta**, pinned to
+exactly `effect@4.0.0-beta.102`. Ship as **0.x prerelease / beta** until
+Effect 4 is stable; a `1.0.0` cut waits on a stable Effect core. See
 `docs/RELEASE_CHECKLIST.md` and `docs/V1_SCOPE.md`.
 
 **TypeScript:** library typecheck and `tsc` build use **TypeScript 7**
@@ -196,7 +198,7 @@ Parameterized keys use families (`Reactivity.Key.family("user")`, then
 Swap `Reactivity.live` for `Reactivity.test` in tests and drive invalidation
 manually with `flush()` — no component changes.
 
-## 4. UI: the inside-out component model (Affe)
+## 4. UI: the inside-out component model
 
 Most frameworks bake structure, style, and behavior into one file. Affe
 components declare a **slot contract** — a typed description of their
@@ -278,7 +280,12 @@ carry tree metadata through `View.fromSlots(...)` / `View.fromJsx(...)`;
 compiler extraction of richer JSX tree metadata remains a tooling concern.
 Platform-agnosticism means your components are *verified* against declared
 platform vocabularies — alternate renderers (TUI, native) are deferred, not
-shipped.
+shipped. Slot handles are renderer-neutral, in-memory handles today:
+attached styles and behaviors run against them (and the test kit drives them),
+but `View.fromSlots(...)` does not yet bind a handle to the DOM element its
+slot names, so slot-attached styles and listeners do not reach the rendered
+page. Static CSS from `Style.extractStatic` targets `.af-<slot>` classes you
+put on the elements yourself.
 
 ## 5. Routing: schema-first, loader-driven
 
@@ -373,6 +380,65 @@ const dispose = Component.mount(App, {
 - Services close when their subtree unmounts (scoped finalizers).
 - Testing = swap the layer (`Reactivity.test`, mock services).
 
+## 8. Resumability: resume instead of hydrating
+
+A server-rendered page can stay dormant: the first interaction imports only
+the code it needs, and component setup never re-runs on the client. Wrap the
+code that should resume in a compiler marker; the Vite plugin
+(`resumeExtract` from `@doeixd/affe/compiler/resume-extract-vite`) hoists it
+into a `Portable.code` definition with a stable id and a lazy loader.
+
+```ts
+import { extract } from "@doeixd/affe/portable-extract";
+
+.bind("note", ({ props }) =>
+  Component.action(
+    extract(
+      (captures: { readonly label: string }) =>
+        Effect.gen(function* () {
+          yield* (yield* NoteService).record(captures.label);
+        }),
+      { captures: Schema.Struct({ label: Schema.String }), bind: { label: props.label } },
+    ),
+  ))
+```
+
+On the server, `Resume.collect(render, { buildId })` returns the HTML plus a
+small JSON manifest. On the client, `Resume.decodeManifest(...)` and
+`Resume.installClient({ root, manifest, expectedBuildId, resolverEntries,
+runtime })` install one listener per event type; the first click loads that
+handler's chunk and runs it. Everything that crosses the wire is
+schema-validated and gated by build id, so a stale or tampered page fails
+closed. Strict mode is plain JSON; `@doeixd/affe-permissive` adds seroval for
+`Map`, `Date` and friends. See `docs/RESUMABILITY_GUIDE.md` and
+`examples/resumable-extract`.
+
+## 9. Agent surface: your actions as tools
+
+An agent is just another caller. Expose `Portable.code` actions in a catalog,
+and one dispatch pipeline serves the UI, HTTP single flight and MCP:
+
+```ts
+const catalog = Agent.catalog({
+  addTodo: Agent.exposeMutation(AddTodo, {
+    description: "Add a todo",
+    args: Schema.Tuple([Schema.String]),
+    success: Schema.Struct({ id: Schema.String, text: Schema.String }),
+    reactivityKeys: ["todos"],
+    access: { agent: true, http: true },
+  }),
+});
+
+Agent.dispatch(catalog)({ tool: "addTodo", args: ["milk"], buildId });
+```
+
+Dispatch authorizes first, rejects stale builds, decodes arguments before the
+handler runs, and asks the `Approval` and `AuditLog` services when the entry
+or catalog requires them (refusing if they are missing). `ViewSpec` is a
+validated, markup-free view format for UI an agent generates, and
+`@doeixd/affe-ui-agent` projects the catalog as an MCP server. See
+`docs/AGENT_SURFACE_GUIDE.md`.
+
 ## Type architecture
 
 Every async value carries three axes — `A` (value), `E` (typed error), `R`
@@ -412,6 +478,8 @@ What you don't give up: incremental adoption inside an existing app, and SSR
 - `docs/SERVICES_AND_LAYERS.md` — dependency injection, provision tiers, request scoping
 - `docs/API.md` — API reference
 - `docs/TESTING.md` — DOM-free test harness, layer swapping, `Reactivity.test`
+- `docs/RESUMABILITY_GUIDE.md` — resumability: markers, manifests, strict vs permissive
+- `docs/AGENT_SURFACE_GUIDE.md` — the agent catalog, governance services, MCP, ViewSpec
 - `docs/V1_SCOPE.md` — what v1 ships and what is deliberately deferred
 - `examples/` — router golden path, single flight (custom + fetch transport),
   styled combobox, optimistic counter, SSR hydration

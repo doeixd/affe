@@ -18,6 +18,25 @@ specs; no open design question in any lane)
   the cwd and never matched `root`, and every generated identity fell back
   to the basename. The fixtures now take a platform-absolute root (still `C:/app` on
   Windows); the plugin was already correct for the absolute roots Vite passes.
+- **Review fixes (2026-09-25).**
+  - Agent governance now fails closed. Plain `dispatch` refuses an entry that
+    declares `access.approval` when no `Approval` is provided, and an `audited`
+    catalog refuses a mutation when no `AuditLog` is provided (unless it opted
+    into `onFailure: "proceed"`), both with `GovernanceUnsatisfiedError`.
+    `singleFlightHandler` only reaches `access.http` entries.
+  - `effect` is a peer and dev dependency only, no longer also a runtime
+    dependency, and the docs quote the pinned `4.0.0-beta.102`.
+  - CI runs the Playwright suite; `npm run test:all` passes on the empty
+    `future/` suite.
+  - The README covers resumability and the agent surface, and states that slot
+    handles are not yet bound to rendered DOM elements (see below).
+- **Known gap: slot handles are not bound to the DOM.** `View.Slots` handles
+  are in-memory (`Element.handleFor`), and `View.fromSlots` never associates
+  one with the element its slot names, so slot-attached styles and behavior
+  listeners do not reach the rendered page. Compile-time contract checks and
+  the DOM-free test kit are unaffected. This needs a design decision (how a
+  JSX node is marked as a slot, and how handles delegate to it) before it is
+  built.
 - **Gates** (verified 2026-09-25, Linux): `npm run typecheck:all` **0
   errors** across every leg, `npm test` (**1416 passing**, 110 files, plus
   7 in `@doeixd/affe-permissive`), `npm run build`, the four example builds,
@@ -87,27 +106,27 @@ specs; no open design question in any lane)
 
 The sections below predate the agent lane and describe the 2026-07/08
 redesign era; they remain accurate for the surfaces they cover.
-Plan reference: `docs/DESIGN_OVERHAUL_V1_PLAN.md`, `docs/V1_API_CONTRACT_DRAFT.md`, `docs/EFFECT_NATIVE_ENHANCEMENT_PLAN.md`, `docs/new_ideas.md`
+Plan reference: `docs/archive/DESIGN_OVERHAUL_V1_PLAN.md`, `docs/archive/V1_API_CONTRACT_DRAFT.md`, `docs/archive/EFFECT_NATIVE_ENHANCEMENT_PLAN.md`, `docs/archive/new_ideas.md`
 
 V1 scope authority (**ratified 2026-07-06**): `docs/V1_SCOPE.md`
 
-Current Affe source of truth: `docs/AF_UI_CONTRACT.md`
+Current Affe source of truth: `docs/archive/AF_UI_CONTRACT.md`
 
-Current slot-design plan: `docs/SLOT_CONTRACT_UNIFICATION_PLAN.md`
+Current slot-design plan: `docs/archive/SLOT_CONTRACT_UNIFICATION_PLAN.md`
 
 Slot contract golden path: `docs/SLOT_CONTRACT_GOLDEN_PATH.md`
 
-Current optimistic/action design plan: `docs/OPTIMISTIC_ACTION_DESIGN_PLAN.md`
+Current optimistic/action design plan: `docs/archive/OPTIMISTIC_ACTION_DESIGN_PLAN.md`
 
-Component ownership model: `docs/PROPS_BINDINGS_SLOTS.md`
+Component ownership model: `docs/archive/PROPS_BINDINGS_SLOTS.md`
 
-Component state ownership: `docs/COMPONENT_STATE_OWNERSHIP.md`
+Component state ownership: `docs/archive/COMPONENT_STATE_OWNERSHIP.md`
 
-Async binding boundary: `docs/BINDINGS_ASYNC_COMMIT_BOUNDARY.md`
+Async binding boundary: `docs/archive/BINDINGS_ASYNC_COMMIT_BOUNDARY.md`
 
-Setup/view comparison: `docs/SETUP_VIEW_COMPARISON.md`
+Setup/view comparison: `docs/archive/SETUP_VIEW_COMPARISON.md`
 
-Component setup builder plan: `docs/COMPONENT_SETUP_BUILDER_PLAN.md`
+Component setup builder plan: `docs/archive/COMPONENT_SETUP_BUILDER_PLAN.md`
 
 Resumability implementation: `docs/RESUMABILITY_IMPLEMENTATION_PLAN.md`
 

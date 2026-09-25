@@ -35,13 +35,12 @@
  * `src/__tests__/serialization.test.ts`; those fixtures are immutable outside
  * an explicitly wire-versioned change.
  *
- * ## Known unprojected path
+ * ## Single-flight loaders
  *
- * `SingleFlightPayload.loaders[].result` does **not** go through this module:
- * it `JSON.stringify`s a core `Result` directly, silently dropping
- * `exit`/`rawCause`, and the client rehydrates it unvalidated. Routing that
- * path through `toWire`/`fromWire` is a byte-changing fix and is a named
- * follow-up, fenced out of the unification by plan Decision 6.
+ * `SingleFlightPayload.loaders[].result` also crosses the wire through this
+ * projection (`Serialization.ResultWire`, R5.1 in `Route.ts`), validated at
+ * the client's trust boundary. It once `JSON.stringify`ed a core `Result`
+ * directly; that follow-up is closed.
  */
 
 import { Schema } from "effect";

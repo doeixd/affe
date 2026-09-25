@@ -2,7 +2,7 @@
 
 Status: **prerelease / beta-ready** as of 2026-07-09.
 Hard external gate for a true **1.0 stable**: Effect 4 stable (currently
-`effect ^4.0.0-beta.29` dep + peer). Until then ship prerelease tags only.
+`effect 4.0.0-beta.102`, an exact peer dependency). Until then ship prerelease tags only.
 
 Authority: `docs/V1_SCOPE.md` (ships vs deferred).
 
@@ -66,7 +66,8 @@ Re-run and capture under the release evidence scratch before cutting a tag:
 
 ### Effect compatibility
 
-- Dependency / peer: `effect ^4.0.0-beta.29`
+- Peer: exactly `effect 4.0.0-beta.102` (also the dev dependency). Effect is a
+  peer only, so an app never installs a second copy.
 - Release class while Effect remains beta: **0.x prerelease / beta**
 - `1.0.0` stable requires Effect 4 stable pin + this checklist re-run
 
