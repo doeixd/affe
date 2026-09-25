@@ -105,9 +105,13 @@ specific siblings keep declaration order. `ServerRoute.find` and
 
 Ranking applies wherever the router sees the whole tree: `runMatchedLoaders`,
 `renderRequest` / `renderRequestStream` loader pre-runs, guards, head
-resolution, the client `RouterRuntime`, and `Route.Switch`. A
-`Component.route` component rendered on its own, outside a `Switch`, still
-decides its match from its own pattern.
+resolution, the client `RouterRuntime`, `Route.Switch`, and
+`Component.route` components rendered side by side under a router. For those,
+routes compete only when neither pattern is a segment prefix of the other:
+`/users/new` and `/users/:id` compete, while `/users` and `/users/:id` are a
+layout and its child and both render. A routed component is created only
+while it wins its URL, so a page mounted on another URL appears once
+navigation reaches it, and a page that loses never runs its loader.
 
 ## Component-First Tier
 

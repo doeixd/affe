@@ -20,6 +20,7 @@ import {
   type StructuralMode,
 } from "./resume-expression.js";
 import type { SetupPlan, SetupStepInspection } from "./Component.js";
+import { installResumeSessionHooks, type ResumeSessionHooks } from "./resume-hooks.js";
 import { currentServerRenderState } from "./render-state.js";
 import {
   BindingReactivityKeyPrefix,
@@ -257,6 +258,10 @@ export function registerComponentActivation(
 }
 
 export function makeResumeSession(installationId: string): ResumeSession {
+  // Render-time hooks in dom.ts / Component.ts reach this module only
+  // through `resume-hooks.ts`, so apps that never collect a session do not
+  // bundle it.
+  installResumeSessionHooks(sessionHooks);
   return {
     installationId,
     markerScope: undefined,
@@ -1453,3 +1458,13 @@ export function observeServerEventTarget(
   session.observations.set(target, frozen);
   return frozen;
 }
+
+const sessionHooks: ResumeSessionHooks = {
+  observeDirectEventHandler,
+  observeRenderedExpression,
+  observeRenderedExpressionTarget,
+  observeServerEventTarget,
+  observeCommittedComponentBindings,
+  observeRenderedComponentBoundary,
+  withRenderedComponentOwner,
+};

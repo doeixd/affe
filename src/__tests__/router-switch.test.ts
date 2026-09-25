@@ -123,6 +123,105 @@ describe("Route.Switch", () => {
   });
 });
 
+describe("Component.route siblings outside a Switch", () => {
+  const page = (name: string, pattern: string, log?: Array<string>) =>
+    Component.make(
+      Component.props<{}>(),
+      Component.require<never>(),
+      () => Effect.acquireRelease(
+        Effect.sync(() => { log?.push(`setup ${name}`); return {}; }),
+        () => Effect.sync(() => { log?.push(`dispose ${name}`); }),
+      ),
+      () => `[${name}]`,
+    ).pipe(Component.route(pattern));
+
+  const mounted = (path: string, children: () => ReadonlyArray<unknown>) => {
+    let router!: Route.RouterService;
+    const { parts, dispose } = createRoot((dispose) => ({
+      dispose,
+      parts: (WithLayer({
+        layer: Route.Router.Memory(path),
+        children: () => {
+          router = useService(Route.RouterTag);
+          return children();
+        },
+      }) as () => ReadonlyArray<unknown>)(),
+    }));
+    const text = () => parts.map(resolve).filter((part) => part !== null).join("");
+    const go = (to: string) => { Effect.runSync(router.navigate(to)); flush(); };
+    return { text, go, dispose };
+  };
+
+  it("shows only the most specific of competing siblings", () => {
+    const New = page("new", "/users/new");
+    const User = page("user", "/users/:id");
+    const view = mounted("/users/new", () => [User({}), New({})]);
+    expect(view.text()).toBe("[new]");
+    view.go("/users/7");
+    expect(view.text()).toBe("[user]");
+    view.dispose();
+  });
+
+  it("keeps a layout and its child together", () => {
+    const Users = page("users", "/users");
+    const User = page("user", "/users/:id");
+    const view = mounted("/users/7", () => [Users({}), User({})]);
+    expect(view.text()).toBe("[users][user]");
+    view.go("/users");
+    expect(view.text()).toBe("[users]");
+    view.dispose();
+  });
+
+  it("renders a page mounted on a URL it does not match once navigation reaches it", () => {
+    const About = page("about", "/about");
+    const view = mounted("/", () => [About({})]);
+    expect(view.text()).toBe("");
+    view.go("/about");
+    expect(view.text()).toBe("[about]");
+    view.dispose();
+  });
+
+  it("switches between already-called components passed to Route.Switch", () => {
+    const Home = page("home", "/", undefined);
+    const About = page("about", "/about");
+    const { view, go, dispose } = (() => {
+      let router!: Route.RouterService;
+      const { view, dispose } = createRoot((dispose) => ({
+        dispose,
+        view: (WithLayer({
+          layer: Route.Router.Memory("/about"),
+          children: () => {
+            router = useService(Route.RouterTag);
+            return Route.Switch({ children: [About({}), Home({})] });
+          },
+        }) as () => unknown)(),
+      }));
+      return { view, dispose, go: (to: string) => { Effect.runSync(router.navigate(to)); flush(); } };
+    })();
+    expect(resolve(view)).toBe("[about]");
+    go("/");
+    expect(resolve(view)).toBe("[home]");
+    go("/about");
+    expect(resolve(view)).toBe("[about]");
+    dispose();
+  });
+
+  it("never sets up the losing sibling and disposes a page when it stops matching", () => {
+    const log: Array<string> = [];
+    const New = page("new", "/users/new", log);
+    const User = page("user", "/users/:id", log);
+    const view = mounted("/users/new", () => [User({}), New({})]);
+    expect(view.text()).toBe("[new]");
+    expect(log).toEqual(["setup new"]);
+    view.go("/users/7");
+    expect(view.text()).toBe("[user]");
+    // Sibling gates update in registration order, so the new page may set up
+    // before the old one's scope closes; both must happen, once each.
+    expect([...log].sort()).toEqual(["dispose new", "setup new", "setup user"]);
+    view.dispose();
+  });
+});
+
 describe("WithLayer", () => {
   const Greeting = Context.Service<{ readonly text: string }>("test/Greeting");
 

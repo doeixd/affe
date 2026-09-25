@@ -1760,7 +1760,9 @@ export function layerContext<A, E, RIn>(
       const subtree = new Owner(parent);
       const entries = new Map<symbol, unknown>();
       if (ambientRuntime !== null) entries.set(ManagedRuntimeContext.id, ambientRuntime);
-      if (scope !== null) entries.set(ComponentScopeContext.id, scope);
+      // Scoped component setups need a scope even outside `mount`: without
+      // an ambient one the subtree uses the boundary's own scope.
+      entries.set(ComponentScopeContext.id, scope ?? layerScope);
       entries.set(
         ComponentServicesContext.id,
         inherited === null ? context : Context.merge(inherited, context),

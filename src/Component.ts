@@ -17,6 +17,7 @@ import type * as Behavior from "./Behavior.js";
 import * as Element from "./Element.js";
 import * as Portable from "./Portable.js";
 import * as Route from "./Route.js";
+import { gateRoutedCall, type RouteGate } from "./route-siblings.js";
 import * as View from "./View.js";
 import {
   annotateHandle,
@@ -35,13 +36,14 @@ import {
   observeCommittedComponentBindings,
   observeRenderedComponentBoundary,
   withRenderedComponentOwner,
-} from "./resume-session.js";
+} from "./resume-hooks.js";
 import {
   defineMutation,
   defineQuery,
   ManagedRuntimeContext,
   mount as mountRuntime,
   mountWithManagedRuntime,
+  useService,
   type BridgeError,
   type MutationSupersededError,
   type Result,
@@ -49,8 +51,10 @@ import {
 } from "./effect-ts.js";
 import {
   ComponentInvocationSource,
+  ComponentScopeContext,
   closeComponentScope,
   currentComponentScope,
+  forkComponentScope,
   currentComponentServices,
   publishComponentServices,
 } from "./component-scope.js";
@@ -387,6 +391,11 @@ type InternalComponent<Props, Req, E, Bindings> = {
   readonly loading?: () => unknown;
   readonly boundary?: ErrorHandlers;
   readonly memo?: (prev: Props, next: Props) => boolean;
+  /**
+   * Set by `Component.route`: a call made under a router is created only
+   * while its pattern wins the URL among its siblings (`route-siblings.ts`).
+   */
+  readonly routeGate?: RouteGate;
 };
 
 function freezeDefinition(
@@ -550,9 +559,11 @@ function makeSetup<Props, Bindings, E, R>(
   return out;
 }
 
-function runForkWithAmbient<R, A, E>(effect: Effect.Effect<A, E, R>): Fiber.Fiber<A, E> {
+function runForkWithAmbient<R, A, E>(
+  effect: Effect.Effect<A, E, R>,
+  scope: Scope.Scope | null = currentComponentScope(),
+): Fiber.Fiber<A, E> {
   const ambient = useContext(ManagedRuntimeContext);
-  const scope = currentComponentScope();
   // Services an ancestor's `Component.withLayer` built reach this component's
   // setup (docs/API.md: a parent `withLayer` satisfies child requirements).
   const services = currentComponentServices();
@@ -582,7 +593,7 @@ function matchBoundary(boundary: ErrorHandlers | undefined, error: unknown): unk
 function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<Bindings>>(
   internal: InternalComponent<Props, Req, E, Bindings>,
 ): Component<Props, Req, E, Bindings, SlotContract> {
-  const component = ((unsafeProps: Props) => {
+  const instantiate = (unsafeProps: Props): unknown => {
     const props = internal.props.parse(unsafeProps);
     const [bindings, setBindings] = createSignal<Bindings | null>(null);
     const [error, setError] = createSignal<unknown | null>(null);
@@ -597,6 +608,12 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
       componentOwner,
       () => runComponentSetup(out, internal, props),
     );
+    // Each instance owns a child of the ambient component scope: resources
+    // its setup acquires are released when THIS instance is disposed (a
+    // route stops matching, a conditional flips), not when the whole mount
+    // closes. Its view's descendants fork from it in turn.
+    const instanceScope = forkComponentScope(currentComponentScope());
+    onCleanup(() => closeComponentScope(instanceScope));
     const fiber = runForkWithAmbient(
       Effect.all({
         bindings: setup,
@@ -619,6 +636,7 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
           },
         }),
       ),
+      instanceScope,
     );
 
     onCleanup(() => {
@@ -639,7 +657,7 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
 
       const currentPlatform = platform();
       const currentReporter = diagnosticsReporter();
-      return runInComponentViewOwner(componentOwner, () => {
+      return runInComponentViewOwner(componentOwner, instanceScope, () => {
         if (
           internal.view === undefined
           && typeof (props as RenderPropChildren<Bindings>).children !== "function"
@@ -655,6 +673,15 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
     };
     (invocation as { [ComponentInvocationSource]?: unknown })[ComponentInvocationSource] = out;
     return invocation;
+  };
+
+  const component = ((unsafeProps: Props) => {
+    const gate = internal.routeGate;
+    const router = gate === undefined ? undefined : ambientRouter();
+    if (gate === undefined || router === undefined) return instantiate(unsafeProps);
+    const gated = gateRoutedCall(router, gate, () => instantiate(unsafeProps));
+    (gated as { [ComponentInvocationSource]?: unknown })[ComponentInvocationSource] = out;
+    return gated;
   }) as Component<Props, Req, E, Bindings, SlotContract>;
 
   const out = Object.assign(component, {
@@ -675,10 +702,20 @@ function toComponent<Props, Req, E, Bindings, SlotContract = SlotsFromBindings<B
     loading: internal.loading,
     boundary: internal.boundary,
     memo: internal.memo,
+    routeGate: internal.routeGate,
   });
 
   out.pipe = ((...fns: ReadonlyArray<(value: any) => any>) => pipeSelf(out, fns)) as typeof out["pipe"];
   return out;
+}
+
+/** The router a component call can see (mount runtime or `WithLayer`), if any. */
+function ambientRouter(): Route.RouterService | undefined {
+  try {
+    return useService(Route.RouterTag);
+  } catch {
+    return undefined;
+  }
 }
 
 function internals<Props, Req, E, Bindings, SlotContract>(
@@ -714,12 +751,19 @@ function withSetupOwner<A>(owner: Owner | null, f: () => A): A {
  * `withLayer` services. Views are evaluated lazily at the insertion site, not
  * under the instance owner, so without this descendants would never see them.
  */
-function runInComponentViewOwner<A>(componentOwner: Owner | null, f: () => A): A {
+function runInComponentViewOwner<A>(
+  componentOwner: Owner | null,
+  instanceScope: Scope.Closeable | null,
+  f: () => A,
+): A {
   const entries = componentOwner === null ? undefined : contextMap.get(componentOwner);
   const current = getOwner();
-  if (entries === undefined || entries.size === 0 || current === null) return f();
+  if (current === null) return f();
+  if ((entries === undefined || entries.size === 0) && instanceScope === null) return f();
   const viewOwner = new Owner(current);
-  contextMap.set(viewOwner, new Map(entries));
+  const viewEntries = new Map(entries);
+  if (instanceScope !== null) viewEntries.set(ComponentScopeContext.id, instanceScope);
+  contextMap.set(viewOwner, viewEntries);
   return runWithOwner(viewOwner, f);
 }
 
@@ -2586,6 +2630,7 @@ export function route<P = Record<string, string>, Q = Record<string, string | un
     );
     wrapped = toComponent({
       ...i,
+      routeGate: { pattern: Route.resolvePattern("", pattern), exact: options?.exact === true },
       definition: routeDefinition,
       setup: (props) => Effect.gen(function* () {
         const router = yield* Route.RouterTag;

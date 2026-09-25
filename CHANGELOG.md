@@ -18,6 +18,21 @@
   the components (`children={[Home, User]}`) so only the winner's setup and
   loader run; calls (`Home({})`) are still accepted.
 - New `Component.isComponent(value)` guard.
+- `Component.route` components rendered side by side under a router now
+  rank against each other like `Switch` children: `/users/new` and
+  `/users/:id` compete, while `/users` and `/users/:id` (a layout and its
+  child) both render. A routed component is created only while it wins its
+  URL, so a page mounted on another URL renders once navigation reaches it
+  (before, it stayed empty), and a losing page never runs its loader.
+- Each component instance now owns a child of the component scope, so the
+  resources its setup acquires are released when that instance unmounts,
+  not when the whole app does. `WithLayer` gives its subtree a scope when
+  there is no ambient one.
+- Client bundles no longer include the resume-session collector (about
+  18 kB minified) unless the app renders resumable pages; the render hooks
+  reach it through `resume-hooks.ts`. The large shared chunk some bundlers
+  name `resume-handle-*.js` is Effect and the reactive core, not
+  resumability code.
 
 ### Router matches rank by specificity
 

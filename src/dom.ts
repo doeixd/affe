@@ -18,14 +18,13 @@ import {
   forkComponentScope,
   withComponentScope,
 } from "./component-scope.js";
+import { makeResumeSession, runInResumeSession } from "./resume-session.js";
 import {
-  makeResumeSession,
   observeDirectEventHandler,
   observeRenderedExpression,
   observeRenderedExpressionTarget,
   observeServerEventTarget,
-  runInResumeSession,
-} from "./resume-session.js";
+} from "./resume-hooks.js";
 import { ServerRenderStateTag, currentServerRenderState } from "./render-state.js";
 import * as SafeHtml from "./SafeHtml.js";
 import { isView, Slot as ViewSlot } from "./View.js";

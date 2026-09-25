@@ -29,3 +29,19 @@ test("renders the page that matches the URL and follows navigation", async ({ pa
 
   expect(pageErrors).toEqual([]);
 });
+
+test("a client app that never resumes does not ship the resume-session collector", async ({ page }) => {
+  const scripts: string[] = [];
+  page.on("response", async (response) => {
+    if (response.url().endsWith(".js")) scripts.push(await response.text());
+  });
+  await page.goto(`${baseUrl}/`);
+  await expect(page.locator("h2")).toHaveText("Home");
+  expect(scripts.length).toBeGreaterThan(0);
+  // Diagnostic codes that only resume-session.ts contains.
+  for (const script of scripts) {
+    expect(script).not.toContain("opaque-component-setup");
+    expect(script).not.toContain("missing-expression-boundary");
+  }
+});
+

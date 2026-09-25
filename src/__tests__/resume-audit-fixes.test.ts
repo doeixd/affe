@@ -422,7 +422,7 @@ function fragmentFixture(id: string, options: {
   readonly resolveDelay: string;
   readonly runDelay?: string;
 }) {
-  const counts = { setups: 0, disposals: 0 };
+  const counts = { started: 0, setups: 0, disposals: 0 };
   const activation = Portable.code<
     {},
     {},
@@ -435,7 +435,8 @@ function fragmentFixture(id: string, options: {
     buildId: B,
     captures: Schema.Struct({}),
     run: () =>
-      Effect.sleep((options.runDelay ?? "0 millis") as "0 millis").pipe(
+      Effect.sync(() => { counts.started++; }).pipe(
+        Effect.andThen(Effect.sleep((options.runDelay ?? "0 millis") as "0 millis")),
         Effect.andThen(Effect.sync(() => {
           counts.setups++;
           return {
@@ -531,13 +532,14 @@ describe("Resume.installFragment audit fixes", () => {
   it("bug 9: dispose() during setup disposes the late mount", async () => {
     const { counts, install } = fragmentFixture("audit.if.dispose.run", {
       resolveDelay: "0 millis",
-      runDelay: "20 millis",
+      runDelay: "200 millis",
     });
     const handle = await Effect.runPromise(install);
     const exit = await Effect.runPromise(
       Effect.gen(function* () {
         const fiber = yield* Effect.forkChild(handle.activate());
-        yield* Effect.sleep("5 millis");
+        // Dispose once setup is under way (a fixed sleep raced it under load).
+        while (counts.started === 0) yield* Effect.sleep("1 millis");
         yield* handle.dispose();
         return yield* Fiber.await(fiber);
       }),
