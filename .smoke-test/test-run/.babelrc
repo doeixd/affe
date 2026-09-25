@@ -1,9 +1,0 @@
-{
-  "presets": ["@babel/preset-env", "@babel/preset-typescript"],
-  "plugins": [
-    ["babel-plugin-jsx-dom-expressions", {
-      "moduleName": "@doeixd/affe",
-      "contextToCustomElements": true
-    }]
-  ]
-}

@@ -12,3 +12,9 @@ playwright-report/
 .size-*/
 .check-docs-*/
 .doc-verify/
+
+# Local-only: editor terminals, scratch files, personal agent settings
+/terminals/
+/scratch*
+/.smoke-test/
+.claude/settings.local.json
