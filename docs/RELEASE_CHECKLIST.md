@@ -86,3 +86,23 @@ session MVP, P12 gated streams + `Component.subscription`, D3 `create-af-ui`.
 Still deferred depth: multi-renderer (TUI/RN), package split execution (P7
 stays single package), full browser Devtools panel chrome, WAI-ARIA
 certification theater. See `docs/V1_SCOPE.md` Deferred.
+
+## How to release
+
+1. On `main`, with CI green, bump `version` in `package.json`, regenerate the
+   deprecated alias (`node scripts/generate-effect-atom-jsx-alias.mjs`), and
+   move the `CHANGELOG.md` "Unreleased" entries under the new version heading.
+2. Run locally: `npm run build && npm run typecheck:all && npm test &&
+   npm run verify:package` (and `npm run test:browser` if Chromium is
+   available). `verify:package` installs the packed tarball into a throwaway
+   project, imports every subpath, and type-checks a golden-path file against
+   the shipped types.
+3. Commit, then tag and push: `git tag v<version> && git push origin v<version>`.
+   `.github/workflows/release.yml` re-runs the gates and publishes
+   `@doeixd/affe` with npm provenance. Versions containing a hyphen
+   (`0.7.0-rc.1`) publish under the `next` dist-tag. The workflow needs the
+   `NPM_TOKEN` repository secret.
+4. Deprecated alias (`effect-atom-jsx`), once per breaking core release and
+   only after `@doeixd/affe` is on npm: `cd deprecated/effect-atom-jsx &&
+   npm publish --access public`, then
+   `npm deprecate effect-atom-jsx "Renamed to @doeixd/affe"`.

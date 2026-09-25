@@ -26,6 +26,21 @@ jobs:
       - name: Test
         run: npm test
 
+  package:
+    name: Published package (pack, install, import, types)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Installs the packed tarball into a throwaway project: every subpath
+      # must import and a golden-path file must type-check strictly.
+      - run: npm run verify:package
+
   browser:
     name: Browser tests (Playwright)
     runs-on: ubuntu-latest
