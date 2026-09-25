@@ -452,6 +452,9 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
   const inFlightFetchers = new Map<string, number>();
   const inFlightFetchFibers = new Map<string, Fiber.Fiber<void, unknown>>();
   let inFlightNavigationFiber: Fiber.Fiber<void, never> | null = null;
+  // The URL a guard-refused navigation rolled the history back to; the
+  // history event that rollback raises is not a new navigation.
+  let historyRollbackTarget: string | null = null;
   let inFlightSubmitFiber: Fiber.Fiber<void, unknown> | null = null;
   let inFlightRequestFiber: Fiber.Fiber<Route.RenderRequestResult, never> | null = null;
   let inFlightDispatchFiber: Fiber.Fiber<ServerRoute.DispatchResult, unknown> | null = null;
@@ -686,6 +689,10 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
       if (initialized) return;
       initialized = true;
       unsubscribeHistory = config.history.subscribe((event) => {
+        if (historyRollbackTarget !== null && event.location.toString() === historyRollbackTarget) {
+          historyRollbackTarget = null;
+          return;
+        }
         historyAction = event.action;
         const previousLocation = location;
         location = new URL(event.location.toString());
@@ -716,6 +723,15 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
           if (guardExit._tag === "Failure") {
             if (isCurrentTask("navigation", taskId)) {
               location = previousLocation;
+              // Roll the history back too, or the URL bar keeps the refused
+              // URL while the page shows the previous one.
+              historyRollbackTarget = previousLocation.toString();
+              if (event.action === "push") config.history.go(-1);
+              else {
+                config.history.replace(
+                  `${previousLocation.pathname}${previousLocation.search}${previousLocation.hash}`,
+                );
+              }
               navigation = cancelledTask(nextLocation.pathname, navigation.outcome);
               clearInFlight("navigation");
               inFlightNavigationFiber = null;
@@ -825,7 +841,11 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
       else config.history.push(to);
     }),
     submit: ((to, options) => Effect.gen(function* () {
+      // Cancel means stop: an in-flight navigation must not commit its
+      // loader data or flip the task back to idle after the submit starts.
       cancelTask("navigation");
+      yield* interruptTrackedFiber("navigation");
+      clearInFlight("navigation");
       yield* interruptTrackedFiber("submit");
       const taskId = allocateTaskId();
       inFlightSubmit = taskId;
@@ -946,6 +966,8 @@ export function create(config: RouterRuntimeConfig): RouterRuntimeInstance {
     }),
     revalidate: (() => Effect.gen(function* () {
       cancelTask("navigation");
+      yield* interruptTrackedFiber("navigation");
+      clearInFlight("navigation");
       yield* interruptTrackedFiber("revalidate");
       const taskId = allocateTaskId();
       inFlightRevalidate = taskId;

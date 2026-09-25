@@ -212,6 +212,33 @@ function withField<K extends keyof ServerRouteNode<any, any, any, any, any, any,
   })) as ServerRouteEnhancer;
 }
 
+/**
+ * Parse a `Cookie` header into name/value pairs: values are unquoted and
+ * percent-decoded (a malformed escape keeps the raw value), as the `cookie`
+ * package and most frameworks do. The first occurrence of a name wins.
+ */
+function parseCookieHeader(header: string | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const part of (header ?? "").split(";")) {
+    const trimmed = part.trim();
+    if (trimmed === "") continue;
+    const index = trimmed.indexOf("=");
+    const name = (index >= 0 ? trimmed.slice(0, index) : trimmed).trim();
+    if (name === "" || Object.prototype.hasOwnProperty.call(out, name)) continue;
+    let value = index >= 0 ? trimmed.slice(index + 1).trim() : "";
+    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+    if (value.includes("%")) {
+      try {
+        value = decodeURIComponent(value);
+      } catch {
+        // Keep the raw value.
+      }
+    }
+    out[name] = value;
+  }
+  return out;
+}
+
 function decodeSchemaOrDefault<A>(schema: Schema.Schema<A> | undefined, input: unknown, fallback: A): A {
   if (!schema) return fallback;
   return Schema.decodeUnknownSync(schema as any)(input) as A;
@@ -629,10 +656,7 @@ export function executeWithServices<T extends AnyServerRouteNode>(
         headerObject[key] = value;
       });
       const headersValue = decodeSchemaOrDefault(route.headersSchema as Schema.Schema<HeadersOf<T>> | undefined, headerObject, {} as HeadersOf<T>);
-      const cookiesValue = decodeSchemaOrDefault(route.cookiesSchema as Schema.Schema<CookiesOf<T>> | undefined, Object.fromEntries((request.headers.get("cookie") ?? "").split(";").map((part) => part.trim()).filter(Boolean).map((part) => {
-        const index = part.indexOf("=");
-        return index >= 0 ? [part.slice(0, index), part.slice(index + 1)] : [part, ""];
-      })), {} as CookiesOf<T>);
+      const cookiesValue = decodeSchemaOrDefault(route.cookiesSchema as Schema.Schema<CookiesOf<T>> | undefined, parseCookieHeader(request.headers.get("cookie")), {} as CookiesOf<T>);
 
       if (!route.handler) {
         throw new Error("[affe/ServerRoute] execute requires a handler.");

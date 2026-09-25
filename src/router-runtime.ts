@@ -175,7 +175,21 @@ export const currentLoaderCacheStore: Effect.Effect<LoaderCacheStore> = Effect.s
   Effect.map((option) => (option._tag === "Some" ? option.value : resolveLoaderCacheStore())),
 );
 
+// When each reactivity key was last invalidated, per store, on one monotonic
+// sequence. A loader run compares it with the sequence at its start: an
+// invalidation that lands while the loader is in flight must leave the result
+// stale, not be erased by the result's fresh `staleAt`.
+let invalidationSequence = 0;
+const lastInvalidated = new WeakMap<LoaderCacheStore, Map<string, number>>();
+
 function markStaleByReactivityKey(store: LoaderCacheStore, key: string): void {
+  invalidationSequence += 1;
+  let seen = lastInvalidated.get(store);
+  if (seen === undefined) {
+    seen = new Map();
+    lastInvalidated.set(store, seen);
+  }
+  seen.set(key, invalidationSequence);
   const cacheKeys = store.reactivityToCache.get(key);
   if (!cacheKeys) return;
   for (const cacheKey of cacheKeys) {
@@ -441,8 +455,8 @@ function executeAndCache<A, E>(
         }),
       )
     : run;
-  return Effect.sync(() => beginReactivityReadCapture()).pipe(
-    Effect.flatMap((capture) => timedRun.pipe(
+  return Effect.sync(() => ({ capture: beginReactivityReadCapture(), startedAt: invalidationSequence })).pipe(
+    Effect.flatMap(({ capture, startedAt }) => timedRun.pipe(
       Effect.exit,
       Effect.map((exit) => {
         // Keep-stale on failure: a loader that fails while the cache still
@@ -459,7 +473,11 @@ function executeAndCache<A, E>(
         // most of them, but a refresh completing in the same tick as dispose
         // must not resurrect the entry.
         if (!store.disposed) {
-          setLoaderCacheEntry(routeId, params, out, { ...options, reactivityKeys: mergedKeys }, store);
+          const entry = setLoaderCacheEntry(routeId, params, out, { ...options, reactivityKeys: mergedKeys }, store);
+          const seen = lastInvalidated.get(store);
+          if (seen !== undefined && mergedKeys.some((key) => (seen.get(key) ?? 0) > startedAt)) {
+            store.cache.set(entry.key, { ...entry, staleAt: 0 });
+          }
         }
         return out;
       }),

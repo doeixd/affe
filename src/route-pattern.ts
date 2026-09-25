@@ -74,6 +74,15 @@ export function matchPatternSegments(
  * Extract params for a matching pattern, or `null` when it does not match.
  * Matching and extraction are the same walk, so they cannot disagree.
  */
+/** `decodeURIComponent` that reports a malformed escape (`%zz`) as `undefined`. */
+function safeDecode(part: string): string | undefined {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return undefined;
+  }
+}
+
 export function extractPatternParams(
   pattern: string,
   pathname: string,
@@ -88,7 +97,10 @@ export function extractPatternParams(
     if (segment.kind === "splat") {
       const rest = parts.slice(partIndex);
       if (rest.length === 0) return null;
-      out["*"] = rest.map((part) => decodeURIComponent(part)).join("/");
+      const decoded = rest.map(safeDecode);
+      // A malformed escape is not a match (a 404), never a thrown URIError.
+      if (decoded.some((part) => part === undefined)) return null;
+      out["*"] = decoded.join("/");
       return out;
     }
     const part = parts[partIndex];
@@ -96,7 +108,9 @@ export function extractPatternParams(
       return remainingAreOptional(segments, index) ? out : null;
     }
     if (segment.kind === "param") {
-      out[segment.name] = decodeURIComponent(part);
+      const decoded = safeDecode(part);
+      if (decoded === undefined) return null;
+      out[segment.name] = decoded;
       partIndex += 1;
       continue;
     }
@@ -128,7 +142,8 @@ export function substitutePattern(
     const value = params[segment.name];
     if (segment.kind === "splat") {
       if (value !== undefined && value !== null && String(value).length > 0) {
-        parts.push(String(value));
+        // Encode each segment but keep the separators: a splat spans segments.
+        parts.push(String(value).split("/").map(encode).join("/"));
       }
       continue;
     }

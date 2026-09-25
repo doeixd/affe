@@ -3198,10 +3198,22 @@ export function actionSingleFlight<Args extends ReadonlyArray<unknown>, A, E, R>
               Effect.flatMap((denial) =>
                 denial !== undefined
                   ? Effect.succeed([] as ReadonlyArray<SingleFlightLoaderEntry>)
-                  : runMatchedLoaders(source, targetUrl, {
-                    includeDeferred: options?.includeDeferred ?? true,
-                    reactivityKeys: revalidate === "reactivity" ? capturedInvalidations : undefined,
-                  })
+                  // Revalidate against a fresh per-request cache: the
+                  // process-wide store would serve pre-mutation data (and
+                  // share loader data across requests and users), exactly
+                  // what `renderRequest` avoids with its own store.
+                  : Effect.acquireUseRelease(
+                    Effect.sync(() => {
+                      const store = makeLoaderCacheStore();
+                      store.requestScoped = true;
+                      return store;
+                    }),
+                    (store) => runMatchedLoaders(source, targetUrl, {
+                      includeDeferred: options?.includeDeferred ?? true,
+                      reactivityKeys: revalidate === "reactivity" ? capturedInvalidations : undefined,
+                    }).pipe(Effect.provideService(LoaderCacheTag, store)),
+                    (store) => Effect.sync(() => store.dispose()),
+                  )
               ),
             )),
         );
@@ -3317,7 +3329,7 @@ export function hydrateSingleFlightPayload(
       }
       const params = extractParams(entry.fullPattern, url.pathname) ?? {};
       const loaderOptions = entry.loaderOptions;
-      setLoaderCacheEntry(item.routeId, params, item.result, {
+      setLoaderCacheEntry(entry.routeId, params, item.result, {
         ...loaderOptions,
         staleTime:
           loaderOptions?.staleTime ?? defaultHydratedLoaderStaleTimeMs,
@@ -3924,7 +3936,7 @@ export function hydrateLoaderHandoff(
         continue;
       }
       const loaderOptions = entry.loaderOptions;
-      setLoaderCacheEntry(item.routeId, item.params, Serialization.resultFromWire(item.result), {
+      setLoaderCacheEntry(entry.routeId, item.params, Serialization.resultFromWire(item.result), {
         ...loaderOptions,
         staleTime: loaderOptions?.staleTime ?? defaultHydratedLoaderStaleTimeMs,
       }, store);
